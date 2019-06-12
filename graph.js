@@ -1,3 +1,10 @@
+class Graph {
+    constructor(nodes = [], edges = []) {
+        this.nodes = nodes;
+        this.edges = edges;
+    }
+}
+
 // create the canvas
 let CANVAS = document.createElement("canvas");
 CANVAS.width = window.innerWidth * 0.8;
@@ -5,7 +12,7 @@ CANVAS.height = window.innerHeight * 0.8;
 document.body.appendChild(CANVAS);
 
 let CTX = CANVAS.getContext("2d");
-let GRAPH = [];
+let GRAPH = new Graph();
 let SELECTION_BUFFER = [];
 
 const PI = Math.PI;
@@ -20,7 +27,7 @@ function distance(p1, p2) {
 function selectedNode() {
     targetNode = null;
 
-    GRAPH.forEach(node => {
+    GRAPH.nodes.forEach(node => {
         if (distance(node, event) <= node.radius) {
             targetNode = node;
         }
@@ -28,12 +35,14 @@ function selectedNode() {
     return targetNode;
 }
 
-function drawEdge(n1,n2){
+function drawEdge(edge) {
+    let [n1, n2] = edge;
     CTX.beginPath();
-    CTX.moveTo(n1.x,n1.y);
-    CTX.lineTo(n2.x,n2.y);
+    CTX.moveTo(n1.x, n1.y);
+    CTX.lineTo(n2.x, n2.y);
     CTX.closePath();
     CTX.stroke();
+    console.log("edge created");
 }
 
 class Node {
@@ -62,25 +71,22 @@ CANVAS.addEventListener("mousedown", event => {
     clickedNode = selectedNode();
     if (!clickedNode) {
         const newnode = new Node(event.x, event.y);
-        GRAPH.push(newnode);
+        GRAPH.nodes.push(newnode);
         newnode.draw();
     } else {
         SELECTION_BUFFER.push(clickedNode);
 
         console.log(SELECTION_BUFFER);
-        if (SELECTION_BUFFER.length === 2){
-            
+        if (SELECTION_BUFFER.length === 2) {
             n1 = SELECTION_BUFFER[0];
             n2 = SELECTION_BUFFER[1];
-            n1.adjNodes.push(n2);
-            n2.adjNodes.push(n1);
+            edge = [n1, n2];
+            GRAPH.edges.push(edge);
 
             // draw the edge
-            drawEdge(n1,n2);
+            drawEdge(edge);
 
             SELECTION_BUFFER = [];
         }
-
-        console.log(GRAPH);
     }
 });
