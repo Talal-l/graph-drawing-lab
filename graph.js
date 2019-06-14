@@ -27,11 +27,20 @@ function drawEdge([n1, n2]) {
         ctx.beginPath();
         ctx.moveTo(n1.x, n1.y);
         ctx.lineTo(n2.x, n2.y);
-        ctx.closePath();
         ctx.stroke();
+        ctx.closePath();
     }
 }
 
+function selectNode(n) {
+    ctx.fillStyle = "#5ccdc9";
+    drawNode(n);
+    ctx.fillStyle = "#000000";
+}
+function deSelectNode(n) {
+    ctx.fillStyle = "#000000";
+    drawNode(n);
+}
 class Node {
     constructor(x, y, radius = 20) {
         this.x = x;
@@ -84,7 +93,6 @@ function distance(p1, p2) {
 // main
 {
     let activeGraph = new Graph();
-    let selection_buffer = [];
     let lastSelection = null;
 
     // events
@@ -94,17 +102,22 @@ function distance(p1, p2) {
 
         if (clickedNode) {
             if (lastSelection === null) {
+                selectNode(clickedNode);
                 lastSelection = clickedNode;
             } else if (clickedNode === lastSelection) {
+                deSelectNode(clickedNode);
                 lastSelection = null;
             } else {
                 activeGraph.addEdge(lastSelection, clickedNode);
+                deSelectNode(lastSelection);
                 lastSelection = null;
             }
         } else {
             // remove previous selection before creating new node
             if (lastSelection === null) {
                 activeGraph.addNode(new Node(event.x, event.y));
+            } else {
+                deSelectNode(lastSelection);
             }
 
             lastSelection = null;
