@@ -1,45 +1,43 @@
 // graphic variables and functions
 const PI = Math.PI;
 
-let canvas = document.createElement("canvas");
-let ctx = canvas.getContext("2d");
-// create the canvas
-canvas.width = window.innerWidth * 0.8;
-canvas.height = window.innerHeight * 0.8;
-document.body.appendChild(canvas);
+let svg = document.querySelector("svg");
+svg.setAttribute("width", `${window.innerWidth * 0.8}`);
+svg.setAttribute("height", `${window.innerHeight * 0.8}`);
+console.log(svg);
 
-function drawNode(node) {
-    ctx.beginPath();
-    ctx.arc(node.x, node.y, node.r, 0, 2 * PI, false);
-    // TODO: make this customizable
-    ctx.fill();
-    ctx.closePath();
+// create the canvas
+
+function drawNode(n) {
+    let circle = `<circle id="x${n.x}y${n.y}"cx="${n.x}" cy="${n.y}" r="${
+        n.r
+    }" fill="black" 
+                        style="stroke: black;"/>`;
+    svg.innerHTML += circle;
+
+    console.log(circle);
 }
 
 function drawGraph(graph) {
-    ctx.clearRect(0, 0, canvas.innerWidth, canvas.innerHeight);
     graph.nodes.forEach(n => drawNode(n));
     graph.edges.forEach(e => drawEdge(e));
 }
 
 function drawEdge([n1, n2]) {
-    {
-        ctx.beginPath();
-        ctx.moveTo(n1.x, n1.y);
-        ctx.lineTo(n2.x, n2.y);
-        ctx.stroke();
-        ctx.closePath();
-    }
+    let line = `<line x1="${n1.x}" x2="${n2.x}" y1="${n1.y}" y2="${
+        n2.y
+    }" stroke="black" stroke-width="1"/>`;
+
+    svg.innerHTML += line;
 }
 
 function selectNode(n) {
-    ctx.fillStyle = "#5ccdc9";
-    drawNode(n);
-    ctx.fillStyle = "#000000";
+    selection = document.querySelector(`#x${n.x}y${n.y}`);
+    selection.setAttribute("fill", "pink");
 }
 function deSelectNode(n) {
-    ctx.fillStyle = "#000000";
-    drawNode(n);
+    selection = document.querySelector(`#x${n.x}y${n.y}`);
+    selection.setAttribute("fill", "black");
 }
 class Node {
     constructor(x, y, radius = 20) {
@@ -96,7 +94,7 @@ function distance(p1, p2) {
     let lastSelection = null;
 
     // events
-    canvas.addEventListener("mousedown", event => {
+    svg.addEventListener("mousedown", event => {
         console.log(event.x, event.y);
         let clickedNode = activeGraph.findNode(event);
 
