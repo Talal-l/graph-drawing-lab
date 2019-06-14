@@ -85,24 +85,32 @@ function distance(p1, p2) {
 {
     let activeGraph = new Graph();
     let selection_buffer = [];
+    let lastSelection = null;
 
     // events
     canvas.addEventListener("mousedown", event => {
         console.log(event.x, event.y);
-        clickedNode = activeGraph.findNode(event);
-        if (!clickedNode) {
-            n = new Node(event.x, event.y);
-            activeGraph.addNode(n);
-        } else {
-            selection_buffer.push(clickedNode);
+        let clickedNode = activeGraph.findNode(event);
 
-            if (selection_buffer.length === 2) {
-                n1 = selection_buffer[0];
-                n2 = selection_buffer[1];
-                activeGraph.addEdge(n1, n2);
-                selection_buffer = [];
+        if (clickedNode) {
+            if (lastSelection === null) {
+                lastSelection = clickedNode;
+            } else if (clickedNode === lastSelection) {
+                lastSelection = null;
+            } else {
+                activeGraph.addEdge(lastSelection, clickedNode);
+                lastSelection = null;
             }
+        } else {
+            // remove previous selection before creating new node
+            if (lastSelection === null) {
+                activeGraph.addNode(new Node(event.x, event.y));
+            }
+
+            lastSelection = null;
         }
+        console.log("activeGraph", activeGraph);
+        console.log("lastSelection", lastSelection);
     });
 
     // test
