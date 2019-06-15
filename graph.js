@@ -6,7 +6,6 @@ let svgNodes = svg.querySelector("#nodes");
 let svgEdges = svg.querySelector("#edges");
 svg.setAttribute("width", `${window.innerWidth * 0.8}`);
 svg.setAttribute("height", `${window.innerHeight * 0.8}`);
-console.log(svg);
 
 // generate html id for nodes and edges
 function nodeId({ x, y }) {
@@ -23,8 +22,6 @@ function drawNode(n) {
     }" fill="black" 
                         style="stroke: black;"/>`;
     svgNodes.innerHTML += circle;
-
-    console.log(circle);
 }
 
 function drawGraph(graph) {
@@ -107,7 +104,6 @@ class Graph {
         this.edges = this.edges.filter(edge => {
             return edge !== e;
         });
-        console.log("after delete", this.edges);
     }
 
     findNode({ x, y }) {
@@ -119,19 +115,13 @@ class Graph {
     }
 
     findEdge(p1, p2) {
-        console.log(p1, p2);
         return this.edges.find(([n1, n2]) => {
-            console.log(n1, n2);
-            console.log(p1, p2);
             let node1 = n1.x === p1.x && n1.y === p1.y;
             let node2 = n2.x === p2.x && n2.y === p2.y;
             return node1 && node2;
         });
     }
 }
-
-// util
-
 function distance(p1, p2) {
     let dx = p2.x - p1.x;
     let dy = p2.y - p1.y;
@@ -183,14 +173,13 @@ function distance(p1, p2) {
 
             break;
         case "svg":
-            console.log("event",event);
+            console.log("event", event);
 
-            // translate ot svg viewport coordinate 
+            // translate ot svg viewport coordinate
             let rect = event.target.getBoundingClientRect();
             let x = event.clientX - rect.left;
             let y = event.clientY - rect.top;
 
-            
             if (lastSelection === null) {
                 activeGraph.addNode(new Node(x, y));
             } else {
@@ -215,6 +204,18 @@ function distance(p1, p2) {
             }
             console.log(event);
         }
+    });
+
+    // export to JSON file
+    let link = document.querySelector("#save-graph");
+    link.addEventListener("click", event => {
+        let d = new Date();
+        let date = `${d.getFullYear()}${d.getDate()}${d.getDate()}${d.getHours()}${d.getMinutes()}${d.getSeconds()}`;
+        let json = JSON.stringify(activeGraph);
+        let blob = new Blob([json], { type: "text/plain" });
+        let url = window.URL.createObjectURL(blob);
+        event.target.setAttribute("download", date);
+        link.setAttribute("href", url);
     });
 
     // test
@@ -248,5 +249,6 @@ function distance(p1, p2) {
         });
 
         console.log(activeGraph.edges, n[0]);
+
     }
 }
