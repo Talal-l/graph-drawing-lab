@@ -39,11 +39,10 @@ function drawEdge(e) {
     svg.innerHTML += line;
 }
 function clearNode(n) {
-    let { x, y } = n;
-    document.querySelector();
+    document.querySelector(`#${nodeId(n)}`).remove();
 }
 function clearEdge(e) {
-    [n1, n1] = e;
+    document.querySelector(`#${edgeId(e)}`).remove();
 }
 
 function selectNode(n) {
@@ -83,8 +82,31 @@ class Graph {
             drawEdge(e);
         }
     }
-    deleteNode() {}
-    deleteEdge() {}
+    deleteNode(n) {
+        // delete all connected edges
+
+        // get all edges that need to be delete
+        let toDelete = this.edges.filter(([n1, n2]) => {
+            return n === n1 || n === n2;
+        });
+        // clear them from drawing
+        toDelete.map(e => {
+            this.deleteEdge(e);
+        });
+
+        // delete node
+        clearNode(n);
+        this.nodes = this.nodes.filter(node => {
+            return node !== n;
+        });
+    }
+    deleteEdge(e) {
+        clearEdge(e);
+        this.edges = this.edges.filter(edge => {
+            return edge !== e;
+        });
+        console.log("after delete", this.edges);
+    }
 
     findNode({ x, y }) {
         return this.nodes.find(n => {
@@ -139,6 +161,17 @@ function distance(p1, p2) {
         console.log("lastSelection", lastSelection);
     });
 
+    window.addEventListener("keypress", event => {
+        if (event.key === "d" || event.key === "Delete") {
+            if (lastSelection !== null){
+                activeGraph.deleteNode(lastSelection);
+                console.log("after node delete",activeGraph);
+                lastSelection = null;
+            }
+            console.log(event);
+        }
+    });
+
     // test
     {
         console.log("testing");
@@ -147,15 +180,28 @@ function distance(p1, p2) {
 
         n = [
             new Node(378, 381),
+            new Node(281, 378),
             new Node(650, 287),
             new Node(421, 230),
             new Node(588, 455)
         ];
-        e = [[n[0], n[1]], [n[1], n[2]], [n[2], n[3]], [n[0], n[3]]];
+        e = [
+            [n[0], n[1]],
+            [n[1], n[2]],
+            [n[2], n[3]],
+            [n[0], n[3]],
+            [n[4], n[0]]
+        ];
         g = new Graph(n, e);
 
         // attach graph
         activeGraph = g;
         drawGraph(g);
+
+        f = g.edges.filter(([n1, n2]) => {
+            return n[0] !== n1 && n[0] !== n2;
+        });
+
+        console.log(activeGraph.edges, n[0]);
     }
 }
