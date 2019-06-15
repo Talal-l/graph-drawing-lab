@@ -6,10 +6,17 @@ svg.setAttribute("width", `${window.innerWidth * 0.8}`);
 svg.setAttribute("height", `${window.innerHeight * 0.8}`);
 console.log(svg);
 
-// create the canvas
+// generate html id for nodes and edges
+function nodeId({ x, y }) {
+    return `x${x}y${y}`;
+}
+function edgeId([n1, n2]) {
+    return `x${n1.x}y${n1.y}x${n2.x}y${n2.y}`;
+}
 
 function drawNode(n) {
-    let circle = `<circle id="x${n.x}y${n.y}"cx="${n.x}" cy="${n.y}" r="${
+    let { x, y } = n;
+    let circle = `<circle id="${nodeId(n)}" cx="${x}" cy="${y}" r="${
         n.r
     }" fill="black" 
                         style="stroke: black;"/>`;
@@ -23,20 +30,28 @@ function drawGraph(graph) {
     graph.edges.forEach(e => drawEdge(e));
 }
 
-function drawEdge([n1, n2]) {
-    let line = `<line x1="${n1.x}" x2="${n2.x}" y1="${n1.y}" y2="${
-        n2.y
-    }" stroke="black" stroke-width="1"/>`;
+function drawEdge(e) {
+    let [n1, n2] = e;
+    let line = `<line id=${edgeId(e)} x1="${n1.x}" x2="${n2.x}" y1="${
+        n1.y
+    }" y2="${n2.y}" stroke="black" stroke-width="1"/>`;
 
     svg.innerHTML += line;
 }
+function clearNode(n) {
+    let { x, y } = n;
+    document.querySelector();
+}
+function clearEdge(e) {
+    [n1, n1] = e;
+}
 
 function selectNode(n) {
-    selection = document.querySelector(`#x${n.x}y${n.y}`);
+    selection = document.querySelector(`#${nodeId(n)}`);
     selection.setAttribute("fill", "pink");
 }
 function deSelectNode(n) {
-    selection = document.querySelector(`#x${n.x}y${n.y}`);
+    selection = document.querySelector(`#${nodeId(n)}`);
     selection.setAttribute("fill", "black");
 }
 class Node {
