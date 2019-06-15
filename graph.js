@@ -143,12 +143,17 @@ function distance(p1, p2) {
     let activeGraph = new Graph();
     let lastSelection = null;
     let clickedEdge = null;
+    let clickedEl = null;
     // events
     svg.addEventListener("mousedown", event => {
-        console.log(event.x, event.y);
-        let clickedNode = activeGraph.findNode(event);
-
-        if (clickedNode) {
+        console.log(event.target.tagName);
+        switch (event.target.tagName) {
+        case "circle":
+            clickedEl = {
+                x: parseInt(event.target.getAttribute("cx")),
+                y: parseInt(event.target.getAttribute("cy"))
+            };
+            let clickedNode = activeGraph.findNode(clickedEl);
             if (lastSelection === null) {
                 selectNode(clickedNode);
                 lastSelection = clickedNode;
@@ -160,7 +165,9 @@ function distance(p1, p2) {
                 deSelectNode(lastSelection);
                 lastSelection = null;
             }
-        } else if (event.target.tagName === "line") {
+
+            break;
+        case "line":
             console.log("event", event.target);
             p1 = {
                 x: parseInt(event.target.getAttribute("x1")),
@@ -173,16 +180,28 @@ function distance(p1, p2) {
             clickedEdge = activeGraph.findEdge(p1, p2);
             activeGraph.deleteEdge(clickedEdge);
             console.log("clicked edge: ", clickedEdge);
-        } else {
-            // remove previous selection before creating new node
+
+            break;
+        case "svg":
+            console.log("event",event);
+
+            // translate ot svg viewport coordinate 
+            let rect = event.target.getBoundingClientRect();
+            let x = event.clientX - rect.left;
+            let y = event.clientY - rect.top;
+
+            
             if (lastSelection === null) {
-                activeGraph.addNode(new Node(event.x, event.y));
+                activeGraph.addNode(new Node(x, y));
             } else {
                 deSelectNode(lastSelection);
             }
 
             lastSelection = null;
+
+            break;
         }
+
         console.log("activeGraph", activeGraph);
         console.log("lastSelection", lastSelection);
     });
