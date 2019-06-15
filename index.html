@@ -14,8 +14,10 @@
 
     <div class="tool-bar">
         <a href="" id="save-graph" download>save graph</a>
-        <button>clear</button>
+        <button id="fileSelect">load graph</button>
+        <button onclick="clearGraphArea()">clear</button>
     </div>
+    <input type="file" id="fileElem" multiple accept="text/*" style="display:none" onchange="handleFiles(this.files)">
 
 
     <svg height="1000" width="100" xmlns="http://www.w3.org/2000/svg" stroke="red" fill="grey">

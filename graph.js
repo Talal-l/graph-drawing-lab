@@ -25,8 +25,15 @@ function drawNode(n) {
 }
 
 function drawGraph(graph) {
+    clearGraphArea();
     graph.nodes.forEach(n => drawNode(n));
     graph.edges.forEach(e => drawEdge(e));
+}
+
+function clearGraphArea() {
+    svgNodes.innerHTML = "";
+    svgEdges.innerHTML = "";
+    console.log("svg", svg);
 }
 
 function drawEdge(e) {
@@ -138,57 +145,57 @@ function distance(p1, p2) {
     svg.addEventListener("mousedown", event => {
         console.log(event.target.tagName);
         switch (event.target.tagName) {
-        case "circle":
-            clickedEl = {
-                x: parseInt(event.target.getAttribute("cx")),
-                y: parseInt(event.target.getAttribute("cy"))
-            };
-            let clickedNode = activeGraph.findNode(clickedEl);
-            if (lastSelection === null) {
-                selectNode(clickedNode);
-                lastSelection = clickedNode;
-            } else if (clickedNode === lastSelection) {
-                deSelectNode(clickedNode);
+            case "circle":
+                clickedEl = {
+                    x: parseInt(event.target.getAttribute("cx")),
+                    y: parseInt(event.target.getAttribute("cy"))
+                };
+                let clickedNode = activeGraph.findNode(clickedEl);
+                if (lastSelection === null) {
+                    selectNode(clickedNode);
+                    lastSelection = clickedNode;
+                } else if (clickedNode === lastSelection) {
+                    deSelectNode(clickedNode);
+                    lastSelection = null;
+                } else {
+                    activeGraph.addEdge(lastSelection, clickedNode);
+                    deSelectNode(lastSelection);
+                    lastSelection = null;
+                }
+
+                break;
+            case "line":
+                console.log("event", event.target);
+                p1 = {
+                    x: parseInt(event.target.getAttribute("x1")),
+                    y: parseInt(event.target.getAttribute("y1"))
+                };
+                p2 = {
+                    x: parseInt(event.target.getAttribute("x2")),
+                    y: parseInt(event.target.getAttribute("y2"))
+                };
+                clickedEdge = activeGraph.findEdge(p1, p2);
+                activeGraph.deleteEdge(clickedEdge);
+                console.log("clicked edge: ", clickedEdge);
+
+                break;
+            case "svg":
+                console.log("event", event);
+
+                // translate ot svg viewport coordinate
+                let rect = event.target.getBoundingClientRect();
+                let x = event.clientX - rect.left;
+                let y = event.clientY - rect.top;
+
+                if (lastSelection === null) {
+                    activeGraph.addNode(new Node(x, y));
+                } else {
+                    deSelectNode(lastSelection);
+                }
+
                 lastSelection = null;
-            } else {
-                activeGraph.addEdge(lastSelection, clickedNode);
-                deSelectNode(lastSelection);
-                lastSelection = null;
-            }
 
-            break;
-        case "line":
-            console.log("event", event.target);
-            p1 = {
-                x: parseInt(event.target.getAttribute("x1")),
-                y: parseInt(event.target.getAttribute("y1"))
-            };
-            p2 = {
-                x: parseInt(event.target.getAttribute("x2")),
-                y: parseInt(event.target.getAttribute("y2"))
-            };
-            clickedEdge = activeGraph.findEdge(p1, p2);
-            activeGraph.deleteEdge(clickedEdge);
-            console.log("clicked edge: ", clickedEdge);
-
-            break;
-        case "svg":
-            console.log("event", event);
-
-            // translate ot svg viewport coordinate
-            let rect = event.target.getBoundingClientRect();
-            let x = event.clientX - rect.left;
-            let y = event.clientY - rect.top;
-
-            if (lastSelection === null) {
-                activeGraph.addNode(new Node(x, y));
-            } else {
-                deSelectNode(lastSelection);
-            }
-
-            lastSelection = null;
-
-            break;
+                break;
         }
 
         console.log("activeGraph", activeGraph);
@@ -216,6 +223,34 @@ function distance(p1, p2) {
         let url = window.URL.createObjectURL(blob);
         event.target.setAttribute("download", date);
         link.setAttribute("href", url);
+    });
+
+    // import graph from file
+
+    function importGraph(json) {
+        let obj = JSON.parse(json);
+        activeGraph = new Graph(obj.nodes, obj.edges);
+        console.log("importing graph");
+        drawGraph(activeGraph);
+    }
+
+    const fileSelect = document.getElementById("fileSelect"),
+        fileElem = document.getElementById("fileElem");
+
+    function handleFiles(files) {
+        let reader = new FileReader();
+        console.log(files);
+
+        reader.onload = e => {
+            let content = e.target.result;
+            importGraph(content);
+            fileElem.value = "";
+        };
+
+        reader.readAsText(files[0]);
+    }
+    fileSelect.addEventListener("click", e => {
+        fileElem.click();
     });
 
     // test
@@ -249,6 +284,5 @@ function distance(p1, p2) {
         });
 
         console.log(activeGraph.edges, n[0]);
-
     }
 }
