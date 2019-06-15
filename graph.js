@@ -34,7 +34,7 @@ function drawEdge(e) {
     let [n1, n2] = e;
     let line = `<line id=${edgeId(e)} x1="${n1.x}" x2="${n2.x}" y1="${
         n1.y
-    }" y2="${n2.y}" stroke="black" stroke-width="1"/>`;
+    }" y2="${n2.y}" stroke="black" stroke-width="4"/>`;
 
     svg.innerHTML += line;
 }
@@ -115,6 +115,17 @@ class Graph {
             return xRange && yRange;
         });
     }
+
+    findEdge(p1, p2) {
+        console.log(p1, p2);
+        return this.edges.find(([n1, n2]) => {
+            console.log(n1, n2);
+            console.log(p1, p2);
+            let node1 = n1.x === p1.x && n1.y === p1.y;
+            let node2 = n2.x === p2.x && n2.y === p2.y;
+            return node1 && node2;
+        });
+    }
 }
 
 // util
@@ -129,7 +140,7 @@ function distance(p1, p2) {
 {
     let activeGraph = new Graph();
     let lastSelection = null;
-
+    let clickedEdge = null;
     // events
     svg.addEventListener("mousedown", event => {
         console.log(event.x, event.y);
@@ -147,6 +158,19 @@ function distance(p1, p2) {
                 deSelectNode(lastSelection);
                 lastSelection = null;
             }
+        } else if (event.target.tagName === "line") {
+            console.log("event", event.target);
+            p1 = {
+                x: parseInt(event.target.getAttribute("x1")),
+                y: parseInt(event.target.getAttribute("y1"))
+            };
+            p2 = {
+                x: parseInt(event.target.getAttribute("x2")),
+                y: parseInt(event.target.getAttribute("y2"))
+            };
+            clickedEdge = activeGraph.findEdge(p1, p2);
+            activeGraph.deleteEdge(clickedEdge);
+            console.log("clicked edge: ", clickedEdge);
         } else {
             // remove previous selection before creating new node
             if (lastSelection === null) {
@@ -163,9 +187,9 @@ function distance(p1, p2) {
 
     window.addEventListener("keypress", event => {
         if (event.key === "d" || event.key === "Delete") {
-            if (lastSelection !== null){
+            if (lastSelection !== null) {
                 activeGraph.deleteNode(lastSelection);
-                console.log("after node delete",activeGraph);
+                console.log("after node delete", activeGraph);
                 lastSelection = null;
             }
             console.log(event);
