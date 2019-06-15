@@ -2,6 +2,8 @@
 const PI = Math.PI;
 
 let svg = document.querySelector("svg");
+let svgNodes = svg.querySelector("#nodes");
+let svgEdges = svg.querySelector("#edges");
 svg.setAttribute("width", `${window.innerWidth * 0.8}`);
 svg.setAttribute("height", `${window.innerHeight * 0.8}`);
 console.log(svg);
@@ -20,7 +22,7 @@ function drawNode(n) {
         n.r
     }" fill="black" 
                         style="stroke: black;"/>`;
-    svg.innerHTML += circle;
+    svgNodes.innerHTML += circle;
 
     console.log(circle);
 }
@@ -36,7 +38,7 @@ function drawEdge(e) {
         n1.y
     }" y2="${n2.y}" stroke="black" stroke-width="4"/>`;
 
-    svg.innerHTML += line;
+    svgEdges.innerHTML += line;
 }
 function clearNode(n) {
     document.querySelector(`#${nodeId(n)}`).remove();
