@@ -184,8 +184,8 @@ function distance(p1, p2) {
 
                 // translate ot svg viewport coordinate
                 let rect = event.target.getBoundingClientRect();
-                let x = event.clientX - rect.left;
-                let y = event.clientY - rect.top;
+                let x = Math.floor(event.clientX - rect.left);
+                let y = Math.floor(event.clientY - rect.top);
 
                 if (lastSelection === null) {
                     activeGraph.addNode(new Node(x, y));
