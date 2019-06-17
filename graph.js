@@ -30,8 +30,15 @@ function drawGraph(graph) {
     for (let nodeId in graph.nodes) {
         drawNode(graph.nodes[nodeId]);
         graph.edges[nodeId].forEach(n2Id => {
-            edge = [graph.nodes[nodeId], graph.nodes[n2Id]];
-            drawEdge(edge);
+            n1 = graph.nodes[nodeId];
+            n2 = graph.nodes[n2Id];
+            edge = [n1, n2];
+
+            // make sure to not draw an undirected edge twice
+            edgeEl = document.querySelector(`#${htmlEdgeId([n2, n1])}`);
+            if (!edgeEl) {
+                drawEdge(edge);
+            }
         });
     }
 }
@@ -210,7 +217,6 @@ function distance(p1, p2) {
 
             break;
         case "svg":
-
             // translate ot svg viewport coordinate
             let rect = event.target.getBoundingClientRect();
             let x = Math.floor(event.clientX - rect.left);
@@ -258,8 +264,13 @@ function distance(p1, p2) {
 
     function importGraph(json) {
         let obj = JSON.parse(json);
-        activeGraph = new Graph(obj.nodes, obj.edges);
+        activeGraph = new Graph();
+        activeGraph.nodes = obj.nodes;
+        activeGraph.edges = obj.edges;
+        activeGraph.nextSeqId = obj.nextSeqId;
         console.log("importing graph");
+        console.log(activeGraph);
+
         drawGraph(activeGraph);
     }
 
