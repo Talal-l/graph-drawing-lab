@@ -13,11 +13,11 @@
 <body>
 
     <div class="tool-bar">
-        <a href="" id="save-graph" download>save graph</a>
-        <button id="fileSelect">load graph</button>
-        <button onclick="clearGraphArea()">clear</button>
+        <a href="" id="saveGraphLink" download>save graph</a>
+        <button id="loadGraph">load graph</button>
+        <button id="clearGraph">clear</button>
     </div>
-    <input type="file" id="fileElem" multiple accept="text/*" style="display:none" onchange="handleFiles(this.files)">
+    <input type="file" id="fileSelector" multiple accept="text/*" style="display:none" >
 
 
     <svg height="1000" width="100" xmlns="http://www.w3.org/2000/svg" stroke="red" fill="grey">
@@ -26,7 +26,10 @@
     </svg>
 
 
-    <script src="./graph.js"></script>
+    <script type="module" src="./graph.js"></script>
+    <script type="module" src="./svgRenderer.js"></script>
+    <script type="module" src="./util.js"></script>
+    <script type="module" src="./main.js"></script>
 </body>
 
 </html>
