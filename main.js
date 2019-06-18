@@ -101,7 +101,6 @@ svgCanvas.addEventListener("mousedown", event => {
             if (deltaX > delta || deltaY > delta) {
                 // get xy inside canvas
                 initX = initY = 0;
-                console.log("resetting init");
                 let [x, y] = getCanvasXy(event);
 
                 // update svg elements
@@ -147,6 +146,7 @@ svgCanvas.addEventListener("mousedown", event => {
             activeGraph.addEdge([lastSelection, clickedNode]);
             deSelectNode(lastSelection);
             lastSelection = null;
+            svgCanvas.removeEventListener("mousemove", onMove);
         }
 
         break;
