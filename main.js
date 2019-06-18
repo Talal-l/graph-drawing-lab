@@ -74,6 +74,11 @@ svgCanvas.addEventListener("mousedown", event => {
         );
         let clickedNode = activeGraph.nodes[nodeId];
 
+        // record initial x,y pos
+        let delta = clickedNode.r * 2; // how many pixels to move before triggering a move operation
+        let initX = event.x;
+        let initY = event.y;
+
         // get connected edges
         let adjNodes = activeGraph.getAdjList(clickedNode);
         let edgeElList = adjNodes.map(n2Id => {
@@ -90,40 +95,47 @@ svgCanvas.addEventListener("mousedown", event => {
         });
             // register move event for the node
         function onMove(event) {
-            // get xy inside canvas
-            let [x, y] = getCanvasXy(event);
+            // check if we moved enough to trigger a move operation
+            let deltaX = Math.abs(event.x - initX);
+            let deltaY = Math.abs(event.y - initY);
+            if (deltaX > delta || deltaY > delta) {
+                // get xy inside canvas
+                initX = initY = 0;
+                console.log("resetting init");
+                let [x, y] = getCanvasXy(event);
 
-            // update svg elements
-            clickedNodeEl.setAttribute("cx", x);
-            clickedNodeEl.setAttribute("cy", y);
+                // update svg elements
+                clickedNodeEl.setAttribute("cx", x);
+                clickedNodeEl.setAttribute("cy", y);
 
-            // update each edge first node coordinate
-            edgeElList.forEach(el => {
-                // HACK: check if an undirected edge was drawn in reverse (n2 to n1) in html
-                let coordinate = 1;
-                let first = parseInt(
-                    el
-                        .getAttribute("id")
-                        .split("-")[0]
-                        .split("n")[1]
-                );
-                if (clickedNode.id !== first) {
-                    coordinate = 2;
-                }
+                // update each edge first node coordinate
+                edgeElList.forEach(el => {
+                    // HACK: check if an undirected edge was drawn in reverse (n2 to n1) in html
+                    let coordinate = 1;
+                    let first = parseInt(
+                        el
+                            .getAttribute("id")
+                            .split("-")[0]
+                            .split("n")[1]
+                    );
+                    if (clickedNode.id !== first) {
+                        coordinate = 2;
+                    }
 
-                el.setAttribute(`x${coordinate}`, x);
-                el.setAttribute(`y${coordinate}`, y);
-            });
+                    el.setAttribute(`x${coordinate}`, x);
+                    el.setAttribute(`y${coordinate}`, y);
+                });
 
-            // update node
-            clickedNode.x = x;
-            clickedNode.y = y;
+                // update node
+                clickedNode.x = x;
+                clickedNode.y = y;
+            }
         }
-        svgCanvas.addEventListener("mousemove",onMove);
+        svgCanvas.addEventListener("mousemove", onMove);
 
-        clickedNodeEl.addEventListener("mouseup", () =>
-            svgCanvas.removeEventListener("mousemove", onMove)
-        );
+        clickedNodeEl.addEventListener("mouseup", () => {
+            svgCanvas.removeEventListener("mousemove", onMove);
+        });
 
         if (lastSelection === null) {
             selectNode(clickedNode);
