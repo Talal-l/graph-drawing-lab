@@ -1,6 +1,5 @@
 {
   "plugins": [
-    "cypress"
   ],
 
     "parserOptions": {
@@ -11,7 +10,6 @@
     "env": {
         "browser": true,
         "node": true,
-        "cypress/globals": true
     },
     "rules": {
         "strict": "error",
