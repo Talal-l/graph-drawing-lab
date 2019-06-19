@@ -1,14 +1,11 @@
 import { Graph, Node } from "./graph.js";
-import {
-    svgCanvas,
-    selectNode,
-    deSelectNode,
-    clearGraphArea,
-    drawGraph,
-    htmlEdgeId,
-    htmlNodeId
-} from "./svgRenderer.js";
+import { SvgRenderer } from "./svgRenderer.js";
 
+let svgCanvas = document.querySelector("svg");
+svgCanvas.setAttribute("width", `${window.innerWidth * 0.8}`);
+svgCanvas.setAttribute("height", `${window.innerHeight * 0.8}`);
+
+let svgRenderer = new SvgRenderer(svgCanvas);
 let activeGraph = new Graph();
 let lastSelection = null;
 let clickedEdge = null;
@@ -20,7 +17,10 @@ const saveGraph = document.querySelector("#saveGraphLink"),
     loadGraph = document.querySelector("#loadGraph"),
     clearGraph = document.querySelector("#clearGraph");
 
-clearGraph.addEventListener("click", () => clearGraphArea());
+clearGraph.addEventListener("click", () => {
+    activeGraph = new Graph();
+    svgRenderer.clearGraphArea();
+});
 saveGraph.addEventListener("click", event => {
     let d = new Date();
     let date = `${d.getFullYear()}${d.getDate()}${d.getDate()}${d.getHours()}${d.getMinutes()}${d.getSeconds()}`;
@@ -45,7 +45,7 @@ fileSelector.addEventListener("change", function handleFiles(event) {
         activeGraph = new Graph();
         Object.assign(activeGraph, JSON.parse(content));
         fileSelector.value = "";
-        drawGraph(activeGraph);
+        svgRenderer.drawGraph(activeGraph);
     };
 
     reader.readAsText(files[0]);
@@ -84,11 +84,11 @@ svgCanvas.addEventListener("mousedown", event => {
         let edgeElList = adjNodes.map(n2Id => {
             let n2 = activeGraph.nodes[n2Id];
             let edgeEl = document.querySelector(
-                `#${htmlEdgeId([clickedNode, n2])}`
+                `#${svgRenderer.htmlEdgeId([clickedNode, n2])}`
             );
             if (!edgeEl) {
                 edgeEl = document.querySelector(
-                    `#${htmlEdgeId([n2, clickedNode])}`
+                    `#${svgRenderer.htmlEdgeId([n2, clickedNode])}`
                 );
             }
             return edgeEl;
@@ -137,14 +137,18 @@ svgCanvas.addEventListener("mousedown", event => {
         });
 
         if (lastSelection === null) {
-            selectNode(clickedNode);
+            svgRenderer.selectNode(clickedNode);
             lastSelection = clickedNode;
         } else if (clickedNode === lastSelection) {
-            deSelectNode(clickedNode);
+            svgRenderer.deSelectNode(clickedNode);
             lastSelection = null;
         } else {
-            activeGraph.addEdge([lastSelection, clickedNode]);
-            deSelectNode(lastSelection);
+            let edge = [lastSelection, clickedNode];
+            if (!activeGraph.edgeExist(edge)) {
+                activeGraph.addEdge(edge);
+                svgRenderer.drawEdge(edge);
+            }
+            svgRenderer.deSelectNode(lastSelection);
             lastSelection = null;
             svgCanvas.removeEventListener("mousemove", onMove);
         }
@@ -161,6 +165,7 @@ svgCanvas.addEventListener("mousedown", event => {
         };
         clickedEdge = activeGraph.findEdge(p1, p2);
         activeGraph.deleteEdge(clickedEdge);
+        svgRenderer.clearEdge(clickedEdge);
 
         break;
     case "svg":
@@ -168,9 +173,11 @@ svgCanvas.addEventListener("mousedown", event => {
         let [x, y] = getCanvasXy(event);
 
         if (lastSelection === null) {
-            activeGraph.addNode(new Node(x, y));
+            let n = new Node(x, y);
+            activeGraph.addNode(n);
+            svgRenderer.drawNode(n);
         } else {
-            deSelectNode(lastSelection);
+            svgRenderer.deSelectNode(lastSelection);
         }
 
         lastSelection = null;
@@ -186,8 +193,10 @@ window.addEventListener("keypress", event => {
     if (event.key === "d" || event.key === "Delete") {
         if (lastSelection !== null) {
             activeGraph.deleteNode(lastSelection);
+            svgRenderer.clearNode(lastSelection);
             console.log("after node delete", activeGraph);
             lastSelection = null;
+            svgRenderer.drawGraph(activeGraph);
         }
         console.log(event);
     }
@@ -218,6 +227,7 @@ window.addEventListener("keypress", event => {
     g.addEdge([n[1], n[3]]);
 
     activeGraph = g;
+    svgRenderer.drawGraph(activeGraph);
 
     console.log("active graph");
     console.log(activeGraph);

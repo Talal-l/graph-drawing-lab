@@ -1,4 +1,3 @@
-import * as svg from  "./svgRenderer.js";
 export class Node {
     constructor(x, y, radius = 20, id = null) {
         this.x = x;
@@ -37,17 +36,24 @@ export class Graph {
         this.nodes[node.id] = node;
         // add it to edge map
         this.edges[node.id] = [];
-
-        svg.drawNode(node);
     }
     addEdge([n1, n2], directed = false) {
-        if (n1 !== n2 && !this.isAdj(n1, n2)) {
+        if (n1 !== n2) {
             this.addAdj(n1, n2);
             if (!directed) {
                 this.addAdj(n2, n1);
             }
-            svg.drawEdge([n1, n2]);
         }
+    }
+    edgeExist([n1, n2], directed = false) {
+        let n1Ton2 = this.isAdj(n1,n2);
+        if (!directed) {
+            let n2Ton1 = this.isAdj(n2,n1);
+            return n1Ton2|| n2Ton1;
+        }
+        return n1Ton2;
+
+
     }
     deleteNode(node) {
         // delete all connected edges
@@ -60,13 +66,11 @@ export class Graph {
         });
 
         // delete node
-        svg.clearNode(node);
         delete this.edges[node.id];
         delete this.nodes[node.id];
     }
     deleteEdge([n1, n2], directed = false) {
         this.removeAdj(n1, n2);
-        svg.clearEdge([n1, n2]);
         if (!directed) {
             this.removeAdj(n2, n1);
         }

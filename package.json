@@ -18,6 +18,7 @@
     "homepage": "https://gitlab.com/talal__l/graph-drawing#readme",
     "devDependencies": {
         "cypress": "^3.3.1",
+        "eslint": "^5.16.0",
         "eslint-plugin-cypress": "^2.2.1"
     }
 }
