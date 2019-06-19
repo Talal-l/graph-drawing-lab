@@ -1,0 +1,25 @@
+{
+  "plugins": [
+    "cypress"
+  ],
+
+    "parserOptions": {
+        "ecmaVersion": 6,
+        "sourceType": "module"
+        
+    },
+    "env": {
+        "browser": true,
+        "node": true,
+        "cypress/globals": true
+    },
+    "rules": {
+        "strict": "error",
+        "semi": "error",
+        "quotes": ["error", "double"],
+        "eqeqeq": "warn",
+        "linebreak-style": ["error", "unix"],
+        "indent": ["error",4],
+        "no-undef": "error"
+    }
+}

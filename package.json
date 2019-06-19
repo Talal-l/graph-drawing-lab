@@ -1,0 +1,23 @@
+{
+  "name": "graph-drawing",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@gitlab.com/talal__l/graph-drawing.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://gitlab.com/talal__l/graph-drawing/issues"
+  },
+  "homepage": "https://gitlab.com/talal__l/graph-drawing#readme",
+  "devDependencies": {
+    "cypress": "^3.3.1",
+    "eslint-plugin-cypress": "^2.2.1"
+  }
+}
