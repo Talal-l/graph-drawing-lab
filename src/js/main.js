@@ -134,9 +134,9 @@ svgCanvas.addEventListener("mousedown", event => {
         }
         svgCanvas.addEventListener("mousemove", onMove);
         svgCanvas.addEventListener("mouseleave", () => {
-            if (isDragged) {
+            if (isDragged && lastSelection) {
+                svgRenderer.deSelectNode(lastSelection);
                 lastSelection = null;
-                svgRenderer.deSelectNode(clickedNode);
             }
             svgCanvas.removeEventListener("mousemove", onMove);
         });
