@@ -61,8 +61,9 @@ function getCanvasXy(event) {
 }
 
 // events
-
 svgCanvas.addEventListener("mousedown", event => {
+    let isDragged = false;
+
     switch (event.target.tagName) {
     case "circle":
         // prepare node to be moved
@@ -99,6 +100,7 @@ svgCanvas.addEventListener("mousedown", event => {
             let deltaX = Math.abs(event.x - initX);
             let deltaY = Math.abs(event.y - initY);
             if (deltaX > delta || deltaY > delta) {
+                isDragged = true;
                 // get xy inside canvas
                 initX = initY = 0;
                 let [x, y] = getCanvasXy(event);
@@ -133,6 +135,11 @@ svgCanvas.addEventListener("mousedown", event => {
         svgCanvas.addEventListener("mousemove", onMove);
 
         clickedNodeEl.addEventListener("mouseup", () => {
+            // remove selection if it was a result of a drag
+            if (isDragged) {
+                lastSelection = null;
+                svgRenderer.deSelectNode(clickedNode);
+            }
             svgCanvas.removeEventListener("mousemove", onMove);
         });
 

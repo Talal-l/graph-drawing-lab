@@ -9,7 +9,7 @@
     },
     "env": {
         "browser": true,
-        "node": true,
+        "node": true
     },
     "rules": {
         "strict": "error",
