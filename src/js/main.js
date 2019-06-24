@@ -138,6 +138,7 @@ svgCanvas.addEventListener("mousedown", event => {
             if (isDragged && lastSelection) {
                 svgRenderer.deSelectNode(lastSelection);
                 lastSelection = null;
+                isDragged = false;
             }
             svgCanvas.removeEventListener("mousemove", onMove);
         });
@@ -147,6 +148,7 @@ svgCanvas.addEventListener("mousedown", event => {
             if (isDragged) {
                 lastSelection = null;
                 svgRenderer.deSelectNode(clickedNode);
+                isDragged = false;
             }
             svgCanvas.removeEventListener("mousemove", onMove);
         });
