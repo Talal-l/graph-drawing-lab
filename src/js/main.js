@@ -106,6 +106,11 @@ svgCanvas.addEventListener("mousedown", event => {
                 initX = initY = 0;
                 let [x, y] = getCanvasXy(event);
 
+                if (lastSelection === null){
+
+                    lastSelection = clickedNode;
+                    svgRenderer.selectNode(lastSelection);
+                }
                 // update svg elements
                 clickedNodeEl.setAttribute("cx", x);
                 clickedNodeEl.setAttribute("cy", y);
