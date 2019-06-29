@@ -1,6 +1,4 @@
-
-
-var N = 6,
+var N = 10,
     E = N * (N - 1),
     graph = {
         nodes: [],
@@ -13,16 +11,25 @@ var sig = new sigma({
         container: "container"
     },
     settings: {
-        autoRescale: false
+        autoRescale: true
     }
 });
 
-let sigmaMouse = document.querySelector(".sigma-mouse");
+let sigmaMouse = document.querySelector("#container");
 let cam = sig.camera;
+console.log(sig.renderers);
 // Generate a random graph:
+let r = Math.min(sigmaMouse.offsetWidth, sigmaMouse.offsetHeight);
 for (let i = 0; i < N; i++) {
-    let x = (Math.random() - 0.5) * sigmaMouse.offsetWidth;
-    let y = (Math.random() - 0.5) * sigmaMouse.offsetHeight;
+    // let x = (Math.random() - 0.5) * r;
+    // let y = (Math.random() - 0.5) * r;
+
+    // let x = r * Math.cos((2 * Math.PI * i) / N - Math.PI / 2);
+    // let y = r * Math.sin((2 * Math.PI * i) / N - Math.PI / 2);
+
+    let x = 0;
+    let y = 0;
+
     let p1 = cam.cameraPosition(x, y);
     sig.graph.addNode({
         id: "n" + i,
@@ -57,7 +64,7 @@ frame();
 // drag events
 var dragListener = sigma.plugins.dragNodes(sig, sig.renderers[0]);
 dragListener.bind("startdrag", function(event) {
-    // console.log(event);
+    console.log(event);
 });
 dragListener.bind("drag", function(event) {
     // console.log(event);
@@ -93,3 +100,8 @@ sig.bind("rightClickStage", e => {
 });
 
 sigmaMouse.addEventListener("contextmenu", event => event.preventDefault());
+
+// Configure the noverlap layout:
+var customLayout = sig.getCustomLayout();
+
+customLayout.run();

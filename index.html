@@ -55,15 +55,23 @@
     <script src="sigma.js/src/misc/sigma.misc.bindEvents.js"></script>
     <script src="sigma.js/src/misc/sigma.misc.bindDOMEvents.js"></script>
     <script src="sigma.js/src/misc/sigma.misc.drawHovers.js"></script>
-    <!-- END SIGMA IMPORTS -->
-    <script src="sigma.js/plugins/sigma.plugins.dragNodes/sigma.plugins.dragNodes.js"></script>
 
+    <!--plugins-->
+    <script src="sigma.js/plugins/sigma.plugins.dragNodes/sigma.plugins.dragNodes.js"></script>
+    <script src="sigma.js/plugins/sigma.plugins.animate/sigma.plugins.animate.js"></script>
+
+    <!--layouts-->
+    <script src="./src/js/customSigLayout.js"></script>
+
+
+    <!-- END SIGMA IMPORTS -->
 
 
 </head>
 
 <body>
 
+    <button onclick="run()">run one step</button>
 
     <style type="text/css">
         body {
