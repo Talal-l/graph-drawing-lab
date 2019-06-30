@@ -102,6 +102,8 @@ sig.bind("rightClickStage", e => {
 sigmaMouse.addEventListener("contextmenu", event => event.preventDefault());
 
 // Configure the noverlap layout:
-var customLayout = sig.getCustomLayout();
+let customLayout = new sigma.CustomLayout(sig);
+console.log(customLayout);
 
-customLayout.run();
+
+
