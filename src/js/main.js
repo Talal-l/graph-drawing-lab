@@ -12,7 +12,7 @@ let clickedEdge = null;
 let clickedEl = null;
 
 // tool bar
-const saveGraph = document.querySelector("#saveGraphLink"),
+const saveGraph = document.querySelector("#saveGraph"),
     fileSelector = document.querySelector("#fileSelector"),
     loadGraph = document.querySelector("#loadGraph"),
     clearGraph = document.querySelector("#clearGraph");
@@ -22,14 +22,15 @@ clearGraph.addEventListener("click", () => {
     svgRenderer.clearGraphArea();
 });
 saveGraph.addEventListener("click", event => {
+    let saveGraphLink = document.querySelector("#saveGraphLink");
     let d = new Date();
     let date = `${d.getFullYear()}${d.getDate()}${d.getDate()}${d.getHours()}${d.getMinutes()}${d.getSeconds()}`;
     let json = JSON.stringify(activeGraph);
     let blob = new Blob([json], { type: "text/plain" });
     let url = window.URL.createObjectURL(blob);
-    event.target.setAttribute("download", date);
-    let link = document.querySelector("#saveGraphLink");
-    link.setAttribute("href", url);
+    saveGraphLink.setAttribute("download", date);
+    saveGraphLink.setAttribute("href", url);
+    saveGraphLink.click();
 });
 loadGraph.addEventListener("click", () => {
     fileSelector.click();
@@ -105,6 +106,11 @@ svgCanvas.addEventListener("mousedown", event => {
                 initX = initY = 0;
                 let [x, y] = getCanvasXy(event);
 
+                if (lastSelection === null){
+
+                    lastSelection = clickedNode;
+                    svgRenderer.selectNode(lastSelection);
+                }
                 // update svg elements
                 clickedNodeEl.setAttribute("cx", x);
                 clickedNodeEl.setAttribute("cy", y);
@@ -133,12 +139,21 @@ svgCanvas.addEventListener("mousedown", event => {
             }
         }
         svgCanvas.addEventListener("mousemove", onMove);
+        svgCanvas.addEventListener("mouseleave", () => {
+            if (isDragged && lastSelection) {
+                svgRenderer.deSelectNode(lastSelection);
+                lastSelection = null;
+                isDragged = false;
+            }
+            svgCanvas.removeEventListener("mousemove", onMove);
+        });
 
         clickedNodeEl.addEventListener("mouseup", () => {
             // remove selection if it was a result of a drag
             if (isDragged) {
                 lastSelection = null;
                 svgRenderer.deSelectNode(clickedNode);
+                isDragged = false;
             }
             svgCanvas.removeEventListener("mousemove", onMove);
         });

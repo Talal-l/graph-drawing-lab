@@ -14,10 +14,10 @@
     "rules": {
         "strict": "error",
         "semi": "error",
-        "quotes": ["error", "double"],
+        "quotes": ["off", "double"],
         "eqeqeq": "warn",
         "linebreak-style": ["error", "unix"],
-        "indent": ["error",4],
+        "indent": ["off",4],
         "no-undef": "error"
 
     }
