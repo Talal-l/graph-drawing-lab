@@ -5,6 +5,13 @@ var N = 10,
         edges: []
     };
 
+// graph module extensions
+
+// get an object of all adjacent nodes to the given node
+sigma.classes.graph.addMethod("allNeighbors", function(node) {
+    return this.allNeighborsIndex[node.id];
+});
+
 var sig = new sigma({
     renderer: {
         type: "webgl",
@@ -47,19 +54,55 @@ for (let i of sig.graph.nodes()) {
     }
 }
 
+// events
+
+// track selected node
+let selectedNode = null;
+
+function toggleNode(node) {
+    if (selectedNode === node) {
+        selectedNode.color = "#921";
+        selectedNode = null;
+    } else {
+        node.color = "#c52";
+        selectedNode = node;
+    }
+    sig.refresh();
+}
 // drag events
 var dragListener = sigma.plugins.dragNodes(sig, sig.renderers[0]);
-dragListener.bind("startdrag", function(event) {
-    console.log(event);
-});
+dragListener.bind("startdrag", function(event) {});
 dragListener.bind("drag", function(event) {
-    // console.log(event);
+    console.log(event);
 });
 dragListener.bind("drop", function(event) {
     // console.log(event);
 });
 dragListener.bind("dragend", function(event) {
     // console.log(event);
+});
+
+sig.bind("clickNode", e => {
+    let node = e.data.node;
+    if (selectedNode && selectedNode.id !== node.id) {
+        // create an edge if non existed between them
+        if (!sig.graph.allNeighbors(node)[selectedNode.id]) {
+            sig.graph.addEdge({
+                id: `e${selectedNode.id}${node.id}`,
+                source: selectedNode.id,
+                target: node.id,
+                size: 3,
+                color: "#ccc"
+            });
+        }
+    }
+    // toggle node if no selection exist
+    toggleNode(selectedNode || node);
+});
+
+// reset selection
+sig.bind("clickStage rightClickStage", e => {
+    if (selectedNode) toggleNode(selectedNode);
 });
 
 let nodeId = 0;
@@ -85,7 +128,6 @@ sig.bind("rightClickStage", e => {
     sig.graph.addNode(n);
     sig.refresh();
 });
-console.log(sig.graph);
 
 sigmaMouse.addEventListener("contextmenu", event => event.preventDefault());
 
