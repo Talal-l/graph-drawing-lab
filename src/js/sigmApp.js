@@ -11,13 +11,13 @@ var sig = new sigma({
         container: "container"
     },
     settings: {
+        doubleClickEnabled: false,
         autoRescale: false
     }
 });
 
 let sigmaMouse = document.querySelector("#container");
 let cam = sig.camera;
-console.log(sig.renderers);
 // Generate a random graph:
 let r = Math.min(sigmaMouse.offsetWidth, sigmaMouse.offsetHeight);
 for (let i = 0; i < N; i++) {
@@ -83,25 +83,67 @@ sig.bind("rightClickStage", e => {
     };
 
     sig.graph.addNode(n);
+    sig.refresh();
 });
 console.log(sig.graph);
 
 sigmaMouse.addEventListener("contextmenu", event => event.preventDefault());
 
 // Configure the noverlap layout:
-let customLayout = new sigma.CustomLayout(sig, { extra: 12 });
+let customLayout = new sigma.CustomLayout(sig);
 console.log(customLayout);
 function run() {
     customLayout.run();
+    sig.refresh();
 }
 function runStep() {
     customLayout.step();
+    sig.refresh();
 }
 
+// tool bar
+const saveGraph = document.querySelector("#saveGraph"),
+    fileSelector = document.querySelector("#fileSelector"),
+    loadGraph = document.querySelector("#loadGraph"),
+    clearGraph = document.querySelector("#clearGraph");
 
-// animation loop
-function frame() {
-    customLayout.step(true);
-    requestAnimationFrame(frame);
-}
-frame();
+clearGraph.addEventListener("click", () => {
+    sig.graph.clear();
+    sig.refresh();
+});
+saveGraph.addEventListener("click", event => {
+    let saveGraphLink = document.querySelector("#saveGraphLink");
+    let d = new Date();
+    let date = `${d.getFullYear()}${d.getDate()}${d.getDate()}${d.getHours()}${d.getMinutes()}${d.getSeconds()}`;
+    let json = JSON.stringify({
+        nodes: sig.graph.nodes(),
+        edges: sig.graph.edges()
+    });
+    let blob = new Blob([json], { type: "text/plain" });
+    let url = window.URL.createObjectURL(blob);
+    saveGraphLink.setAttribute("download", date);
+    saveGraphLink.setAttribute("href", url);
+    saveGraphLink.click();
+});
+loadGraph.addEventListener("click", () => {
+    fileSelector.click();
+});
+
+fileSelector.addEventListener("change", function handleFiles(event) {
+    console.log("file");
+    let files = event.target.files;
+    let reader = new FileReader();
+
+    reader.onload = e => {
+        let content = e.target.result;
+        console.log(content);
+        sig.graph.clear();
+        sig.graph.read(JSON.parse(content));
+        fileSelector.value = "";
+        sig.refresh();
+    };
+
+    reader.readAsText(files[0]);
+});
+
+sig.refresh();
