@@ -18,7 +18,8 @@
         "eqeqeq": "warn",
         "linebreak-style": ["error", "unix"],
         "indent": ["off",4],
-        "no-undef": "error"
+        "no-undef": "error",
+        "capitalized-comments":"warn"
 
     }
 }
