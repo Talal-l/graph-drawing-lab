@@ -23,33 +23,6 @@ let container = document.querySelector("#container");
 let N = 10;
 let r = Math.min(container.offsetWidth, container.offsetHeight);
 
-for (let i = 0; i < N; i++) {
-    let x = 0;
-    let y = 0;
-
-    let p1 = cam.cameraPosition(x, y);
-    let node = {
-        id: "n" + i,
-        label: "Node " + i,
-        x: p1.x,
-        y: p1.y,
-        size: 10,
-        color: "#921"
-    };
-    sig.graph.addNode(node);
-
-    for (let n of sig.graph.nodes()) {
-        if (node.id === n.id) continue;
-        sig.graph.addEdge({
-            id: `e${node.id}${n.id}`,
-            source: node.id,
-            target: n.id,
-            size: 3,
-            color: "#ccc"
-        });
-    }
-}
-
 // Create graph layout
 let customLayout = new sigma.CustomLayout(sig);
 console.log(customLayout);
@@ -62,15 +35,38 @@ function runStep() {
     sig.refresh();
 }
 
+function distance(p1, p2) {
+    return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+}
+
 // Graph events
 
-
+// Track selected node
+let selectedNode = null;
+let dragStartPos = null;
+let dragEndPos = null;
+let dragThreshold = 5;
+let drag = null;
 
 // Add drag support
 let dragListener = sigma.plugins.dragNodes(sig, sig.renderers[0]);
 
-// Track selected node
-let selectedNode = null;
+dragListener.bind("startdrag", e => {
+    drag = false;
+    dragStartPos = {
+        x: e.data.node.x,
+        y: e.data.node.y
+    };
+});
+
+dragListener.bind("drag", e => {
+    dragEndPos = {
+        x: e.data.node.x,
+        y: e.data.node.y
+    };
+    // Register the movement as a drag operation
+    if (distance(dragStartPos, dragEndPos) >= dragThreshold) drag = true;
+});
 
 function toggleNode(node) {
     if (selectedNode === node) {
@@ -97,8 +93,7 @@ sig.bind("clickNode", e => {
             });
         }
     }
-    // Toggle node if no selection exist
-    toggleNode(selectedNode || node);
+    if (!drag) toggleNode(selectedNode || node);
 });
 
 // Reset selection
@@ -125,7 +120,7 @@ sig.bind("rightClickStage", e => {
         x: p.x,
         y: p.y,
         size: 10,
-        color: "#021"
+        color: "#921"
     };
 
     sig.graph.addNode(n);
