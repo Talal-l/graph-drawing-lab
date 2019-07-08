@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link type="text/css" rel="stylesheet" href="./src/css/style.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css"
+        integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+
     <title>graph</title>
 
     <!-- START SIGMA IMPORTS -->
@@ -70,22 +73,66 @@
 </head>
 
 <body>
-    <div id="container"></div>
 
 
-    <div class="tool-bar">
-        <button id="saveGraph">save graph</button>
-        <button id="loadGraph">load graph</button>
-        <button id="clearGraph">clear</button>
+    <div class="toolbar-container">
 
-        <button onclick="run()">run</button>
-        <button onclick="runStep()">run one step</button>
+        <div class="icon fas fa-bars" id="menu">
+        </div>
+
+
+        <!-- Graph options-->
+        <div class="icon fas fa-project-diagram" id="genGraph">
+            <span class="tooltip">Generate graph</span>
+        </div>
+
+        <div class="icon fas fa-save " id="saveGraph">
+            <span class="tooltip">Save graph</span>
+        </div>
+
+        <div class="icon fas fa-upload" id="loadGraph">
+            <span class="tooltip">Upload graph</span>
+        </div>
+
+        <div class="icon fas fa-trash" id="clearGraph">
+            <span class="tooltip">Delete graph</span>
+        </div>
+
+
+        <!-- Node/Edge options-->
+        <div class="icon fas fa-plus-circle group-start" id="addNode">
+            <span class="tooltip">Add node</span>
+        </div>
+
+        <div class="icon fas fa-bezier-curve" id="addEdge">
+            <span class="tooltip">Add edge</span>
+        </div>
+
+        <div class="icon fas fa-eraser" id="erase">
+            <span class="tooltip">Delete node/edge</span>
+        </div>
+
+
+        <!-- Layout options -->
+        <div class="icon fas fa-play group-start" id="runLayout" onclick="run()">
+            <span class="tooltip">Run layout</span>
+        </div>
+
+        <div class="icon fas fa-step-forward" id="stepLayout" onclick="runStep()">
+            <span class="tooltip">Run step</span>
+        </div>
+
+        <div class="icon fas fa-power-off" id="resetLayout">
+            <span class="tooltip">Reset layout</span>
+        </div>
 
 
     </div>
+
     <input type="file" id="fileSelector" multiple accept="text/*" style="display:none">
     <a href="" id="saveGraphLink" download style="display: none">save graph</a>
 
+    <div id="container"></div>
     <script src="src/js/main.js"></script>
 </body>
 

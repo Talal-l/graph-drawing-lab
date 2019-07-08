@@ -2,13 +2,74 @@ body {
     margin: 0%;
 }
 
+/* Toolbar and icons */
+.toolbar-container {
+    display: flex;
+    margin: 8px;
+}
+
+.icon {
+    position: relative;
+    margin-left: 16px;
+    margin-right: 16px;
+}
+.icon::before {
+    cursor: pointer;
+    font-size: 30px;
+    margin-bottom: 8px;
+}
+.group-start {
+    margin-left: auto;
+}
+#menu {
+    margin-right: 64px;
+}
+
+/* Tooltip */
+.tooltip {
+    visibility: hidden;
+    background-color: #555;
+    color: #fff;
+    padding: 4px;
+    width: 120px;
+    border-radius: 8px;
+    text-align: center;
+
+    position: absolute;
+    /* 
+    Start the tooltip from the middle of its parent then move left by (width+padding)/2 
+    */
+    left: calc(50% - 64px);
+    bottom: -128%;
+
+    display: block;
+    z-index: 1;
+    margin: 0;
+}
+
+/* Add the tooltip arrow*/
+.tooltip::before {
+    content: "";
+    position: absolute;
+    bottom: 100%;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent transparent #555 transparent;
+    left: calc(50% - 5px);
+    margin: 0;
+}
+
+.icon:hover .tooltip {
+    visibility: visible;
+    transition-delay: 0.8s;
+}
+
+/* Graph drawing area  */
 #container {
     position: absolute;
     width: 100%;
     height: 100%;
     border: solid;
     z-index: -1;
-}
-.tool-bar {
-    position: absolute;
+    margin: 0;
 }
