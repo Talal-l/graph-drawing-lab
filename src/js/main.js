@@ -7,12 +7,15 @@ sigma.classes.graph.addMethod("allNeighbors", function(node) {
 // Create the main sigma instance
 var sig = new sigma({
     renderer: {
-        type: "webgl",
+        type: "canvas",
         container: "container"
     },
     settings: {
         doubleClickEnabled: false,
-        autoRescale: false
+        autoRescale: false,
+        enableEdgeHovering: true,
+        edgeHoverColor: "edge",
+        edgeHoverSizeRatio: 1.5
     }
 });
 
@@ -22,33 +25,6 @@ let container = document.querySelector("#container");
 // Generate a random graph:
 let N = 10;
 let r = Math.min(container.offsetWidth, container.offsetHeight);
-
-for (let i = 0; i < N; i++) {
-    let x = 0;
-    let y = 0;
-
-    let p1 = cam.cameraPosition(x, y);
-    let node = {
-        id: "n" + i,
-        label: "Node " + i,
-        x: p1.x,
-        y: p1.y,
-        size: 10,
-        color: "#921"
-    };
-    sig.graph.addNode(node);
-
-    for (let n of sig.graph.nodes()) {
-        if (node.id === n.id) continue;
-        sig.graph.addEdge({
-            id: `e${node.id}${n.id}`,
-            source: node.id,
-            target: n.id,
-            size: 3,
-            color: "#ccc"
-        });
-    }
-}
 
 // Create graph layout
 let customLayout = new sigma.CustomLayout(sig);
@@ -62,30 +38,79 @@ function runStep() {
     sig.refresh();
 }
 
+function distance(p1, p2) {
+    return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+}
+
 // Graph events
 
-
+// Track selected node
+let selectedNode = null;
+let selectedEdge = null;
+let dragStartPos = null;
+let dragEndPos = null;
+let dragThreshold = 5;
+let drag = null;
 
 // Add drag support
 let dragListener = sigma.plugins.dragNodes(sig, sig.renderers[0]);
 
-// Track selected node
-let selectedNode = null;
+dragListener.bind("startdrag", e => {
+    drag = false;
+    dragStartPos = {
+        x: e.data.node.x,
+        y: e.data.node.y
+    };
+});
 
-function toggleNode(node) {
-    if (selectedNode === node) {
+dragListener.bind("drag", e => {
+    dragEndPos = {
+        x: e.data.node.x,
+        y: e.data.node.y
+    };
+    // Register the movement as a drag operation
+    if (distance(dragStartPos, dragEndPos) >= dragThreshold) drag = true;
+});
+
+function selectNode(node) {
+    node.color = "#c52";
+    selectedNode = node;
+
+    sig.refresh();
+}
+function deSelectNode(node) {
+    if (node) {
         selectedNode.color = "#921";
         selectedNode = null;
-    } else {
-        node.color = "#c52";
-        selectedNode = node;
+        sig.refresh();
     }
-    sig.refresh();
+}
+
+function selectEdge(edge) {
+    if (edge) {
+        edge.color = "#c8f";
+        selectedEdge = edge;
+
+        sig.refresh();
+    }
+}
+function deSelectEdge(edge) {
+    if (edge) {
+        selectedEdge.color = "#ccc";
+        selectedEdge = null;
+
+        sig.refresh();
+    }
 }
 
 sig.bind("clickNode", e => {
+    // Exit if it's a drag operation and not a click
+    if (drag) return;
+
     let node = e.data.node;
-    if (selectedNode && selectedNode.id !== node.id) {
+    if (!selectedNode) {
+        selectNode(node);
+    } else if (selectedNode.id !== node.id) {
         // Create an edge if non existed between them
         if (!sig.graph.allNeighbors(node)[selectedNode.id]) {
             sig.graph.addEdge({
@@ -95,15 +120,35 @@ sig.bind("clickNode", e => {
                 size: 3,
                 color: "#ccc"
             });
+
+            deSelectNode(selectedNode);
+        } else {
+            // Jump to the other node
+            deSelectNode(selectedNode);
+            selectNode(node);
         }
     }
-    // Toggle node if no selection exist
-    toggleNode(selectedNode || node);
+
+    // Remove any selected edge
+    deSelectEdge(selectedEdge);
+});
+
+sig.bind("clickEdge", e => {
+    let edge = e.data.edge;
+    if (!selectedEdge) {
+        selectEdge(edge);
+    } else {
+        deSelectEdge(selectedEdge);
+    }
+
+    // Remove any selected node
+    deSelectNode(selectedNode);
 });
 
 // Reset selection
 sig.bind("clickStage rightClickStage", e => {
-    if (selectedNode) toggleNode(selectedNode);
+    deSelectEdge(selectedEdge);
+    deSelectNode(selectedNode);
 });
 
 let clickCount = 0;
@@ -125,11 +170,23 @@ sig.bind("rightClickStage", e => {
         x: p.x,
         y: p.y,
         size: 10,
-        color: "#021"
+        color: "#921"
     };
 
     sig.graph.addNode(n);
     sig.refresh();
+});
+
+// Keyboard events
+window.addEventListener("keypress", event => {
+    if (event.key === "d" || event.key === "Delete") {
+        if (selectedNode) {
+            sig.graph.dropNode(selectedNode.id);
+            selectedNode = null;
+        }
+        if (selectedEdge) sig.graph.dropEdge(selectedEdge.id);
+        sig.refresh();
+    }
 });
 
 // Tool bar
