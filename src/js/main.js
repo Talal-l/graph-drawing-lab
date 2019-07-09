@@ -29,15 +29,6 @@ let r = Math.min(container.offsetWidth, container.offsetHeight);
 // Create graph layout
 let customLayout = new sigma.CustomLayout(sig);
 console.log(customLayout);
-function run() {
-    customLayout.run();
-    sig.refresh();
-}
-function runStep() {
-    customLayout.step();
-    sig.refresh();
-}
-
 function distance(p1, p2) {
     return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
 }
@@ -152,9 +143,51 @@ sig.bind("clickStage rightClickStage", e => {
 });
 
 let clickCount = 0;
-// Disable right click in the graph area
-container.addEventListener("contextmenu", event => event.preventDefault());
-sig.bind("rightClickStage", e => {
+
+// Keyboard events
+window.addEventListener("keypress", event => {
+    if (event.key === "d" || event.key === "Delete") {
+        if (selectedNode) {
+            sig.graph.dropNode(selectedNode.id);
+            selectedNode = null;
+        }
+        if (selectedEdge) sig.graph.dropEdge(selectedEdge.id);
+        sig.refresh();
+    }
+});
+
+// Tool bar
+const genGraph = document.querySelector("#genGraph"),
+    saveGraph = document.querySelector("#saveGraph"),
+    loadGraph = document.querySelector("#loadGraph"),
+    fileSelector = document.querySelector("#fileSelector"),
+    deleteGraph = document.querySelector("#deleteGraph"),
+    addNode = document.querySelector("#addNode"),
+    addEdge = document.querySelector("#addEdge"),
+    runLayout = document.querySelector("#runLayout"),
+    stepLayout = document.querySelector("#stepLayout"),
+    erase = document.querySelector("#erase"),
+    toolbar = document.querySelector(".toolbar-container");
+
+fileSelector.addEventListener("change", function handleFiles(event) {
+    console.log("file");
+    let files = event.target.files;
+    let reader = new FileReader();
+
+    reader.onload = e => {
+        let content = e.target.result;
+        console.log(content);
+        sig.graph.clear();
+        sig.graph.read(JSON.parse(content));
+        fileSelector.value = "";
+        sig.refresh();
+    };
+
+    reader.readAsText(files[0]);
+});
+
+// Add stage click listener
+function clickStageHandler() {
     // The camera starts at the center of the canvas
     // It is treated as the origin and the coordinates are added to it when the nodes are rendered (when autoRescale is false)
     // To get the desired position we subtract away the initial coordinate of the camera
@@ -175,63 +208,67 @@ sig.bind("rightClickStage", e => {
 
     sig.graph.addNode(n);
     sig.refresh();
-});
+}
 
-// Keyboard events
-window.addEventListener("keypress", event => {
-    if (event.key === "d" || event.key === "Delete") {
-        if (selectedNode) {
-            sig.graph.dropNode(selectedNode.id);
-            selectedNode = null;
-        }
-        if (selectedEdge) sig.graph.dropEdge(selectedEdge.id);
-        sig.refresh();
+toolbar.addEventListener("click", event => {
+    let target = event.target;
+
+    switch (target.id) {
+        case "menu":
+            break;
+        case "genGraph":
+            break;
+        case "saveGraph":
+            let saveGraphLink = document.querySelector("#saveGraphLink");
+            let d = new Date();
+            let date = `${d.getFullYear()}${d.getDate()}${d.getDate()}${d.getHours()}${d.getMinutes()}${d.getSeconds()}`;
+            let json = JSON.stringify({
+                nodes: sig.graph.nodes(),
+                edges: sig.graph.edges()
+            });
+            let blob = new Blob([json], { type: "text/plain" });
+            let url = window.URL.createObjectURL(blob);
+            saveGraphLink.setAttribute("download", date);
+            saveGraphLink.setAttribute("href", url);
+            saveGraphLink.click();
+
+            break;
+        case "loadGraph":
+            fileSelector.click();
+            break;
+        case "deleteGraph":
+            sig.graph.clear();
+            sig.refresh();
+            break;
+        case "addNode":
+            if (!addNode.classList.contains("active")) {
+                sig.settings("enableCamera", false);
+                sig.bind("clickStage", clickStageHandler);
+            } else {
+                sig.unbind("clickStage", clickStageHandler);
+                sig.settings("enableCamera", true);
+            }
+
+            target.classList.toggle("active");
+            break;
+        case "addEdge":
+            break;
+        case "erase":
+            break;
+        case "runLayout":
+            customLayout.run();
+            sig.refresh();
+
+            break;
+        case "stepLayout":
+            customLayout.step();
+            sig.refresh();
+            break;
+        case "resetLayout":
+            break;
+
+        default:
+            break;
     }
 });
-
-// Tool bar
-const saveGraph = document.querySelector("#saveGraph"),
-    fileSelector = document.querySelector("#fileSelector"),
-    loadGraph = document.querySelector("#loadGraph"),
-    clearGraph = document.querySelector("#clearGraph");
-
-clearGraph.addEventListener("click", () => {
-    sig.graph.clear();
-    sig.refresh();
-});
-saveGraph.addEventListener("click", event => {
-    let saveGraphLink = document.querySelector("#saveGraphLink");
-    let d = new Date();
-    let date = `${d.getFullYear()}${d.getDate()}${d.getDate()}${d.getHours()}${d.getMinutes()}${d.getSeconds()}`;
-    let json = JSON.stringify({
-        nodes: sig.graph.nodes(),
-        edges: sig.graph.edges()
-    });
-    let blob = new Blob([json], { type: "text/plain" });
-    let url = window.URL.createObjectURL(blob);
-    saveGraphLink.setAttribute("download", date);
-    saveGraphLink.setAttribute("href", url);
-    saveGraphLink.click();
-});
-loadGraph.addEventListener("click", () => {
-    fileSelector.click();
-});
-
-fileSelector.addEventListener("change", function handleFiles(event) {
-    console.log("file");
-    let files = event.target.files;
-    let reader = new FileReader();
-
-    reader.onload = e => {
-        let content = e.target.result;
-        console.log(content);
-        sig.graph.clear();
-        sig.graph.read(JSON.parse(content));
-        fileSelector.value = "";
-        sig.refresh();
-    };
-
-    reader.readAsText(files[0]);
-});
-
 sig.refresh();

@@ -12,12 +12,17 @@ body {
     position: relative;
     margin-left: 16px;
     margin-right: 16px;
+    border-radius: 60px;
 }
 .icon::before {
     cursor: pointer;
     font-size: 30px;
     margin-bottom: 8px;
 }
+.active {
+    box-shadow: 0 0 3pt 2pt orange;
+}
+
 .group-start {
     margin-left: auto;
 }
