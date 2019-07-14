@@ -7,15 +7,15 @@ sigma.classes.graph.addMethod("allNeighbors", function(node) {
 // Create the main sigma instance
 var sig = new sigma({
     renderer: {
-        type: "canvas",
+        type: "webgl",
         container: "container"
     },
     settings: {
         doubleClickEnabled: false,
-        autoRescale: false,
-        enableEdgeHovering: true,
-        edgeHoverColor: "edge",
-        edgeHoverSizeRatio: 1.5
+        autoRescale: false
+        // EnableEdgeHovering: true,
+        // EdgeHoverColor: "edge",
+        // EdgeHoverSizeRatio: 1.5
     }
 });
 
@@ -96,6 +96,7 @@ function deSelectEdge(edge) {
 
 sig.bind("clickNode", e => {
     // Exit if it's a drag operation and not a click
+    console.log(e);
     if (drag) return;
 
     let node = e.data.node;
@@ -162,11 +163,11 @@ const genGraph = document.querySelector("#genGraph"),
     loadGraph = document.querySelector("#loadGraph"),
     fileSelector = document.querySelector("#fileSelector"),
     deleteGraph = document.querySelector("#deleteGraph"),
-    addNode = document.querySelector("#addNode"),
-    addEdge = document.querySelector("#addEdge"),
+    addNodeItem = document.querySelector("#addNode"),
+    addEdgeItem = document.querySelector("#addEdge"),
     runLayout = document.querySelector("#runLayout"),
     stepLayout = document.querySelector("#stepLayout"),
-    erase = document.querySelector("#erase"),
+    eraseItem = document.querySelector("#erase"),
     toolbar = document.querySelector(".toolbar-container");
 
 fileSelector.addEventListener("change", function handleFiles(event) {
@@ -210,8 +211,51 @@ function clickStageHandler() {
     sig.refresh();
 }
 
+// Map each mode item id to their activation method (toggle edit mode on and off)
+let modes = {
+    addNode(state = true) {
+        if (state) {
+            sig.settings("enableCamera", false);
+            sig.bind("clickStage", clickStageHandler);
+            addNodeItem.classList.add("active");
+        } else {
+            sig.unbind("clickStage", clickStageHandler);
+            sig.settings("enableCamera", true);
+            addNodeItem.classList.remove("active");
+        }
+    },
+    addEdge(state = true) {
+        if (state) {
+            addEdgeItem.classList.add("active");
+        } else {
+            addEdgeItem.classList.remove("active");
+        }
+    },
+    erase(state = true) {
+        if (state) {
+            eraseItem.classList.add("active");
+        } else {
+            eraseItem.classList.remove("active");
+        }
+    }
+};
+
 toolbar.addEventListener("click", event => {
     let target = event.target;
+
+    // Handle mode change
+    let isActive = target.classList.contains("active");
+    if (!isActive) {
+        // Deactivate and active mode
+        let active = document.querySelector(".active");
+        if (active) {
+            modes[active.id](false);
+        }
+        // Select it if was a mode item
+        if (target.id in modes) modes[target.id](true);
+    }else{
+        modes[target.id](false);
+    }
 
     switch (target.id) {
         case "menu":
@@ -239,21 +283,6 @@ toolbar.addEventListener("click", event => {
         case "deleteGraph":
             sig.graph.clear();
             sig.refresh();
-            break;
-        case "addNode":
-            if (!addNode.classList.contains("active")) {
-                sig.settings("enableCamera", false);
-                sig.bind("clickStage", clickStageHandler);
-            } else {
-                sig.unbind("clickStage", clickStageHandler);
-                sig.settings("enableCamera", true);
-            }
-
-            target.classList.toggle("active");
-            break;
-        case "addEdge":
-            break;
-        case "erase":
             break;
         case "runLayout":
             customLayout.run();
