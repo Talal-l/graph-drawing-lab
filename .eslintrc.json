@@ -19,7 +19,7 @@
         "linebreak-style": ["error", "unix"],
         "indent": ["off",4],
         "no-undef": "error",
-        "capitalized-comments":"warn"
+        "capitalized-comments": ["error", "never"]
 
     }
 }
