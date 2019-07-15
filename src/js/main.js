@@ -46,135 +46,162 @@ function distance(p1, p2) {
 
 // graph events
 
-// track selected node
-let selectedNode = null;
-let selectedEdge = null;
-let dragStartPos = null;
-let dragEndPos = null;
-let dragThreshold = 5;
-let drag = null;
+// create an object to use to track select and drag operations
+let graphUiModes = (function() {
+    let selectedNode = null;
+    let selectedEdge = null;
+    let dragStartPos = null;
+    let dragEndPos = null;
+    let dragThreshold = 5;
+    let drag = null;
 
-// add drag support
-function dragSupport(state) {
-    if (state) {
-        let dragListener = sigma.plugins.dragNodes(sig, sig.renderers[0]);
-
-        dragListener.bind("startdrag", e => {
-            drag = false;
-            dragStartPos = {
-                x: e.data.node.x,
-                y: e.data.node.y
-            };
-        });
-
-        dragListener.bind("drag", e => {
-            dragEndPos = {
-                x: e.data.node.x,
-                y: e.data.node.y
-            };
-            // register the movement as a drag operation
-            if (distance(dragStartPos, dragEndPos) >= dragThreshold)
-                drag = true;
-        });
-    } else {
-        sigma.plugins.killDragNodes(sig);
-    }
-}
-// dragSupport(true);
-
-function selectNode(node) {
-    node.color = "#c52";
-    selectedNode = node;
-
-    sig.refresh();
-}
-function deSelectNode(node) {
-    if (node) {
-        selectedNode.color = "#921";
-        selectedNode = null;
-        sig.refresh();
-    }
-}
-
-function selectEdge(edge) {
-    if (edge) {
-        edge.color = "#c8f";
-        selectedEdge = edge;
+    function selectNode(node) {
+        node.color = "#c52";
+        selectedNode = node;
 
         sig.refresh();
     }
-}
-function deSelectEdge(edge) {
-    if (edge) {
-        selectedEdge.color = "#ccc";
-        selectedEdge = null;
-
-        sig.refresh();
+    function deSelectNode(node) {
+        if (node) {
+            selectedNode.color = "#921";
+            selectedNode = null;
+            sig.refresh();
+        }
     }
-}
 
-sig.bind("clickNode", e => {
-    // exit if it's a drag operation and not a click
-    console.log(e);
-    if (drag) return;
+    function dragSupport(state) {
+        if (state) {
+            let dragListener = sigma.plugins.dragNodes(sig, sig.renderers[0]);
 
-    let node = e.data.node;
-    if (!selectedNode) {
-        selectNode(node);
-    } else if (selectedNode.id !== node.id) {
-        // create an edge if non existed between them
-        if (!sig.graph.allNeighbors(node)[selectedNode.id]) {
-            sig.graph.addEdge({
-                id: `e${selectedNode.id}${node.id}`,
-                source: selectedNode.id,
-                target: node.id,
-                size: 3,
-                color: "#ccc"
+            dragListener.bind("startdrag", e => {
+                drag = false;
+                dragStartPos = {
+                    x: e.data.node.x,
+                    y: e.data.node.y
+                };
             });
 
-            deSelectNode(selectedNode);
+            dragListener.bind("drag", e => {
+                dragEndPos = {
+                    x: e.data.node.x,
+                    y: e.data.node.y
+                };
+                // register the movement as a drag operation
+                if (distance(dragStartPos, dragEndPos) >= dragThreshold)
+                    drag = true;
+            });
         } else {
-            // jump to the other node
-            deSelectNode(selectedNode);
-            selectNode(node);
+            sigma.plugins.killDragNodes(sig);
         }
     }
 
-    // remove any selected edge
-    deSelectEdge(selectedEdge);
-});
+    let clickCount = 0;
+    function clickStageHandler() {
+        // the camera starts at the center of the canvas
+        // it is treated as the origin and the coordinates are added to it when the nodes are rendered (when autoRescale is false)
+        // to get the desired position we subtract away the initial coordinate of the camera
+        let x = event.offsetX - container.offsetWidth / 2;
+        let y = event.offsetY - container.offsetHeight / 2;
 
-sig.bind("clickEdge", e => {
-    let edge = e.data.edge;
-    if (!selectedEdge) {
-        selectEdge(edge);
-    } else {
-        deSelectEdge(selectedEdge);
-    }
+        // get x,y after applying the same transformation that were applied to the camera
+        let p = cam.cameraPosition(x, y);
 
-    // remove any selected node
-    deSelectNode(selectedNode);
-});
+        let n = {
+            label: "click" + clickCount++,
+            id: "click" + clickCount++,
+            x: p.x,
+            y: p.y,
+            size: 10,
+            color: "#921"
+        };
 
-// reset selection
-sig.bind("clickStage rightClickStage", e => {
-    deSelectEdge(selectedEdge);
-    deSelectNode(selectedNode);
-});
-
-let clickCount = 0;
-
-// keyboard events
-window.addEventListener("keypress", event => {
-    if (event.key === "d" || event.key === "Delete") {
-        if (selectedNode) {
-            sig.graph.dropNode(selectedNode.id);
-            selectedNode = null;
-        }
-        if (selectedEdge) sig.graph.dropEdge(selectedEdge.id);
+        sig.graph.addNode(n);
         sig.refresh();
     }
-});
+    function nodeSelectHandler(e) {
+        // exit if it's a drag operation and not a click
+        if (drag) return;
+
+        let node = e.data.node;
+        if (!selectedNode) {
+            selectNode(node);
+        } else if (selectedNode.id !== node.id) {
+            // create an edge if non existed between them
+            if (!sig.graph.allNeighbors(node)[selectedNode.id]) {
+                sig.graph.addEdge({
+                    id: `e${selectedNode.id}${node.id}`,
+                    source: selectedNode.id,
+                    target: node.id,
+                    size: 3,
+                    color: "#ccc"
+                });
+
+                deSelectNode(selectedNode);
+            } else {
+                // jump to the other node
+                deSelectNode(selectedNode);
+                selectNode(node);
+            }
+        }
+    }
+    function nodeEraseHandler(e) {
+        let clickedNode = e.data.node;
+        sig.graph.dropNode(clickedNode.id);
+        sig.refresh();
+    }
+    function edgeEraseHandler(e) {
+        let clickedEdge = e.data.edge;
+        sig.graph.dropEdge(clickedEdge.id);
+        sig.refresh();
+    }
+    if (selectedEdge) sig.graph.dropEdge(selectedEdge.id);
+
+    // expose public methods
+    // map each mode item id to their activation method (toggle edit mode on and off)
+    return {
+        addNode(state = true) {
+            if (state) {
+                sig.settings("enableCamera", false);
+                sig.bind("clickStage", clickStageHandler);
+                addNodeItem.classList.add("active");
+            } else {
+                sig.unbind("clickStage");
+                sig.settings("enableCamera", true);
+                addNodeItem.classList.remove("active");
+            }
+        },
+        addEdge(state = true) {
+            if (state) {
+                sig.bind("clickNode", nodeSelectHandler);
+                addEdgeItem.classList.add("active");
+            } else {
+                sig.unbind("clickNode");
+                addEdgeItem.classList.remove("active");
+                if (selectedNode) deSelectNode(selectedNode);
+            }
+        },
+        erase(state = true) {
+            sig.killRenderer("0");
+            console.log(sig);
+            if (state) {
+                sig.unbind("clickStage");
+                sig.unbind("clickEdge");
+                sig.unbind("clickNode");
+                sig.bind("clickNode", nodeEraseHandler);
+                sig.bind("clickEdge", edgeEraseHandler);
+                sig.settings("enableEdgeHovering", true);
+                eraseItem.classList.add("active");
+                sig.addRenderer(canvasRenderer);
+            } else {
+                sig.settings("enableEdgeHovering", false);
+                sig.addRenderer(webglRenderer);
+                eraseItem.classList.remove("active");
+                sig.unbind("clickNode");
+            }
+            sig.refresh();
+        }
+    };
+})(); // immediately execute the function to return the object
 
 // tool bar
 const genGraph = document.querySelector("#genGraph"),
@@ -205,79 +232,11 @@ fileSelector.addEventListener("change", function handleFiles(event) {
 
     reader.readAsText(files[0]);
 });
-
-// add stage click listener
-function clickStageHandler() {
-    // the camera starts at the center of the canvas
-    // it is treated as the origin and the coordinates are added to it when the nodes are rendered (when autoRescale is false)
-    // to get the desired position we subtract away the initial coordinate of the camera
-    let x = event.offsetX - container.offsetWidth / 2;
-    let y = event.offsetY - container.offsetHeight / 2;
-
-    // get x,y after applying the same transformation that were applied to the camera
-    let p = cam.cameraPosition(x, y);
-
-    let n = {
-        label: "click" + clickCount++,
-        id: "click" + clickCount++,
-        x: p.x,
-        y: p.y,
-        size: 10,
-        color: "#921"
-    };
-
-    sig.graph.addNode(n);
-    sig.refresh();
-}
-
-// map each mode item id to their activation method (toggle edit mode on and off)
-let modes = {
-    addNode(state = true) {
-        if (state) {
-            sig.settings("enableCamera", false);
-            sig.bind("clickStage", clickStageHandler);
-            addNodeItem.classList.add("active");
-        } else {
-            sig.unbind("clickStage", clickStageHandler);
-            sig.settings("enableCamera", true);
-            addNodeItem.classList.remove("active");
-        }
-    },
-    addEdge(state = true) {
-        if (state) {
-            addEdgeItem.classList.add("active");
-        } else {
-            addEdgeItem.classList.remove("active");
-        }
-    },
-    erase(state = true) {
-        sig.killRenderer("0");
-        console.log(sig);
-        if (state) {
-            sig.settings("enableEdgeHovering", true);
-            eraseItem.classList.add("active");
-            sig.addRenderer(canvasRenderer);
-            console.log("switching to canvas");
-            console.log(sig.renderers);
-        } else {
-            sig.settings("enableEdgeHovering", false);
-            sig.addRenderer(webglRenderer);
-            console.log("switching to webgl");
-            eraseItem.classList.remove("active");
-        }
-        console.log(sig.renderers[0]);
-        // need to re-enable the drag plugin when switching renderer
-        dragSupport(false);
-        dragSupport(true);
-
-        sig.refresh();
-    }
-};
-
 toolbar.addEventListener("click", event => {
     let target = event.target;
 
     // handle mode change
+    let modes = graphUiModes;
     let isActive = target.classList.contains("active");
     if (!isActive) {
         // deactivate any active mode
