@@ -119,9 +119,6 @@ let graphUiModes = (function() {
         sig.refresh();
     }
     function nodeSelectHandler(e) {
-        // exit if it's a drag operation and not a click
-        if (drag) return;
-
         let node = e.data.node;
         if (!selectedNode) {
             selectNode(node);
@@ -159,6 +156,16 @@ let graphUiModes = (function() {
     // expose public methods
     // map each mode item id to their activation method (toggle edit mode on and off)
     return {
+        moveNode(state = true) {
+            if (state){
+                dragSupport(true);
+                moveNodeItem.classList.add("active");
+
+            }else{
+                dragSupport(false);
+                moveNodeItem.classList.remove("active");
+            }
+        },
         addNode(state = true) {
             if (state) {
                 sig.settings("enableCamera", false);
@@ -209,11 +216,12 @@ const genGraph = document.querySelector("#genGraph"),
     loadGraph = document.querySelector("#loadGraph"),
     fileSelector = document.querySelector("#fileSelector"),
     deleteGraph = document.querySelector("#deleteGraph"),
+    moveNodeItem = document.querySelector("#moveNode"),
     addNodeItem = document.querySelector("#addNode"),
     addEdgeItem = document.querySelector("#addEdge"),
+    eraseItem = document.querySelector("#erase"),
     runLayout = document.querySelector("#runLayout"),
     stepLayout = document.querySelector("#stepLayout"),
-    eraseItem = document.querySelector("#erase"),
     toolbar = document.querySelector(".toolbar-container");
 
 fileSelector.addEventListener("change", function handleFiles(event) {
