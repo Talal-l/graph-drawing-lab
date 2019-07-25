@@ -326,11 +326,13 @@ warnModal.addEventListener("click", event => {
             saveCurrentGraph();
             sig.graph.clear();
             sig.refresh();
+            genModal.style.display = "flex";
             break;
         case "delete":
             warnModal.style.display = "none";
             sig.graph.clear();
             sig.refresh();
+            genModal.style.display = "flex";
             break;
     }
 });
