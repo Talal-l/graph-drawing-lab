@@ -157,11 +157,10 @@ let graphUiModes = (function() {
     // map each mode item id to their activation method (toggle edit mode on and off)
     return {
         moveNode(state = true) {
-            if (state){
+            if (state) {
                 dragSupport(true);
                 moveNodeItem.classList.add("active");
-
-            }else{
+            } else {
                 dragSupport(false);
                 moveNodeItem.classList.remove("active");
             }
@@ -262,20 +261,14 @@ toolbar.addEventListener("click", event => {
         case "menu":
             break;
         case "genGraph":
+            console.log(sig.graph.nodes());
+            if (!sig.graph.nodes().length) genModal.style.display = "flex";
+            else {
+                warnModal.style.display = "flex";
+            }
             break;
         case "saveGraph":
-            let saveGraphLink = document.querySelector("#saveGraphLink");
-            let d = new Date();
-            let date = `${d.getFullYear()}${d.getDate()}${d.getDate()}${d.getHours()}${d.getMinutes()}${d.getSeconds()}`;
-            let json = JSON.stringify({
-                nodes: sig.graph.nodes(),
-                edges: sig.graph.edges()
-            });
-            let blob = new Blob([json], { type: "text/plain" });
-            let url = window.URL.createObjectURL(blob);
-            saveGraphLink.setAttribute("download", date);
-            saveGraphLink.setAttribute("href", url);
-            saveGraphLink.click();
+            saveCurrentGraph();
 
             break;
         case "loadGraph":
@@ -301,4 +294,79 @@ toolbar.addEventListener("click", event => {
             break;
     }
 });
+
+const genModal = document.querySelector("#gen-modal");
+const warnModal = document.querySelector("#warn-modal");
+genModal.addEventListener("click", event => {
+    const target = event.target;
+
+    switch (target.id) {
+        case "generate":
+            console.log("generate");
+
+            const nodeNum = document.querySelector("#node-num").value;
+            console.log(nodeNum);
+            generateGraph(nodeNum);
+            sig.refresh();
+            genModal.style.display = "none";
+            break;
+        case "dismiss":
+            console.log("dismiss");
+            genModal.style.display = "none";
+            break;
+    }
+});
+
+warnModal.addEventListener("click", event => {
+    const target = event.target;
+
+    switch (target.id) {
+        case "save":
+            warnModal.style.display = "none";
+            saveCurrentGraph();
+            sig.graph.clear();
+            sig.refresh();
+            break;
+        case "delete":
+            warnModal.style.display = "none";
+            sig.graph.clear();
+            sig.refresh();
+            break;
+    }
+});
+
+function generateGraph(nodeNum, density) {
+    let x = container.offsetWidth / 2;
+    let y = container.offsetHeight / 2;
+
+    // get x,y after applying the same transformation that were applied to the camera
+    let p = cam.cameraPosition(x, y);
+
+    for (let i = 0; i < nodeNum; i++) {
+        const size = 10;
+        let n = {
+            label: "ran" + i,
+            id: "ran" + i,
+            x: (0.5 - Math.random()) * x + size,
+            y: (0.5 - Math.random()) * y + size,
+            size,
+            color: "#921"
+        };
+        sig.graph.addNode(n);
+    }
+}
+function saveCurrentGraph() {
+    let saveGraphLink = document.querySelector("#saveGraphLink");
+    let d = new Date();
+    let date = `${d.getFullYear()}${d.getDate()}${d.getDate()}${d.getHours()}${d.getMinutes()}${d.getSeconds()}`;
+    let json = JSON.stringify({
+        nodes: sig.graph.nodes(),
+        edges: sig.graph.edges()
+    });
+    let blob = new Blob([json], { type: "text/plain" });
+    let url = window.URL.createObjectURL(blob);
+    saveGraphLink.setAttribute("download", date);
+    saveGraphLink.setAttribute("href", url);
+    saveGraphLink.click();
+}
 sig.refresh();
