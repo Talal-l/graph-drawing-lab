@@ -11,6 +11,8 @@
 
     <title>graph</title>
 
+    <script defer src="src/js/main.js"></script>
+
     <!-- START SIGMA IMPORTS -->
     <script src="sigma.js/src/sigma.core.js"></script>
     <script src="sigma.js/src/conrad.js"></script>
@@ -136,7 +138,37 @@
     <a href="" id="saveGraphLink" download style="display: none">save graph</a>
 
     <div id="container"></div>
-    <script src="src/js/main.js"></script>
+
+    <div class="modal-container">
+        <div class=modal>
+            <div class="input-group-wrapper">
+
+                <div class="input-group">
+                    <label for="graph-types">Graph type</label>
+                    <select id="graph-types">
+                        <option value="connected graph">Connected graph</option>
+                        <option value="complete graph">Complete graph</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="num-nodes">Number of nodes</label>
+                    <input type="number" name="num-nodes" id="num-nodes" min="0">
+                </div>
+                <div class="input-group">
+                    <label for="num-nodes">Graph density</label>
+                    <input type="number" name="graph-density" id="graph-density" min="0" max="1" step="0.01">
+                </div>
+                <div class="btns">
+                    <button class="primary">generate</button>
+                    <button class="danger">Dismiss</button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
 </body>
 
 </html>
