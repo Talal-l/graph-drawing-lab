@@ -305,8 +305,9 @@ genModal.addEventListener("click", event => {
             console.log("generate");
 
             const nodeNum = document.querySelector("#node-num").value;
+            const density = document.querySelector("#graph-density").value;
             console.log(nodeNum);
-            generateGraph(nodeNum);
+            generateGraph(parseInt(nodeNum), parseFloat(density));
             sig.refresh();
             genModal.style.display = "none";
             break;
@@ -337,24 +338,56 @@ warnModal.addEventListener("click", event => {
     }
 });
 
-function generateGraph(nodeNum, density) {
-    let x = container.offsetWidth / 2;
-    let y = container.offsetHeight / 2;
+function generateGraph(N, density) {
+    N = parseInt(N);
+    density = parseFloat(density);
 
-    // get x,y after applying the same transformation that were applied to the camera
-    let p = cam.cameraPosition(x, y);
+    const x = container.offsetWidth / 2;
+    const y = container.offsetHeight / 2;
 
-    for (let i = 0; i < nodeNum; i++) {
+    let nodes = [];
+
+    let E = Math.floor(density * N * (N - 1));
+
+    for (let i = 0; i < N; i++) {
         const size = 10;
         let n = {
-            label: "ran" + i,
-            id: "ran" + i,
+            label: "r" + i,
+            id: "r" + i,
             x: (0.5 - Math.random()) * x + size,
             y: (0.5 - Math.random()) * y + size,
             size,
             color: "#921"
         };
         sig.graph.addNode(n);
+        nodes.push("r" + i);
+    }
+
+    shuffle(nodes);
+    let maxEdges = Math.floor(E / N);
+    for (let i = 0; i < nodes.length; i++) {
+        let nEdgeCount = Math.min(maxEdges, E);
+        E -= nEdgeCount;
+        let eCount = 0;
+        let source = nodes[i];
+        for (let j = 0; j < N && eCount < nEdgeCount; j++) {
+            if (j == i) continue;
+            let target = nodes[j];
+            let edge = {
+                id: "e" + source + target,
+                source: "" + source,
+                target: "" + target,
+                color: "#ccc"
+            };
+            sig.graph.addEdge(edge);
+            eCount++;
+        }
+    }
+}
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        let j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
     }
 }
 function saveCurrentGraph() {
