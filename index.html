@@ -140,23 +140,25 @@
     <div id="container"></div>
 
     <div id="gen-modal" class="modal-container">
-        <div class=modal>
+        <div class="modal">
             <div class="input-group-wrapper">
 
                 <div class="input-group">
-                    <label for="graph-types">Graph type</label>
-                    <select id="graph-types">
-                        <option value="connected graph">Connected graph</option>
-                        <option value="complete graph">Complete graph</option>
+                    <label for="gen-mode">Generation mode</label>
+                    <select id="gen-mode">
+                        <option value="exact">Exact</option>
+                        <option value="range">Range</option>
                     </select>
                 </div>
                 <div class="input-group">
                     <label for="node-num">Number of nodes</label>
-                    <input type="number" name="node-num" id="node-num" min="0">
+                    <input type="number" name="node-num-min" id="node-num-min" min="0">
+                    <input type="number" name="node-num-max" id="node-num-max" min="0">
                 </div>
                 <div class="input-group">
-                    <label for="graph-density">Graph density</label>
-                    <input type="number" name="graph-density" id="graph-density" min="0" max="1" step="0.01">
+                    <label for="edge-num">Number of edges</label>
+                    <input type="number" name="edge-num-min" id="edge-num-min" min="0" max="1" step="0.01">
+                    <input type="number" name="edge-num-max" id="edge-num-max" min="0" max="1" step="0.01">
                 </div>
                 <div class="btns">
                     <button id="generate" class="primary">Generate</button>

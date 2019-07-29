@@ -3,7 +3,11 @@
 sigma.classes.graph.addMethod("allNeighbors", function(node) {
     return this.allNeighborsIndex[node.id];
 });
-
+sigma.classes.graph.addMethod("edgeExist", function(n1Id, n2Id) {
+    return (
+        this.edgesIndex["e" + n1Id + n2Id] || this.edgesIndex["e" + n2Id + n1Id]
+    );
+});
 let container = document.querySelector("#container");
 
 let canvasRenderer = {
@@ -297,6 +301,22 @@ toolbar.addEventListener("click", event => {
 
 const genModal = document.querySelector("#gen-modal");
 const warnModal = document.querySelector("#warn-modal");
+
+const genMode = document.querySelector("#gen-mode");
+const nodeNumMinEl = document.querySelector("#node-num-min");
+const nodeNumMaxEl = document.querySelector("#node-num-max");
+const edgeNumMinEl = document.querySelector("#edge-num-min");
+const edgeNumMaxEl = document.querySelector("#edge-num-max");
+genMode.addEventListener("change", event => {
+    if (event.target.value === "range") {
+        nodeNumMaxEl.style.display = "inline";
+        edgeNumMaxEl.style.display = "inline";
+    } else {
+        nodeNumMaxEl.style.display = "none";
+        edgeNumMaxEl.style.display = "none";
+    }
+});
+
 genModal.addEventListener("click", event => {
     const target = event.target;
 
@@ -304,10 +324,13 @@ genModal.addEventListener("click", event => {
         case "generate":
             console.log("generate");
 
-            const nodeNum = document.querySelector("#node-num").value;
-            const density = document.querySelector("#graph-density").value;
-            console.log(nodeNum);
-            generateGraph(parseInt(nodeNum), parseFloat(density));
+            const nodeNumMin = parseInt(nodeNumMinEl.value);
+            const edgeNumMin = parseInt(edgeNumMinEl.value);
+
+            const nodeNumMax = parseInt(nodeNumMaxEl.value) || nodeNumMin;
+            const edgeNumMax = parseInt(edgeNumMaxEl.value) || edgeNumMin;
+
+            generateGraph(nodeNumMin, nodeNumMax, edgeNumMin, edgeNumMax);
             sig.refresh();
             genModal.style.display = "none";
             break;
@@ -338,16 +361,42 @@ warnModal.addEventListener("click", event => {
     }
 });
 
-function generateGraph(N, density) {
-    N = parseInt(N);
-    density = parseFloat(density);
+function random(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
+function minSpanningTree(G) {
+    // deep copy of the existing nodes
+    let outTree = Array.from(G.nodes());
+    // select the root
+    let inTree = [outTree.pop()];
+
+    while (outTree.length) {
+        // pick a node from outside the tree
+        let source = outTree.pop();
+        // pick a random node from the tree
+        let target = inTree[random(0, inTree.length - 1)];
+        // create and edge
+        let edge = {
+            id: "e" + source.id + target.id,
+            source: source.id,
+            target: target.id,
+            color: "#ccc"
+        };
+        G.addEdge(edge);
+        // add node to tree
+        inTree.push(source);
+    }
+}
+function generateGraph(nMin, nMax, eMin, eMax) {
     const x = container.offsetWidth / 2;
     const y = container.offsetHeight / 2;
 
-    let nodes = [];
+    const N = random(nMin, nMax);
+    const eLimit = (N * (N - 1)) / 2;
+    let E = random(Math.min(eMin, eLimit), Math.min(eMax, eLimit));
 
-    let E = Math.floor(density * N * (N - 1));
+    let nodes = [];
 
     for (let i = 0; i < N; i++) {
         const size = 10;
@@ -363,24 +412,43 @@ function generateGraph(N, density) {
         nodes.push("r" + i);
     }
 
-    shuffle(nodes);
-    let maxEdges = Math.floor(E / N);
-    for (let i = 0; i < nodes.length; i++) {
-        let nEdgeCount = Math.min(maxEdges, E);
-        E -= nEdgeCount;
-        let eCount = 0;
-        let source = nodes[i];
-        for (let j = 0; j < N && eCount < nEdgeCount; j++) {
-            if (j == i) continue;
-            let target = nodes[j];
-            let edge = {
-                id: "e" + source + target,
-                source: "" + source,
-                target: "" + target,
-                color: "#ccc"
-            };
-            sig.graph.addEdge(edge);
-            eCount++;
+    // create a random minimum spanning tree (MST) to guarantee that the graph is connected
+    minSpanningTree(sig.graph);
+    // subtract edges created by the MST
+    E = E - (N - 1);
+
+    // loop until the desired number fo edges is reached
+    while (E > 0) {
+        for (let i = nodes.length - 1; i >= 0; i--) {
+            // determine how many edges to allow for this node in this iteration
+            let nEdgeCount = random(1, Math.min(E, N - 1));
+            for (
+                let j = i + 1, eCount = 0;
+                j < nodes.length && eCount < nEdgeCount;
+                j++
+            ) {
+                if (j !== i) {
+                    let edge = {
+                        id: "e" + nodes[j] + nodes[i],
+                        source: nodes[i],
+                        target: nodes[j],
+                        color: "#ccc"
+                    };
+                    if (!sig.graph.edgeExist(nodes[j], nodes[i])) {
+                        sig.graph.addEdge(edge);
+                        eCount++;
+                        // update total edge count
+                        E--;
+                        // return as soon as the edge limit is reached
+                        if (E === 0) {
+                            console.log(
+                                "Final number of edges: " + sig.graph.edges().length
+                            );
+                            return;
+                        }
+                    }
+                }
+            }
         }
     }
 }

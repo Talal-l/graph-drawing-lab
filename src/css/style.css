@@ -112,6 +112,13 @@ body {
     border: solid black;
     background-color: #fff;
 }
+#node-num-max {
+    display: none;
+}
+#edge-num-max {
+    display: none;
+}
+
 .input-group {
     padding: 16px;
 }
@@ -130,7 +137,7 @@ body {
     background-color: #d9534f;
     color: #fff;
 }
-.primary{
-    background-color:  #5CB85C;
+.primary {
+    background-color: #5cb85c;
     color: #fff;
 }
