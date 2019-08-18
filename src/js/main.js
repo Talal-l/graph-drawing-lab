@@ -26,6 +26,8 @@ let webglRenderer = {
     container: "container"
 };
 
+const edgeSize = 1.5;
+const nodeSize = 10;
 // create the main sigma instance
 var sig = new sigma({
     renderer: webglRenderer,
@@ -37,8 +39,6 @@ var sig = new sigma({
 
 let cam = sig.cameras.cam1;
 
-// generate a random graph:
-let N = 10;
 let r = Math.min(container.offsetWidth, container.offsetHeight);
 
 // create graph layout
@@ -51,6 +51,7 @@ function distance(p1, p2) {
 // graph events
 
 // create an object to use to track select and drag operations
+// using constructor function so we can selectively expose methods
 let graphUiModes = (function() {
     let selectedNode = null;
     let selectedEdge = null;
@@ -115,7 +116,7 @@ let graphUiModes = (function() {
             id: "click" + clickCount++,
             x: p.x,
             y: p.y,
-            size: 10,
+            size: nodeSize,
             color: "#921"
         };
 
@@ -133,7 +134,7 @@ let graphUiModes = (function() {
                     id: `e${selectedNode.id}${node.id}`,
                     source: selectedNode.id,
                     target: node.id,
-                    size: 3,
+                    size: edgeSize,
                     color: "#ccc"
                 });
 
@@ -376,9 +377,10 @@ function minSpanningTree(G) {
         let source = outTree.pop();
         // pick a random node from the tree
         let target = inTree[random(0, inTree.length - 1)];
-        // create and edge
+        // create an edge
         let edge = {
             id: "e" + source.id + target.id,
+            size: edgeSize,
             source: source.id,
             target: target.id,
             color: "#ccc"
@@ -399,13 +401,12 @@ function generateGraph(nMin, nMax, eMin, eMax) {
     let nodes = [];
 
     for (let i = 0; i < N; i++) {
-        const size = 10;
         let n = {
             label: "r" + i,
             id: "r" + i,
-            x: (0.5 - Math.random()) * x + size,
-            y: (0.5 - Math.random()) * y + size,
-            size,
+            x: (0.5 - Math.random()) * x + nodeSize,
+            y: (0.5 - Math.random()) * y + nodeSize,
+            size: nodeSize,
             color: "#921"
         };
         sig.graph.addNode(n);
@@ -430,6 +431,7 @@ function generateGraph(nMin, nMax, eMin, eMax) {
                 if (j !== i) {
                     let edge = {
                         id: "e" + nodes[j] + nodes[i],
+                        size: edgeSize,
                         source: nodes[i],
                         target: nodes[j],
                         color: "#ccc"
@@ -442,7 +444,8 @@ function generateGraph(nMin, nMax, eMin, eMax) {
                         // return as soon as the edge limit is reached
                         if (E === 0) {
                             console.log(
-                                "Final number of edges: " + sig.graph.edges().length
+                                "Final number of edges: " +
+                                    sig.graph.edges().length
                             );
                             return;
                         }
