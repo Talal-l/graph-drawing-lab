@@ -152,13 +152,13 @@
                 </div>
                 <div class="input-group">
                     <label for="node-num">Number of nodes</label>
-                    <input type="number" name="node-num-min" id="node-num-min" min="0">
-                    <input type="number" name="node-num-max" id="node-num-max" min="0">
+                    <input type="number" name="node-num-min" id="node-num-min" min="0" max="100000">
+                    <input type="number" name="node-num-max" id="node-num-max" min="0" max="100000">
                 </div>
                 <div class="input-group">
                     <label for="edge-num">Number of edges</label>
-                    <input type="number" name="edge-num-min" id="edge-num-min" min="0" max="1" step="0.01">
-                    <input type="number" name="edge-num-max" id="edge-num-max" min="0" max="1" step="0.01">
+                    <input type="number" name="edge-num-min" id="edge-num-min" min="0" max="1000000" step="1">
+                    <input type="number" name="edge-num-max" id="edge-num-max" min="0" max="1000000" step="1">
                 </div>
                 <div class="btns">
                     <button id="generate" class="primary">Generate</button>

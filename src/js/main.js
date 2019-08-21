@@ -8,6 +8,7 @@ sigma.classes.graph.addMethod("edgeExist", function(n1Id, n2Id) {
         this.edgesIndex["e" + n1Id + n2Id] || this.edgesIndex["e" + n2Id + n1Id]
     );
 });
+
 let container = document.querySelector("#container");
 
 let canvasRenderer = {
@@ -28,14 +29,16 @@ let webglRenderer = {
 
 const edgeSize = 1.5;
 const nodeSize = 10;
-// create the main sigma instance
-var sig = new sigma({
+
+let sigDefaults = {
     renderer: webglRenderer,
     settings: {
         doubleClickEnabled: false,
         autoRescale: false
     }
-});
+};
+// create the main sigma instance
+let sig = new sigma(sigDefaults);
 
 let cam = sig.cameras.cam1;
 
@@ -44,11 +47,39 @@ let r = Math.min(container.offsetWidth, container.offsetHeight);
 // create graph layout
 let customLayout = new sigma.CustomLayout(sig);
 console.log(customLayout);
+
+// util
+
+/**
+ * 
+ * @param {object} p1 First point object with x and y as properties
+ * @param {object} p2 Second point object with x and y as properties
+ * @return {number} distance between the two points
+ */
 function distance(p1, p2) {
     return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
 }
+/**
+ * Generate a random integer between min and max inclusive
+ * @param {number} min
+ * @param {number} max 
+ * @return {number}
+ */
+function random(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+/**
+ * 
+ * @param {array} array
+ */
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        let j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
 
-// graph events
+// UI events
 
 // create an object to use to track select and drag operations
 // using constructor function so we can selectively expose methods
@@ -228,22 +259,6 @@ const genGraph = document.querySelector("#genGraph"),
     stepLayout = document.querySelector("#stepLayout"),
     toolbar = document.querySelector(".toolbar-container");
 
-fileSelector.addEventListener("change", function handleFiles(event) {
-    console.log("file");
-    let files = event.target.files;
-    let reader = new FileReader();
-
-    reader.onload = e => {
-        let content = e.target.result;
-        console.log(content);
-        sig.graph.clear();
-        sig.graph.read(JSON.parse(content));
-        fileSelector.value = "";
-        sig.refresh();
-    };
-
-    reader.readAsText(files[0]);
-});
 toolbar.addEventListener("click", event => {
     let target = event.target;
 
@@ -300,48 +315,41 @@ toolbar.addEventListener("click", event => {
     }
 });
 
-const genModal = document.querySelector("#gen-modal");
-const warnModal = document.querySelector("#warn-modal");
-
-const genMode = document.querySelector("#gen-mode");
-const nodeNumMinEl = document.querySelector("#node-num-min");
-const nodeNumMaxEl = document.querySelector("#node-num-max");
-const edgeNumMinEl = document.querySelector("#edge-num-min");
-const edgeNumMaxEl = document.querySelector("#edge-num-max");
-genMode.addEventListener("change", event => {
-    if (event.target.value === "range") {
-        nodeNumMaxEl.style.display = "inline";
-        edgeNumMaxEl.style.display = "inline";
-    } else {
-        nodeNumMaxEl.style.display = "none";
-        edgeNumMaxEl.style.display = "none";
-    }
-});
+// warning modal
+const genModal = document.querySelector("#gen-modal"),
+    warnModal = document.querySelector("#warn-modal"),
+    genMode = document.querySelector("#gen-mode"),
+    nodeNumMinEl = document.querySelector("#node-num-min"),
+    nodeNumMaxEl = document.querySelector("#node-num-max"),
+    edgeNumMinEl = document.querySelector("#edge-num-min"),
+    edgeNumMaxEl = document.querySelector("#edge-num-max");
 
 genModal.addEventListener("click", event => {
     const target = event.target;
 
     switch (target.id) {
         case "generate":
-            console.log("generate");
-
             const nodeNumMin = parseInt(nodeNumMinEl.value);
             const edgeNumMin = parseInt(edgeNumMinEl.value);
-
             const nodeNumMax = parseInt(nodeNumMaxEl.value) || nodeNumMin;
             const edgeNumMax = parseInt(edgeNumMaxEl.value) || edgeNumMin;
-
-            generateGraph(nodeNumMin, nodeNumMax, edgeNumMin, edgeNumMax);
+            let G = generateGraph(
+                nodeNumMin,
+                nodeNumMax,
+                edgeNumMin,
+                edgeNumMax
+            );
+            sig.graph.clear();
+            // extract the nodes and edges from the created graph and update the current instance with it
+            sig.graph.read({ nodes: G.nodes(), edges: G.edges() });
             sig.refresh();
             genModal.style.display = "none";
             break;
         case "dismiss":
-            console.log("dismiss");
             genModal.style.display = "none";
             break;
     }
 });
-
 warnModal.addEventListener("click", event => {
     const target = event.target;
 
@@ -362,10 +370,41 @@ warnModal.addEventListener("click", event => {
     }
 });
 
-function random(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+fileSelector.addEventListener("change", function handleFiles(event) {
+    console.log("file");
+    let files = event.target.files;
+    let reader = new FileReader();
 
+    reader.onload = e => {
+        let content = e.target.result;
+        console.log(content);
+        sig.graph.clear();
+        sig.graph.read(JSON.parse(content));
+        fileSelector.value = "";
+        sig.refresh();
+    };
+
+    reader.readAsText(files[0]);
+});
+genMode.addEventListener("change", event => {
+    if (event.target.value === "range") {
+        nodeNumMaxEl.style.display = "inline";
+        edgeNumMaxEl.style.display = "inline";
+    } else {
+        nodeNumMaxEl.style.display = "none";
+        edgeNumMaxEl.style.display = "none";
+        nodeNumMaxEl.value = null;
+        edgeNumMaxEl.value = null;
+    }
+});
+
+/**
+ * Creates a random minimum spanning tree for the given sigma graph.
+ *
+ * @param {object} G  A sigma graph object
+ * @return {undefined}
+ *
+ */
 function minSpanningTree(G) {
     // deep copy of the existing nodes
     let outTree = Array.from(G.nodes());
@@ -390,15 +429,23 @@ function minSpanningTree(G) {
         inTree.push(source);
     }
 }
+/**
+ *
+ * @param {number} nMin  Minimum number of nodes
+ * @param {number} nMax  Maximum number of nodes
+ * @param {number} eMin  Minimum number of edges
+ * @param {number} eMax  Maximum number of edges
+ * @return {object} A Sigma graph object
+ */
 function generateGraph(nMin, nMax, eMin, eMax) {
     const x = container.offsetWidth / 2;
     const y = container.offsetHeight / 2;
 
+    let G = new sigma.classes.graph();
+    console.log(G);
     const N = random(nMin, nMax);
     const eLimit = (N * (N - 1)) / 2;
     let E = random(Math.min(eMin, eLimit), Math.min(eMax, eLimit));
-
-    let nodes = [];
 
     for (let i = 0; i < N; i++) {
         let n = {
@@ -409,12 +456,12 @@ function generateGraph(nMin, nMax, eMin, eMax) {
             size: nodeSize,
             color: "#921"
         };
-        sig.graph.addNode(n);
-        nodes.push("r" + i);
+        G.addNode(n);
     }
+    let nodes = G.nodes();
 
     // create a random minimum spanning tree (MST) to guarantee that the graph is connected
-    minSpanningTree(sig.graph);
+    minSpanningTree(G);
     // subtract edges created by the MST
     E = E - (N - 1);
 
@@ -430,22 +477,21 @@ function generateGraph(nMin, nMax, eMin, eMax) {
             ) {
                 if (j !== i) {
                     let edge = {
-                        id: "e" + nodes[j] + nodes[i],
+                        id: "e" + nodes[j].label + nodes[i].label,
                         size: edgeSize,
-                        source: nodes[i],
-                        target: nodes[j],
+                        source: nodes[i].label,
+                        target: nodes[j].label,
                         color: "#ccc"
                     };
-                    if (!sig.graph.edgeExist(nodes[j], nodes[i])) {
-                        sig.graph.addEdge(edge);
+                    if (!G.edgeExist(nodes[j].label, nodes[i].label)) {
+                        G.addEdge(edge);
                         eCount++;
                         // update total edge count
                         E--;
                         // return as soon as the edge limit is reached
                         if (E === 0) {
                             console.log(
-                                "Final number of edges: " +
-                                    sig.graph.edges().length
+                                "Final number of edges: " + G.edges().length
                             );
                             return;
                         }
@@ -454,13 +500,10 @@ function generateGraph(nMin, nMax, eMin, eMax) {
             }
         }
     }
+
+    return G;
 }
-function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        let j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-}
+
 function saveCurrentGraph() {
     let saveGraphLink = document.querySelector("#saveGraphLink");
     let d = new Date();
