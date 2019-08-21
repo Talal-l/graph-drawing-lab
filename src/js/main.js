@@ -493,14 +493,13 @@ function generateGraph(nMin, nMax, eMin, eMax) {
                             console.log(
                                 "Final number of edges: " + G.edges().length
                             );
-                            return;
+                             break;
                         }
                     }
                 }
             }
         }
     }
-
     return G;
 }
 
