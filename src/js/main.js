@@ -9,6 +9,12 @@ sigma.classes.graph.addMethod("edgeExist", function(n1Id, n2Id) {
     );
 });
 
+
+sigma.classes.graph.attach("addNode", "updateOnAddNode", updateMenu);
+sigma.classes.graph.attach("dropNode", "updateOnDropNode", updateMenu);
+sigma.classes.graph.attach("clear", "updateOnClear", updateMenu);
+sigma.classes.graph.attach("addEdge", "updateOnAddEdge", updateMenu);
+sigma.classes.graph.attach("dropEdge", "updateOnDropEdge", updateMenu);
 let container = document.querySelector("#container");
 
 let canvasRenderer = {
@@ -255,7 +261,7 @@ const genGraph = document.querySelector("#genGraph"),
     addNodeItem = document.querySelector("#addNode"),
     addEdgeItem = document.querySelector("#addEdge"),
     eraseItem = document.querySelector("#erase"),
-    randomLayout= document.querySelector("#randomLayout"),
+    randomLayout = document.querySelector("#randomLayout"),
     runLayout = document.querySelector("#runLayout"),
     stepLayout = document.querySelector("#stepLayout"),
     toolbar = document.querySelector(".toolbar-container");
@@ -302,12 +308,11 @@ toolbar.addEventListener("click", event => {
         case "randomLayout":
             const x = container.offsetWidth;
             const y = container.offsetHeight;
-            sig.graph.nodes().forEach(n =>{
+            sig.graph.nodes().forEach(n => {
                 n.x = (0.5 - Math.random()) * x;
                 n.y = (0.5 - Math.random()) * y;
             });
             sig.refresh();
-
 
             break;
         case "runLayout":
@@ -327,7 +332,6 @@ toolbar.addEventListener("click", event => {
     }
 });
 
-// warning modal
 const genModal = document.querySelector("#gen-modal"),
     warnModal = document.querySelector("#warn-modal"),
     genMode = document.querySelector("#gen-mode"),
@@ -493,8 +497,7 @@ function minSpanningTree(G) {
     }
 }
 /**
- * Requires a canvas to draw on
- * 
+ *
  * @param {number} nMin  Minimum number of nodes
  * @param {number} nMax  Maximum number of nodes
  * @param {number} eMin  Minimum number of edges
@@ -507,7 +510,6 @@ function generateGraph(nMin, nMax, eMin, eMax, container) {
     const y = container.offsetHeight;
 
     let G = new sigma.classes.graph();
-    console.log(G);
     const N = random(nMin, nMax);
     const eLimit = (N * (N - 1)) / 2;
     let E = random(Math.min(eMin, eLimit), Math.min(eMax, eLimit));
@@ -582,4 +584,12 @@ function saveCurrentGraph() {
     saveGraphLink.setAttribute("href", url);
     saveGraphLink.click();
 }
+
+function updateMenu() {
+    document.querySelector("#node-num").innerHTML = sig.graph.nodes().length;
+    document.querySelector("#edge-num").innerHTML = sig.graph.edges().length;
+}
+
+
 sig.refresh();
+
