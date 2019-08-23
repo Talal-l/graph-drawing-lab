@@ -115,6 +115,10 @@ body {
 #node-num-max {
     display: none;
 }
+.error{
+    display: none;
+    color: #B00020;
+}
 #edge-num-max {
     display: none;
 }
