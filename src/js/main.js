@@ -255,6 +255,7 @@ const genGraph = document.querySelector("#genGraph"),
     addNodeItem = document.querySelector("#addNode"),
     addEdgeItem = document.querySelector("#addEdge"),
     eraseItem = document.querySelector("#erase"),
+    randomLayout= document.querySelector("#randomLayout"),
     runLayout = document.querySelector("#runLayout"),
     stepLayout = document.querySelector("#stepLayout"),
     toolbar = document.querySelector(".toolbar-container");
@@ -297,6 +298,17 @@ toolbar.addEventListener("click", event => {
         case "deleteGraph":
             sig.graph.clear();
             sig.refresh();
+            break;
+        case "randomLayout":
+            const x = container.offsetWidth;
+            const y = container.offsetHeight;
+            sig.graph.nodes().forEach(n =>{
+                n.x = (0.5 - Math.random()) * x;
+                n.y = (0.5 - Math.random()) * y;
+            });
+            sig.refresh();
+
+
             break;
         case "runLayout":
             customLayout.run();
@@ -367,7 +379,8 @@ genModal.addEventListener("click", event => {
                 break;
             }
             if (edgeNumMin < nodeNumMin - 1 || !edgeNumMin) {
-                edgeError.innerHTML = `Can't have less than ${nodeNumMin - 2} edges `;
+                edgeError.innerHTML = `Can't have less than ${nodeNumMin -
+                    2} edges `;
                 edgeError.style.display = "block";
                 break;
             }
@@ -380,7 +393,8 @@ genModal.addEventListener("click", event => {
                 nodeNumMin,
                 nodeNumMax,
                 edgeNumMin,
-                edgeNumMax
+                edgeNumMax,
+                container
             );
             sig.graph.clear();
             // extract the nodes and edges from the created graph and update the current instance with it
@@ -450,7 +464,7 @@ genMode.addEventListener("change", event => {
 /**
  * Creates a random minimum spanning tree for the given sigma graph.
  *
- * @param {object} G  A sigma graph object
+ * @param {object} G  Sigma graph object
  * @return {undefined}
  *
  */
@@ -479,16 +493,18 @@ function minSpanningTree(G) {
     }
 }
 /**
- *
+ * Requires a canvas to draw on
+ * 
  * @param {number} nMin  Minimum number of nodes
  * @param {number} nMax  Maximum number of nodes
  * @param {number} eMin  Minimum number of edges
  * @param {number} eMax  Maximum number of edges
- * @return {object} A Sigma graph object
+ * @param {object} container HTML canvas element
+ * @return {object} Sigma graph object
  */
-function generateGraph(nMin, nMax, eMin, eMax) {
-    const x = container.offsetWidth / 2;
-    const y = container.offsetHeight / 2;
+function generateGraph(nMin, nMax, eMin, eMax, container) {
+    const x = container.offsetWidth;
+    const y = container.offsetHeight;
 
     let G = new sigma.classes.graph();
     console.log(G);
