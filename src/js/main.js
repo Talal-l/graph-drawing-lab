@@ -9,7 +9,6 @@ sigma.classes.graph.addMethod("edgeExist", function(n1Id, n2Id) {
     );
 });
 
-
 sigma.classes.graph.attach("addNode", "updateOnAddNode", updateMenu);
 sigma.classes.graph.attach("dropNode", "updateOnDropNode", updateMenu);
 sigma.classes.graph.attach("clear", "updateOnClear", updateMenu);
@@ -265,6 +264,7 @@ const genGraph = document.querySelector("#genGraph"),
     runLayout = document.querySelector("#runLayout"),
     stepLayout = document.querySelector("#stepLayout"),
     toolbar = document.querySelector(".toolbar-container");
+sideMenu = document.querySelector("#side-menu");
 
 toolbar.addEventListener("click", event => {
     let target = event.target;
@@ -286,6 +286,11 @@ toolbar.addEventListener("click", event => {
 
     switch (target.id) {
         case "menu":
+            if (sideMenu.style.display === "flex") {
+                sideMenu.style.display = "none";
+            } else {
+                sideMenu.style.display = "flex";
+            }
             break;
         case "genGraph":
             console.log(sig.graph.nodes());
@@ -588,8 +593,13 @@ function saveCurrentGraph() {
 function updateMenu() {
     document.querySelector("#node-num").innerHTML = sig.graph.nodes().length;
     document.querySelector("#edge-num").innerHTML = sig.graph.edges().length;
+    document.querySelector("#density").innerHTML = density(sig.graph);
+}
+function density(G) {
+    let V = G.nodes().length;
+    let E = G.edges().length;
+    let D = (2 * E) / (V * (V - 1));
+    return D.toFixed(2);
 }
 
-
 sig.refresh();
-
