@@ -598,7 +598,7 @@ function updateMenu() {
 function density(G) {
     let V = G.nodes().length;
     let E = G.edges().length;
-    let D = (2 * E) / (V * (V - 1));
+    let D = (2 * E) / (V * (V - 1)) || 0;
     return D.toFixed(2);
 }
 
