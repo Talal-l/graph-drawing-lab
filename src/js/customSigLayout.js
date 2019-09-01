@@ -14,11 +14,6 @@
      * Acknowledgement:
      * Version: 0.1
      */
-
-    // Metrics 
-    function angularResolution(e1, e2) {
-        console.log(e1, e2);
-    }
     class CustomLayout {
         constructor(sig, options) {
             let defaultOptions = {
@@ -32,11 +27,6 @@
             this.iterationCount = 0;
         }
 
-        refreshScreen() {
-            sig.refresh();
-        }
-
-
         run() {
             let maxIt = this.options.maxIterations;
             while (this.iterationCount < maxIt) {
@@ -45,16 +35,15 @@
             this.iterationCount = 0;
         }
 
-
         /**
-         * Execute one iteration 
+         * Execute one iteration
          *
          * @param  {boolean} [refresh=false] Set to redraw graph
          */
         step(refresh = false) {
-            console.log("running step of customelayout");
+            // console.log("running step of customelayout");
             let nodes = this.graph.nodes();
-            console.log(nodes);
+            // console.log(nodes);
             let edges = this.graph.edges();
 
             let r = 450;
@@ -68,9 +57,9 @@
                 n.x += (x - n.x) / step;
                 n.y += (y - n.y) / step;
             }
-            console.log(this.graph.nodes());
+            // console.log(this.graph.nodes());
 
-            if (refresh) this.refreshScreen();
+            if (refresh) refreshScreen();
 
             this.iterationCount++;
         }

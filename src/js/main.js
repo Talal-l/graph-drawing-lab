@@ -16,6 +16,23 @@ sigma.classes.graph.attach("addEdge", "updateOnAddEdge", updateMenu);
 sigma.classes.graph.attach("dropEdge", "updateOnDropEdge", updateMenu);
 let container = document.querySelector("#container");
 
+sigma.classes.graph.addIndex("nodesCount", {
+    constructor: function() {
+        this.nodesCount = 0;
+    },
+    addNode: function() {
+        this.nodesCount++;
+    },
+    clear: function() {
+        this.nodesCount = 0;
+    }
+});
+
+// return the number of nodes as a string
+sigma.classes.graph.addMethod("getNodesCount", function() {
+    return this.nodesCount + "";
+});
+
 let canvasRenderer = {
     container: "container",
     type: "canvas",
@@ -100,13 +117,13 @@ let graphUiModes = (function() {
         node.color = "#c52";
         selectedNode = node;
 
-        sig.refresh();
+        refreshScreen(sig, updateCriteria);
     }
     function deSelectNode(node) {
         if (node) {
             selectedNode.color = "#921";
             selectedNode = null;
-            sig.refresh();
+            refreshScreen(sig, updateCriteria);
         }
     }
 
@@ -131,6 +148,10 @@ let graphUiModes = (function() {
                 if (distance(dragStartPos, dragEndPos) >= dragThreshold)
                     drag = true;
             });
+            dragListener.bind("dragend", e => {
+                // make sure to update criteria after a node drag
+                updateCriteria(sig);
+            });
         } else {
             sigma.plugins.killDragNodes(sig);
         }
@@ -147,9 +168,10 @@ let graphUiModes = (function() {
         // get x,y after applying the same transformation that were applied to the camera
         let p = cam.cameraPosition(x, y);
 
+        let id = sig.graph.getNodesCount();
         let n = {
-            label: "click" + clickCount++,
-            id: "click" + clickCount++,
+            label: id,
+            id: id,
             x: p.x,
             y: p.y,
             size: nodeSize,
@@ -157,7 +179,7 @@ let graphUiModes = (function() {
         };
 
         sig.graph.addNode(n);
-        sig.refresh();
+        refreshScreen(sig, updateCriteria);
     }
     function nodeSelectHandler(e) {
         let node = e.data.node;
@@ -185,12 +207,12 @@ let graphUiModes = (function() {
     function nodeEraseHandler(e) {
         let clickedNode = e.data.node;
         sig.graph.dropNode(clickedNode.id);
-        sig.refresh();
+        refreshScreen(sig, updateCriteria);
     }
     function edgeEraseHandler(e) {
         let clickedEdge = e.data.edge;
         sig.graph.dropEdge(clickedEdge.id);
-        sig.refresh();
+        refreshScreen(sig, updateCriteria);
     }
     if (selectedEdge) sig.graph.dropEdge(selectedEdge.id);
 
@@ -245,7 +267,7 @@ let graphUiModes = (function() {
                 eraseItem.classList.remove("active");
                 sig.unbind("clickNode");
             }
-            sig.refresh();
+            refreshScreen(sig, updateCriteria);
         }
     };
 })(); // immediately execute the function to return the object
@@ -308,7 +330,7 @@ toolbar.addEventListener("click", event => {
             break;
         case "deleteGraph":
             sig.graph.clear();
-            sig.refresh();
+            refreshScreen(sig, updateCriteria);
             break;
         case "randomLayout":
             const x = container.offsetWidth;
@@ -317,17 +339,17 @@ toolbar.addEventListener("click", event => {
                 n.x = (0.5 - Math.random()) * x;
                 n.y = (0.5 - Math.random()) * y;
             });
-            sig.refresh();
+            refreshScreen(sig, updateCriteria);
 
             break;
         case "runLayout":
             customLayout.run();
-            sig.refresh();
+            refreshScreen(sig, updateCriteria);
 
             break;
         case "stepLayout":
             customLayout.step();
-            sig.refresh();
+            refreshScreen(sig, updateCriteria);
             break;
         case "resetLayout":
             break;
@@ -389,7 +411,7 @@ genModal.addEventListener("click", event => {
             }
             if (edgeNumMin < nodeNumMin - 1 || !edgeNumMin) {
                 edgeError.innerHTML = `Can't have less than ${nodeNumMin -
-                    2} edges `;
+                    1} edges `;
                 edgeError.style.display = "block";
                 break;
             }
@@ -408,7 +430,7 @@ genModal.addEventListener("click", event => {
             sig.graph.clear();
             // extract the nodes and edges from the created graph and update the current instance with it
             sig.graph.read({ nodes: G.nodes(), edges: G.edges() });
-            sig.refresh();
+            refreshScreen(sig, updateCriteria);
             genModal.style.display = "none";
             break;
         case "dismiss":
@@ -424,13 +446,13 @@ warnModal.addEventListener("click", event => {
             warnModal.style.display = "none";
             saveCurrentGraph();
             sig.graph.clear();
-            sig.refresh();
+            refreshScreen(sig, updateCriteria);
             genModal.style.display = "flex";
             break;
         case "delete":
             warnModal.style.display = "none";
             sig.graph.clear();
-            sig.refresh();
+            refreshScreen(sig, updateCriteria);
             genModal.style.display = "flex";
             break;
     }
@@ -447,7 +469,7 @@ fileSelector.addEventListener("change", function handleFiles(event) {
         sig.graph.clear();
         sig.graph.read(JSON.parse(content));
         fileSelector.value = "";
-        sig.refresh();
+        refreshScreen(sig, updateCriteria);
     };
 
     reader.readAsText(files[0]);
@@ -520,14 +542,16 @@ function generateGraph(nMin, nMax, eMin, eMax, container) {
     let E = random(Math.min(eMin, eLimit), Math.min(eMax, eLimit));
 
     for (let i = 0; i < N; i++) {
+        let id = G.getNodesCount();
         let n = {
-            label: "r" + i,
-            id: "r" + i,
+            label: id,
+            id: id,
             x: (0.5 - Math.random()) * x + nodeSize,
             y: (0.5 - Math.random()) * y + nodeSize,
             size: nodeSize,
             color: "#921"
         };
+        console.log(i);
         G.addNode(n);
     }
     let nodes = G.nodes();
@@ -590,16 +614,33 @@ function saveCurrentGraph() {
     saveGraphLink.click();
 }
 
-function updateMenu() {
-    document.querySelector("#node-num").innerHTML = sig.graph.nodes().length;
-    document.querySelector("#edge-num").innerHTML = sig.graph.edges().length;
-    document.querySelector("#density").innerHTML = density(sig.graph);
-}
+function updateMenu() {}
 function density(G) {
     let V = G.nodes().length;
     let E = G.edges().length;
     let D = (2 * E) / (V * (V - 1)) || 0;
-    return D.toFixed(2);
+    return D.toFixed(3);
 }
 
-sig.refresh();
+refreshScreen(sig, updateCriteria);
+
+function updateCriteria(s) {
+    let length = 120;
+
+    // update ui
+    document.querySelector("#node-num").innerHTML = sig.graph.nodes().length;
+    document.querySelector("#edge-num").innerHTML = sig.graph.edges().length;
+    document.querySelector("#density").innerHTML = density(sig.graph);
+
+    let occlusion = nodeNodeOcclusion(s.graph);
+
+    let edgeLen = edgeLength(s.graph, length);
+    document.querySelector("#occlusion").innerHTML = String(occlusion).slice(
+        0,
+        10
+    );
+    document.querySelector("#edge-length").innerHTML = String(edgeLen).slice(
+        0,
+        10
+    );
+}

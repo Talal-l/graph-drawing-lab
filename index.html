@@ -10,9 +10,6 @@
         integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
 
     <title>graph</title>
-
-    <script defer src="src/js/main.js"></script>
-
     <!-- START SIGMA IMPORTS -->
     <script src="sigma.js/src/sigma.core.js"></script>
     <script src="sigma.js/src/conrad.js"></script>
@@ -67,6 +64,12 @@
 
     <!--layouts-->
     <script src="./src/js/customSigLayout.js"></script>
+
+    <!--imports-->
+    <script src="src/js/util.js"></script>
+    <script src="src/js/criteria.js"></script>
+
+    <script defer src="src/js/main.js"></script>
 
 
     <!-- END SIGMA IMPORTS -->
@@ -151,6 +154,17 @@
                 <span>Graph density</span>
                 <span id="density">0</span>
             </div>
+            <div class="menu-item">
+                <span>Node occlusion</span>
+                <span id="occlusion">0</span>
+            </div>
+            <div class="menu-item">
+                <span>edge length</span>
+                <span id="edge-length">0</span>
+            </div>
+
+
+
 
 
 
