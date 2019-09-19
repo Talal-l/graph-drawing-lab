@@ -493,13 +493,13 @@ genMode.addEventListener("change", event => {
 });
 
 /**
- * Creates a random minimum spanning tree for the given sigma graph.
+ * Creates a random spanning tree for the given sigma graph.
  *
  * @param {object} G  Sigma graph object
  * @return {undefined}
  *
  */
-function minSpanningTree(G) {
+function ranSpanningTree(G) {
     // deep copy of the existing nodes
     let outTree = Array.from(G.nodes());
     // select the root
@@ -556,9 +556,9 @@ function generateGraph(nMin, nMax, eMin, eMax, container) {
     }
     let nodes = G.nodes();
 
-    // create a random minimum spanning tree (MST) to guarantee that the graph is connected
-    minSpanningTree(G);
-    // subtract edges created by the MST
+    // create a random spanning tree (ST) to guarantee that the graph is connected
+    ranSpanningTree(G);
+    // subtract edges created by the ST
     E = E - (N - 1);
 
     // loop until the desired number fo edges is reached
