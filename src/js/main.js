@@ -562,37 +562,25 @@ function generateGraph(nMin, nMax, eMin, eMax, container) {
     E = E - (N - 1);
 
     // loop until the desired number fo edges is reached
-    while (E > 0) {
-        for (let i = nodes.length - 1; i >= 0; i--) {
-            // determine how many edges to allow for this node in this iteration
-            let nEdgeCount = random(1, Math.min(E, N - 1));
-            for (
-                let j = i + 1, eCount = 0;
-                j < nodes.length && eCount < nEdgeCount;
-                j++
-            ) {
-                if (j !== i) {
-                    let edge = {
-                        id: "e" + nodes[j].label + nodes[i].label,
-                        size: edgeSize,
-                        source: nodes[i].label,
-                        target: nodes[j].label,
-                        color: "#ccc"
-                    };
-                    if (!G.edgeExist(nodes[j].label, nodes[i].label)) {
-                        G.addEdge(edge);
-                        eCount++;
-                        // update total edge count
-                        E--;
-                        // return as soon as the edge limit is reached
-                        if (E === 0) {
-                            console.log(
-                                "Final number of edges: " + G.edges().length
-                            );
-                            break;
-                        }
-                    }
-                }
+    for (let i = 0; E > 0; i = (i + 1) % N) {
+        // determine the number of edges allowed for this node in this iteration
+        let nEdge = random(0, Math.min(E, N - 1));
+        while (nEdge > 0) {
+            // pick a random node to connect to
+            let j = random(0, N - 1);
+
+            if (j !== i && !G.edgeExist(nodes[j].label, nodes[i].label)) {
+                let edge = {
+                    id: "e" + nodes[j].label + nodes[i].label,
+                    size: edgeSize,
+                    source: nodes[i].label,
+                    target: nodes[j].label,
+                    color: "#ccc"
+                };
+                G.addEdge(edge);
+                nEdge--;
+                // update total edge count
+                E--;
             }
         }
     }
