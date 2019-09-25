@@ -3,9 +3,9 @@
 sigma.classes.graph.addMethod("allNeighbors", function(node) {
     return this.allNeighborsIndex[node.id];
 });
-sigma.classes.graph.addMethod("edgeExist", function(n1Id, n2Id) {
+sigma.classes.graph.addMethod("edgeExist", function(n1, n2) {
     return (
-        this.edgesIndex["e" + n1Id + n2Id] || this.edgesIndex["e" + n2Id + n1Id]
+        this.edgesIndex[getEdgeId(n1, n2)] || this.edgesIndex[getEdgeId(n2, n1)]
     );
 });
 
@@ -90,17 +90,6 @@ function distance(p1, p2) {
 function random(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-/**
- *
- * @param {array} array
- */
-function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        let j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-}
-
 // UI events
 
 // create an object to use to track select and drag operations
@@ -189,7 +178,7 @@ let graphUiModes = (function() {
             // create an edge if non existed between them
             if (!sig.graph.allNeighbors(node)[selectedNode.id]) {
                 sig.graph.addEdge({
-                    id: `e${selectedNode.id}${node.id}`,
+                    id: getEdgeId(selectNode, node),
                     source: selectedNode.id,
                     target: node.id,
                     size: edgeSize,
@@ -512,7 +501,7 @@ function ranSpanningTree(G) {
         let target = inTree[random(0, inTree.length - 1)];
         // create an edge
         let edge = {
-            id: "e" + source.id + target.id,
+            id: getEdgeId(source, target),
             size: edgeSize,
             source: source.id,
             target: target.id,
@@ -556,6 +545,9 @@ function generateGraph(nMin, nMax, eMin, eMax, container) {
     }
     let nodes = G.nodes();
 
+    // randomize the nodes order to ensure we get random edges
+    shuffle(nodes);
+
     // create a random spanning tree (ST) to guarantee that the graph is connected
     ranSpanningTree(G);
     // subtract edges created by the ST
@@ -565,16 +557,16 @@ function generateGraph(nMin, nMax, eMin, eMax, container) {
     for (let i = 0; E > 0; i = (i + 1) % N) {
         // determine the number of edges allowed for this node in this iteration
         let nEdge = random(0, Math.min(E, N - 1));
-        while (nEdge > 0) {
+        for (let j = 0; j < N && nEdge > 0; j++) {
             // pick a random node to connect to
-            let j = random(0, N - 1);
+            let edges = G.edges();
 
-            if (j !== i && !G.edgeExist(nodes[j].label, nodes[i].label)) {
+            if (j !== i && !G.edgeExist(nodes[j], nodes[i])) {
                 let edge = {
-                    id: "e" + nodes[j].label + nodes[i].label,
+                    id: getEdgeId(nodes[j], nodes[i]),
                     size: edgeSize,
-                    source: nodes[i].label,
-                    target: nodes[j].label,
+                    source: nodes[i].id,
+                    target: nodes[j].id,
                     color: "#ccc"
                 };
                 G.addEdge(edge);
@@ -585,6 +577,10 @@ function generateGraph(nMin, nMax, eMin, eMax, container) {
         }
     }
     return G;
+}
+// return string to use for edge id
+function getEdgeId(n1, n2) {
+    return `e${n1.id}-${n2.id}`;
 }
 
 function saveCurrentGraph() {
