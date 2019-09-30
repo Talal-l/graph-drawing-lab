@@ -178,7 +178,7 @@ let graphUiModes = (function() {
             // create an edge if non existed between them
             if (!sig.graph.allNeighbors(node)[selectedNode.id]) {
                 sig.graph.addEdge({
-                    id: getEdgeId(selectNode, node),
+                    id: getEdgeId(selectedNode, node),
                     source: selectedNode.id,
                     target: node.id,
                     size: edgeSize,
