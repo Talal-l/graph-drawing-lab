@@ -70,26 +70,6 @@ let r = Math.min(container.offsetWidth, container.offsetHeight);
 let customLayout = new sigma.CustomLayout(sig);
 console.log(customLayout);
 
-// util
-
-/**
- *
- * @param {object} p1 First point object with x and y as properties
- * @param {object} p2 Second point object with x and y as properties
- * @return {number} distance between the two points
- */
-function distance(p1, p2) {
-    return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
-}
-/**
- * Generate a random integer between min and max inclusive
- * @param {number} min
- * @param {number} max
- * @return {number}
- */
-function random(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
 // UI events
 
 // create an object to use to track select and drag operations
@@ -168,6 +148,7 @@ let graphUiModes = (function() {
         };
 
         sig.graph.addNode(n);
+        console.log(n);
         refreshScreen(sig, updateCriteria);
     }
     function nodeSelectHandler(e) {
@@ -615,7 +596,6 @@ function updateCriteria(s) {
     document.querySelector("#node-num").innerHTML = sig.graph.nodes().length;
     document.querySelector("#edge-num").innerHTML = sig.graph.edges().length;
     document.querySelector("#density").innerHTML = density(sig.graph);
-
     let occlusion = nodeNodeOcclusion(s.graph);
 
     let edgeLen = edgeLength(s.graph, length);
@@ -627,4 +607,26 @@ function updateCriteria(s) {
         0,
         10
     );
+    let isec = edgeCrossing(sig.graph);
+    console.log(isec);
+
+    for (n of sig.graph.nodes()) {
+        if (n.label === "in") {
+            sig.graph.dropNode(n.id);
+        }
+    }
+    for (let i = 0; i < isec.length; i++) {
+        let n = {
+            label: "in",
+            id: "in" + i,
+            x: isec[i].x,
+            y: isec[i].y,
+            size: 5,
+            color: "#f21"
+        };
+        sig.graph.addNode(n);
+        sig.graph.r;
+    }
+    refreshScreen(sig, e => {});
+    document.querySelector("#edge-cross").innerHTML = isec.length;
 }

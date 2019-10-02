@@ -47,15 +47,22 @@
             let edges = this.graph.edges();
 
             let r = 450;
-            let N = nodes.length;
+            let N = 0;
+            for (n of nodes){
+                if (n.label !== "in") N++;
+            }
+
+
             let step = 30;
             for (let i = 0; i < N; i++) {
                 let n = nodes[i];
-                let x = r * Math.cos((2 * Math.PI * i) / N);
-                let y = r * Math.sin((2 * Math.PI * i) / N);
+                if (n.label !== "in") {
+                    let x = r * Math.cos((2 * Math.PI * i) / N);
+                    let y = r * Math.sin((2 * Math.PI * i) / N);
 
-                n.x += (x - n.x) / step;
-                n.y += (y - n.y) / step;
+                    n.x += (x - n.x) / step;
+                    n.y += (y - n.y) / step;
+                }
             }
             // console.log(this.graph.nodes());
 
