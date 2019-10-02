@@ -1,3 +1,7 @@
+// util.js imports
+/*global refreshScreen, getEdgeNodes, distance, edgeIntersection*/
+ 
+
 /**
  * Calculate the normalized score describing how close nodes are to each other.
  * 0 being very far and 1 being very close.
@@ -8,12 +12,12 @@ function nodeNodeOcclusion(graph) {
     let nodes = graph.nodes();
     let sum = 0;
     // array of sigma node objects that contain x and y coordinates
-    for (i of nodes) {
-        for (j of nodes) {
+    for (let i of nodes) {
+        for (let j of nodes) {
             if (i.id !== j.id) {
                 let d = distance(i, j);
                 // console.log(`distance between ${i.id} and ${j.id} = ${d}`);
-                sum += 1 / d ** 2;
+                sum += 1 / (d*d);
             }
         }
     }
@@ -28,11 +32,11 @@ function nodeNodeOcclusion(graph) {
 function edgeLength(graph, len) {
     let edges = graph.edges();
     let sum = 0;
-    for (e of edges) {
+    for (let e of edges) {
         console.log(e);
-        [n1, n2] = getEdgeNodes(e, graph);
+        let [n1, n2] = getEdgeNodes(e, graph);
         let d = distance(n1, n2);
-        sum += (d - len) ** 2;
+        sum += (d - len) * (d - len);
     }
     return sum;
 }

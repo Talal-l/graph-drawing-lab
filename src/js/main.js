@@ -1,3 +1,15 @@
+// sigam.js imports
+/*global sigma*/
+
+// util.js imports
+/*global refreshScreen, getEdgeNodes, distance, edgeIntersection, random, shuffle */
+ 
+// criteria.js imports
+/*global edgeCrossing, nodeNodeOcclusion, edgeLength*/
+
+
+
+
 // graph module extensions
 // get an object of all adjacent nodes to the given node
 sigma.classes.graph.addMethod("allNeighbors", function(node) {
@@ -255,8 +267,8 @@ const genGraph = document.querySelector("#genGraph"),
     randomLayout = document.querySelector("#randomLayout"),
     runLayout = document.querySelector("#runLayout"),
     stepLayout = document.querySelector("#stepLayout"),
-    toolbar = document.querySelector(".toolbar-container");
-sideMenu = document.querySelector("#side-menu");
+    toolbar = document.querySelector(".toolbar-container"),
+    sideMenu = document.querySelector("#side-menu");
 
 toolbar.addEventListener("click", event => {
     let target = event.target;
@@ -586,7 +598,6 @@ function density(G) {
     let D = (2 * E) / (V * (V - 1)) || 0;
     return D.toFixed(3);
 }
-
 refreshScreen(sig, updateCriteria);
 
 function updateCriteria(s) {
@@ -610,7 +621,7 @@ function updateCriteria(s) {
     let isec = edgeCrossing(sig.graph);
     console.log(isec);
 
-    for (n of sig.graph.nodes()) {
+    for (let n of sig.graph.nodes()) {
         if (n.label === "in") {
             sig.graph.dropNode(n.id);
         }

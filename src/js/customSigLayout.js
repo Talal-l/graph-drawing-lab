@@ -1,3 +1,10 @@
+// sigam.js imports
+/*global sigma*/
+
+// util.js imports
+/*global refreshScreen, getEdgeNodes, distance, edgeIntersection, random, shuffle */
+ 
+
 (function(undefined) {
     console.log(this);
     if (typeof sigma === "undefined") throw new Error("sigma is not declared");
@@ -48,7 +55,7 @@
 
             let r = 450;
             let N = 0;
-            for (n of nodes){
+            for (let n of nodes){
                 if (n.label !== "in") N++;
             }
 
