@@ -148,3 +148,11 @@ function edgeIntersection(e1, e2, graph) {
         }
     );
 }
+
+function minMaxNorm(value, min, max) {
+    return (value - min) / (max - min);
+}
+
+function transform(value) {
+    return value / (value + 1);
+}

@@ -3,12 +3,9 @@
 
 // util.js imports
 /*global refreshScreen, getEdgeNodes, distance, edgeIntersection, random, shuffle */
- 
+
 // criteria.js imports
 /*global edgeCrossing, nodeNodeOcclusion, edgeLength*/
-
-
-
 
 // graph module extensions
 // get an object of all adjacent nodes to the given node
@@ -626,18 +623,18 @@ function updateCriteria(s) {
             sig.graph.dropNode(n.id);
         }
     }
-    for (let i = 0; i < isec.length; i++) {
-        let n = {
-            label: "in",
-            id: "in" + i,
-            x: isec[i].x,
-            y: isec[i].y,
-            size: 5,
-            color: "#f21"
-        };
-        sig.graph.addNode(n);
-        sig.graph.r;
-    }
-    refreshScreen(sig, e => {});
-    document.querySelector("#edge-cross").innerHTML = isec.length;
+    //for (let i = 0; i < isec.length; i++) {
+    //let n = {
+    //label: "in",
+    //id: "in" + i,
+    //x: isec[i].x,
+    //y: isec[i].y,
+    //size: 5,
+    //color: "#f21"
+    //};
+    //sig.graph.addNode(n);
+    //sig.graph.r;
+    //}
+    //refreshScreen(sig, e => {});
+    document.querySelector("#edge-cross").innerHTML = isec + "";
 }

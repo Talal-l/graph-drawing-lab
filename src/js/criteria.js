@@ -1,12 +1,10 @@
 // util.js imports
 /*global refreshScreen, getEdgeNodes, distance, edgeIntersection*/
- 
 
 /**
  * Calculate the normalized score describing how close nodes are to each other.
- * 0 being very far and 1 being very close.
  * @param {object} graph - A sigma graph instance
- * @returns {number} - TODO: Normalized score
+ * @returns {number} - Score
  */
 function nodeNodeOcclusion(graph) {
     let nodes = graph.nodes();
@@ -17,7 +15,7 @@ function nodeNodeOcclusion(graph) {
             if (i.id !== j.id) {
                 let d = distance(i, j);
                 // console.log(`distance between ${i.id} and ${j.id} = ${d}`);
-                sum += 1 / (d*d);
+                sum += 1 / (d * d);
             }
         }
     }
@@ -27,7 +25,7 @@ function nodeNodeOcclusion(graph) {
  * Calculate a score describing how far are the edges from the desired length.
  * @param {object} graph - A sigma graph instance
  * @param {number} len - The desired edge length
- * @returns {number} - TODO: Normalized score
+ * @returns {number} - Score
  */
 function edgeLength(graph, len) {
     let edges = graph.edges();
@@ -41,24 +39,23 @@ function edgeLength(graph, len) {
     return sum;
 }
 
-/** Calculate the edge crossing score where 0 is no crossing and 1 being all edges are crossed.
+/** Calculate the total number of edge crossings
  * @param {object} graph - A sigma graph instance
- * @returns {number} - TODO: Normalized score
+ * @returns {number} - Number o edge crossings
  */
 function edgeCrossing(graph) {
     let edges = graph.edges();
-    let isecList = [];
+    let edgeCross = 0;
 
     for (let i = 0; i < edges.length - 1; i++) {
         let e1 = edges[i];
         for (let j = i + 1; j < edges.length; j++) {
             let e2 = edges[j];
-            // skip if same source or same target
-            let i = edgeIntersection(e1, e2, graph);
-            i && isecList.push(i);
+            // TODO: skip if same source or same target
+            edgeCross += edgeIntersection(e1, e2, graph) ? 1 : 0;
         }
     }
-    return isecList;
+    return edgeCross;
 }
 
 function angularResolution(e1, e2) {}
