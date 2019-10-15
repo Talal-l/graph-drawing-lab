@@ -6,9 +6,9 @@
  * @param {function} [onRefresh]  - Called after a refresh
  *
  */
-function refreshScreen(sig, onRefresh) {
+function refreshScreen(onRefresh) {
     sig.refresh();
-    if (typeof onRefresh === "function") onRefresh(sig);
+    if (typeof onRefresh === "function") onRefresh();
 }
 
 /**
@@ -40,6 +40,36 @@ function shuffle(array) {
 function distance(p1, p2) {
     return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
 }
+
+/**
+ * Distance between a segment and a point
+ * @param {object} p - A point object with x and y as properties
+ * @param {{start:{x:number,y:number}, end:{x:number,y:number}}} seg - An object representing a line segment
+ * @returns {number} - Distance between the two points
+ * source: http://geomalgorithms.com/a02-_lines.html
+ */
+function pointSegDistance(p, seg) {
+    let s0 = new Vec(seg.start);
+    let s1 = new Vec(seg.end);
+    let s0s1 = s1.sub(s0);
+
+    let pv = new Vec(p);
+    let s0p = pv.sub(s0);
+    let s1p = pv.sub(s1);
+
+    if (s0p.dot(s0s1) <= 0) {
+        return distance(s0, p);
+    }
+    // after the end point
+    if (s1p.dot(s0s1) >= 0) {
+        return distance(s1, p);
+    }
+
+    // inside the segment
+    let proj = s0s1.scale(pv.dot(s0s1) / s0s1.dot(s0s1));
+    return distance(proj, p);
+}
+
 /**
  * Generate a random integer between min and max inclusive
  * @param {number} min
@@ -90,6 +120,9 @@ class Vec {
     cross(v) {
         return this.x * v.y - this.y * v.x;
     }
+    len() {
+        return Math.sqrt(this.x ** 2 + this.y ** 2);
+    }
 }
 
 /**
@@ -98,7 +131,7 @@ class Vec {
  * Source: https://stackoverflow.com/a/565282
  *
  * @param {{start:{x:number,y:number}, end:{x:number,y:number}}} seg1 - An object representing the first segment
- * @param {{start:{x:number,y:number}, end:{x:number,y:number}}} seg2 - An object representing the first segment
+ * @param {{start:{x:number,y:number}, end:{x:number,y:number}}} seg2 - An object representing the second segment
  * @returns {object} - A Vec object with the x and y of the intersection point
  */
 function intersection(seg1, seg2) {

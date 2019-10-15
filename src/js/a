@@ -65,41 +65,7 @@ let sigDefaults = {
 };
 // create the main sigma instance
 let sig = new sigma(sigDefaults);
-sig.graph.addNode({
-    id: "center",
-    x: 0,
-    y: 0,
-    size: nodeSize,
-    color: "#121"
-});
-sig.graph.addNode({
-    id: "left",
-    x: -500,
-    y: 0,
-    size: nodeSize,
-    color: "#121"
-});
-sig.graph.addNode({
-    id: "right",
-    x: 500,
-    y: 0,
-    size: nodeSize,
-    color: "#121"
-});
-sig.graph.addNode({
-    id: "up",
-    x: 0,
-    y: 500,
-    size: nodeSize,
-    color: "#121"
-});
-sig.graph.addNode({
-    id: "down",
-    x: 0,
-    y: -500,
-    size: nodeSize,
-    color: "#121"
-});
+
 let cam = sig.cameras.cam1;
 
 let r = Math.min(container.offsetWidth, container.offsetHeight);

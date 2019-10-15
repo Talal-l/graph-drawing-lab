@@ -12,3 +12,4 @@ jspm_packages/
 # other
 cred/
 .vscode
+jsconfig.json

@@ -2,7 +2,7 @@
 /*global refreshScreen, getEdgeNodes, distance, edgeIntersection*/
 
 /**
- * Calculate the normalized score describing how close nodes are to each other.
+ * Calculate the score describing how close nodes are to each other.
  * @param {object} graph - A sigma graph instance
  * @returns {number} - Score
  */
@@ -19,6 +19,33 @@ function nodeNodeOcclusion(graph) {
             }
         }
     }
+    return sum;
+}
+
+/**
+ * Calculate the score describing how close nodes are to edges.
+ * @param {object} graph - A sigma graph instance
+ * @returns {number} - Score
+ */
+function edgeNodeOcclusion(graph) {
+    let nodes = graph.nodes();
+    let edges = graph.edges();
+    let sum = 0;
+
+    for (let e of edges) {
+        let seg = {
+            start: new Vec(graph.nodes(e.source)),
+            end: new Vec(graph.nodes(e.target))
+        };
+        for (let n of nodes) {
+            // if n != start or end
+            if (n.id !== e.source && n.id !== e.target) {
+                sum += 1 / pointSegDistance(n, seg);
+                console.log(pointSegDistance(n, seg));
+            }
+        }
+    }
+
     return sum;
 }
 /**
