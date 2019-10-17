@@ -123,6 +123,9 @@ class Vec {
     len() {
         return Math.sqrt(this.x ** 2 + this.y ** 2);
     }
+    angle(v) {
+        return Math.acos(this.dot(v) / (this.len() * v.len()));
+    }
 }
 
 /**
@@ -188,4 +191,11 @@ function minMaxNorm(value, min, max) {
 
 function transform(value) {
     return value / (value + 1);
+}
+
+function isEmpty(obj) {
+    for (var prop in obj) {
+        if (obj.hasOwnProperty(prop)) return false;
+    }
+    return true;
 }

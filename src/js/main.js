@@ -12,6 +12,15 @@
 sigma.classes.graph.addMethod("allNeighbors", function(node) {
     return this.allNeighborsIndex[node.id];
 });
+
+sigma.classes.graph.addMethod("allNeighborNodes", function(node) {
+    let neighbors = [];
+    let obj = this.allNeighborsIndex[node.id];
+    for (const id of Object.keys(obj)) {
+        neighbors.push(this.nodes(id));
+    }
+    return neighbors;
+});
 sigma.classes.graph.addMethod("edgeExist", function(n1, n2) {
     return (
         this.edgesIndex[getEdgeId(n1, n2)] || this.edgesIndex[getEdgeId(n2, n1)]
@@ -87,14 +96,14 @@ sig.graph.addNode({
     color: "#121"
 });
 sig.graph.addNode({
-    id: "up",
+    id: "down",
     x: 0,
     y: 500,
     size: nodeSize,
     color: "#121"
 });
 sig.graph.addNode({
-    id: "down",
+    id: "up",
     x: 0,
     y: -500,
     size: nodeSize,
@@ -634,12 +643,14 @@ function updateCriteria() {
     // in case the set length is larger than the max possible in the canvas
     maxLen = Math.max(length, maxLen);
     let maxCrossing = sig.graph.edges().length * (sig.graph.edges().length - 1);
+    let maxAngularRes = sig.graph.nodes().length * 180;
 
     // calculate the needed criteria
     let edgeLen = edgeLength(sig.graph, length);
     let nOcclusion = nodeNodeOcclusion(sig.graph);
     let eOcclusion = edgeNodeOcclusion(sig.graph);
     let crossing = edgeCrossing(sig.graph);
+    let angularRes = angularResolution(sig.graph);
 
     // normalize
     edgeLen = minMaxNorm(edgeLen, 0, sig.graph.edges().length * maxLen ** 2);
@@ -666,4 +677,7 @@ function updateCriteria() {
         0,
         10
     );
+    document.querySelector("#angular-resolution").innerHTML = String(
+        angularRes
+    ).slice(0, 10);
 }
