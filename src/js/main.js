@@ -74,41 +74,6 @@ let sigDefaults = {
 };
 // create the main sigma instance
 let sig = new sigma(sigDefaults);
-sig.graph.addNode({
-    id: "center",
-    x: 0,
-    y: 0,
-    size: nodeSize,
-    color: "#121"
-});
-sig.graph.addNode({
-    id: "left",
-    x: -500,
-    y: 0,
-    size: nodeSize,
-    color: "#121"
-});
-sig.graph.addNode({
-    id: "right",
-    x: 500,
-    y: 0,
-    size: nodeSize,
-    color: "#121"
-});
-sig.graph.addNode({
-    id: "down",
-    x: 0,
-    y: 500,
-    size: nodeSize,
-    color: "#121"
-});
-sig.graph.addNode({
-    id: "up",
-    x: 0,
-    y: -500,
-    size: nodeSize,
-    color: "#121"
-});
 let cam = sig.cameras.cam1;
 
 let r = Math.min(container.offsetWidth, container.offsetHeight);
@@ -513,7 +478,7 @@ genMode.addEventListener("change", event => {
  * Creates a random spanning tree for the given sigma graph.
  *
  * @param {object} G  Sigma graph object
- * @return {undefined}
+ * @returns {undefined}
  *
  */
 function ranSpanningTree(G) {
@@ -547,7 +512,7 @@ function ranSpanningTree(G) {
  * @param {number} eMin  Minimum number of edges
  * @param {number} eMax  Maximum number of edges
  * @param {object} container HTML canvas element
- * @return {object} Sigma graph object
+ * @returns {object} a Sigma graph object
  */
 function generateGraph(nMin, nMax, eMin, eMax, container) {
     const x = container.offsetWidth;
@@ -634,50 +599,33 @@ function density(G) {
 }
 refreshScreen(updateCriteria);
 
-// takes in a sigma instance so it has all the needed context about the graph
 function updateCriteria() {
     // get the needed parameters
-    let length = 12;
+    let length = 500;
     let c = document.querySelector(".sigma-scene");
     let maxLen = Math.sqrt(c.width * c.width + c.height * c.height);
-    // in case the set length is larger than the max possible in the canvas
-    maxLen = Math.max(length, maxLen);
-    let maxCrossing = sig.graph.edges().length * (sig.graph.edges().length - 1);
-    let maxAngularRes = sig.graph.nodes().length * 180;
 
     // calculate the needed criteria
-    let edgeLen = edgeLength(sig.graph, length);
+    let edgeLen = edgeLength(sig.graph, length, maxLen);
     let nOcclusion = nodeNodeOcclusion(sig.graph);
     let eOcclusion = edgeNodeOcclusion(sig.graph);
     let crossing = edgeCrossing(sig.graph);
     let angularRes = angularResolution(sig.graph);
 
-    // normalize
-    edgeLen = minMaxNorm(edgeLen, 0, sig.graph.edges().length * maxLen ** 2);
-    nOcclusion = transform(nOcclusion);
-    eOcclusion = transform(eOcclusion);
-    crossing = minMaxNorm(crossing, 0, maxCrossing);
-
     // update ui
     document.querySelector("#node-num").innerHTML = sig.graph.nodes().length;
     document.querySelector("#edge-num").innerHTML = sig.graph.edges().length;
     document.querySelector("#density").innerHTML = density(sig.graph);
-    document.querySelector("#node-occlusion").innerHTML = String(
-        nOcclusion
-    ).slice(0, 10);
-    document.querySelector("#edge-node-occlusion").innerHTML = String(
-        eOcclusion
-    ).slice(0, 10);
+    document.querySelector("#node-occlusion").innerHTML = nOcclusion.toFixed(
+        10
+    );
+    document.querySelector(
+        "#edge-node-occlusion"
+    ).innerHTML = eOcclusion.toFixed(10);
 
-    document.querySelector("#edge-length").innerHTML = String(edgeLen).slice(
-        0,
-        10
-    );
-    document.querySelector("#edge-cross").innerHTML = String(crossing).slice(
-        0,
-        10
-    );
-    document.querySelector("#angular-resolution").innerHTML = String(
-        angularRes
-    ).slice(0, 10);
+    document.querySelector("#edge-length").innerHTML = edgeLen.toFixed(10);
+    document.querySelector("#edge-cross").innerHTML = crossing.toFixed(10);
+    document.querySelector(
+        "#angular-resolution"
+    ).innerHTML = angularRes.toFixed(10);
 }

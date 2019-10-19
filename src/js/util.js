@@ -3,7 +3,7 @@
 /**
  * A wrapper method to use to enable us to attach a callback function to the refresh method
  * @param {sigma} sig - A sigma instance
- * @param {function} [onRefresh]  - Called after a refresh
+ * @param {function} [onRefresh]  - A function to call after a refresh
  *
  */
 function refreshScreen(onRefresh) {
@@ -12,7 +12,6 @@ function refreshScreen(onRefresh) {
 }
 
 /**
- *
  * @param {object} e - A sigma graph edge
  * @param {sigma.classes.graph} graph - A sigma graph instance
  */
