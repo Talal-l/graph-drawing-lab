@@ -474,6 +474,11 @@ genMode.addEventListener("change", event => {
     }
 });
 
+sideMenu.addEventListener("change", event => {
+    updateObjective();
+});
+
+
 /**
  * Creates a random spanning tree for the given sigma graph.
  *
@@ -599,6 +604,30 @@ function density(G) {
 }
 refreshScreen(updateCriteria);
 
+function updateObjective() {
+    // get the weights
+    let w = [
+        document.querySelector("#node-occlusion-weight").value,
+        document.querySelector("#edge-node-occlusion-weight").value,
+        document.querySelector("#edge-length-weight").value,
+        document.querySelector("#edge-crossing-weight").value,
+        document.querySelector("#angular-resolution-weight").value
+    ];
+
+    // get the criteria
+    let c = [
+        document.querySelector("#node-occlusion").innerHTML,
+        document.querySelector("#edge-node-occlusion").innerHTML,
+        document.querySelector("#edge-length").innerHTML,
+        document.querySelector("#edge-cross").innerHTML,
+        document.querySelector("#angular-resolution").innerHTML
+    ];
+    let wSum = 0;
+    for (let i = 0; i < 5; i++) wSum += parseFloat(w[i]) * parseFloat(c[i]);
+
+    document.querySelector("#objective-function").innerHTML = wSum.toFixed(10);
+}
+
 function updateCriteria() {
     // get the needed parameters
     let length = 500;
@@ -628,4 +657,6 @@ function updateCriteria() {
     document.querySelector(
         "#angular-resolution"
     ).innerHTML = angularRes.toFixed(10);
+
+    updateObjective();
 }

@@ -25,6 +25,8 @@ main{
     width: 100%;
 }
 
+
+/*side menu start*/
 .side-menu{
     display: flex;
     flex-direction: column;
@@ -32,7 +34,16 @@ main{
     background:#4A4B4B;
     color: #fff;
     padding: 8px;
-    width: 200px;
+    width: 250px;
+}
+
+.menu-item-desc{
+    display: flex;
+    flex-direction: row;
+}
+.menu-item-desc input{
+    margin-left: 8px;
+    width: 50px;
 }
 
 .menu-item{
@@ -41,9 +52,13 @@ main{
     margin: 8px;
     width: 100%;
 }
-.menu-item > span{
-    margin-right: 8px
+.menu-item *{
+    margin: 0;
 }
+/*side menu end*/
+
+
+
 /* Toolbar and icons */
 .toolbar-container {
     display: flex;

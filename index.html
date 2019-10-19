@@ -139,8 +139,12 @@
 
     </div>
 
-    <div class="wrapper">
 
+
+
+
+    <!--side menu -->
+    <div class="wrapper">
         <div class="side-menu" id="side-menu">
             <div class="menu-item">
                 <span>Number of nodes</span>
@@ -155,27 +159,50 @@
                 <span id="density">0</span>
             </div>
             <div class="menu-item">
-                <span>Node occlusion</span>
-                <span id="node-occlusion">0</span>
+                <div class="menu-item-desc">
+                    <p>Node occlusion</p>
+                    <input type="number" id="node-occlusion-weight" value="1" step=0.01  min=0 max=1>
+                </div>
+                <p id="node-occlusion">0</p>
             </div>
             <div class="menu-item">
-                <span>Edge node occlusion</span>
-                <span id="edge-node-occlusion">0</span>
+                <div class="menu-item-desc">
+                    <p>Edge node occlusion</p>
+                    <input type="number" id="edge-node-occlusion-weight" value="1" step=0.01  min=0 max=1>
+                </div>                
+                <p id="edge-node-occlusion">0</p>
             </div>
             <div class="menu-item">
-                <span>edge length</span>
-                <span id="edge-length">0</span>
+                <div class="menu-item-desc">
+                    <p>edge length</p>
+                        <input type="number" id="edge-length-weight" value="1" step=0.01  min=0 max=1>
+                </div>
+                <p id="edge-length">0</p>
             </div>
             <div class="menu-item">
-                <span>edge crossing</span>
-                <span id="edge-cross">0</span>
+                <div class="menu-item-desc">
+                    <p>edge crossing</p>
+                        <input type="number" id="edge-crossing-weight" value="1" step=0.01  min=0 max=1>
+                </div>
+                <p id="edge-cross">0</p>
             </div>
             <div class="menu-item">
-                <span> Angular resolution </span>
-                <span id="angular-resolution">0</span>
+                <div class="menu-item-desc">
+                    <p>Angular resolution </p>
+                        <input type="number" id="angular-resolution-weight" value="1" step=0.01  min=0 max=1>
+                </div>
+                 <p id="angular-resolution">0</p>
             </div>
-
+            <div class="menu-item">
+                 <p>Objective function </p>
+                 <p id="objective-function">0</p>
+            </div>
         </div>
+
+    <!--side menu -->
+
+
+
 
         <main>
 
