@@ -625,7 +625,7 @@ function updateObjective() {
     let wSum = 0;
     for (let i = 0; i < 5; i++) wSum += parseFloat(w[i]) * parseFloat(c[i]);
 
-    document.querySelector("#objective-function").innerHTML = wSum.toFixed(10);
+    document.querySelector("#objective-function").innerHTML = wSum.toFixed(3);
 }
 
 function updateCriteria() {
@@ -646,17 +646,17 @@ function updateCriteria() {
     document.querySelector("#edge-num").innerHTML = sig.graph.edges().length;
     document.querySelector("#density").innerHTML = density(sig.graph);
     document.querySelector("#node-occlusion").innerHTML = nOcclusion.toFixed(
-        10
+        3
     );
     document.querySelector(
         "#edge-node-occlusion"
-    ).innerHTML = eOcclusion.toFixed(10);
+    ).innerHTML = eOcclusion.toFixed(3);
 
-    document.querySelector("#edge-length").innerHTML = edgeLen.toFixed(10);
-    document.querySelector("#edge-cross").innerHTML = crossing.toFixed(10);
+    document.querySelector("#edge-length").innerHTML = edgeLen.toFixed(3);
+    document.querySelector("#edge-cross").innerHTML = crossing.toFixed(3);
     document.querySelector(
         "#angular-resolution"
-    ).innerHTML = angularRes.toFixed(10);
+    ).innerHTML = angularRes.toFixed(3);
 
     updateObjective();
 }
