@@ -482,19 +482,23 @@ sideMenu.addEventListener("change", event => {
 toggleEl = document.querySelectorAll(".menu-section-label");
 for (const e of toggleEl) {
     e.onclick = function() {
+        let secId = this.getAttribute("data-section");
+        let secEl = document.querySelector(`#${secId}`);
         let t = this.querySelector(".menu-section-toggle");
         if (t.classList.contains("arrow-right")) {
             t.classList.remove("arrow-right");
             t.style.animationDirection = "reverse";
             t.classList.add("arrow-down");
+            secEl.style.display = "block";
         } else {
             t.classList.remove("arrow-down");
             t.style.animationDirection = "normal";
             t.style.animationPlayState = "running";
             t.classList.add("arrow-right");
+            secEl.style.display = "none";
         }
-        var newone = t.cloneNode(true);
-        t.parentNode.replaceChild(newone, t);
+        var newOne = t.cloneNode(true);
+        t.parentNode.replaceChild(newOne, t);
     };
 }
 /**
