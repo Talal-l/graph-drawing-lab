@@ -474,11 +474,29 @@ genMode.addEventListener("change", event => {
     }
 });
 
+// side menu events
 sideMenu.addEventListener("change", event => {
     updateObjective();
 });
 
-
+toggleEl = document.querySelectorAll(".menu-section-label");
+for (const e of toggleEl) {
+    e.onclick = function() {
+        let t = this.querySelector(".menu-section-toggle");
+        if (t.classList.contains("arrow-right")) {
+            t.classList.remove("arrow-right");
+            t.style.animationDirection = "reverse";
+            t.classList.add("arrow-down");
+        } else {
+            t.classList.remove("arrow-down");
+            t.style.animationDirection = "normal";
+            t.style.animationPlayState = "running";
+            t.classList.add("arrow-right");
+        }
+        var newone = t.cloneNode(true);
+        t.parentNode.replaceChild(newone, t);
+    };
+}
 /**
  * Creates a random spanning tree for the given sigma graph.
  *
@@ -645,9 +663,7 @@ function updateCriteria() {
     document.querySelector("#node-num").innerHTML = sig.graph.nodes().length;
     document.querySelector("#edge-num").innerHTML = sig.graph.edges().length;
     document.querySelector("#density").innerHTML = density(sig.graph);
-    document.querySelector("#node-occlusion").innerHTML = nOcclusion.toFixed(
-        3
-    );
+    document.querySelector("#node-occlusion").innerHTML = nOcclusion.toFixed(3);
     document.querySelector(
         "#edge-node-occlusion"
     ).innerHTML = eOcclusion.toFixed(3);

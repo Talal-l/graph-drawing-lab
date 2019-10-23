@@ -1,5 +1,5 @@
 /** {*/
-/*outline: 1px solid red;*/
+  /*outline: 1px solid red;*/
 /*}*/
 html {
   width: 100%;
@@ -33,16 +33,39 @@ main {
   border-top: 5px solid white;
   border-bottom: 5px solid transparent;
   align-self: flex-end;
+  transform-origin: 50% 0%;
+  animation-name: rotate;
+  animation-fill-mode: forwards;
+  animation-play-state: paused;
+  animation-duration: 0.2s;
+  margin-right: 5px;
 }
+
 .arrow-right {
   width: 0;
   height: 0;
-  border-left: 5px solid white;
+  border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid transparent;
+  border-top: 5px solid white;
   border-bottom: 5px solid transparent;
-  align-self: center;
+  align-self: flex-end;
+  transform-origin: 50% 0%;
+  animation-fill-mode: forwards;
+  margin-right: 5px;
+
+  animation-name: rotate;
+  animation-duration: 0.2s;
 }
+
+@keyframes rotate {
+  from {
+    transform: none;
+  }
+  to {
+    transform: rotate(-90deg);
+  }
+}
+
 .menu-section-label {
   display: flex;
   flex-direction: row;
@@ -81,12 +104,9 @@ main {
 }
 
 .menu-item input {
-  width:36px;
-  border:none;
-
+  width: 36px;
+  border: none;
 }
-
-
 
 /*side menu end*/
 
