@@ -81,7 +81,6 @@ let r = Math.min(container.offsetWidth, container.offsetHeight);
 // create graph layout
 let customLayout = new sigma.CustomLayout(sig);
 console.log(customLayout);
-
 // UI events
 
 // create an object to use to track select and drag operations
@@ -651,6 +650,7 @@ function updateObjective() {
 }
 
 function updateCriteria() {
+    let showAnnotation = true;
     // get the needed parameters
     let length = 500;
     let c = document.querySelector(".sigma-scene");
@@ -660,7 +660,7 @@ function updateCriteria() {
     let edgeLen = edgeLength(sig.graph, length, maxLen);
     let nOcclusion = nodeNodeOcclusion(sig.graph);
     let eOcclusion = edgeNodeOcclusion(sig.graph);
-    let crossing = edgeCrossing(sig.graph);
+    let [crossing, list] = edgeCrossing(sig.graph);
     let angularRes = angularResolution(sig.graph);
 
     // update ui
@@ -678,5 +678,77 @@ function updateCriteria() {
         "#angular-resolution"
     ).innerHTML = angularRes.toFixed(3);
 
+    if (showAnnotation) {
+        clearAnnotation();
+        for (let v of list) {
+            addAnnotation(v);
+        }
+    }
     updateObjective();
+}
+
+// annotations
+
+// update annotations on camera move
+cam.bind("coordinatesUpdated", updateAnnotation);
+
+/*
+ *  add circle on intersection point
+ */
+function addAnnotation(vec) {
+    let annotation = document.querySelector("#annotation");
+    const ns = "http://www.w3.org/2000/svg";
+
+    // convert from cam space to graph space.
+    let { x, y } = cam.graphPosition(vec.x, vec.y);
+    x += container.offsetWidth / 2;
+    y += container.offsetHeight / 2;
+
+    let svgW = 40;
+    let svgH = 40;
+    svg = document.createElementNS(ns, "svg");
+    // record intersection point in camera so we can update annotation on camera move
+    svg.setAttributeNS(null, "data-x-cam", vec.x);
+    svg.setAttributeNS(null, "data-y-cam", vec.y);
+
+    svg.setAttributeNS(null, "class", "annotation");
+    svg.setAttributeNS(null, "width", svgW);
+    svg.setAttributeNS(null, "height", svgH);
+    svg.style.position = "absolute";
+    svg.style.left = `${x - svgW / 2}px`;
+    svg.style.top = `${y - svgH / 2}px`;
+
+    let cir = document.createElementNS(ns, "circle");
+    cir.setAttributeNS(null, "cx", svgW / 2);
+    cir.setAttributeNS(null, "cy", svgH / 2);
+    cir.setAttributeNS(null, "r", 10);
+    cir.setAttributeNS(null, "fill", "red");
+
+    svg.appendChild(cir);
+    annotation.appendChild(svg);
+}
+
+function clearAnnotation() {
+    document.querySelector("#annotation").innerHTML = "";
+}
+
+function updateAnnotation() {
+    let annotations =
+        Array.from(document.querySelectorAll(".annotation")) || [];
+    for (let a of annotations) {
+        let svgW = a.getAttribute("width");
+        let svgH = a.getAttribute("height");
+
+        // coordinate in camera space
+        let xc = parseFloat(a.getAttribute("data-x-cam"));
+        let yc = parseFloat(a.getAttribute("data-y-cam"));
+
+        // convert from camera space to graph space.
+        let { x, y } = cam.graphPosition(xc, yc);
+        x += container.offsetWidth / 2;
+        y += container.offsetHeight / 2;
+
+        a.style.left = `${x - svgW / 2}px`;
+        a.style.top = `${y - svgH / 2}px`;
+    }
 }

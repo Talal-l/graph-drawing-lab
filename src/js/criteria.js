@@ -75,18 +75,23 @@ function edgeLength(graph, len, maxLen) {
 function edgeCrossing(graph) {
     let edges = graph.edges();
     let sum = 0;
+    let isecList = [];
 
     for (let i = 0; i < edges.length - 1; i++) {
         let e1 = edges[i];
         for (let j = i + 1; j < edges.length; j++) {
             let e2 = edges[j];
             // TODO: skip if same source or same target
-            sum += edgeIntersection(e1, e2, graph) ? 1 : 0;
+            let isec = edgeIntersection(e1, e2, graph);
+            if (isec) {
+                sum++;
+                isecList.push(isec);
+            }
         }
     }
 
     let maxCrossing = sig.graph.edges().length * (sig.graph.edges().length - 1);
-    return minMaxNorm(sum, 0, maxCrossing);
+    return [minMaxNorm(sum, 0, maxCrossing), isecList];
 }
 
 /**
