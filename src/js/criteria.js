@@ -70,7 +70,7 @@ function edgeLength(graph, len, maxLen) {
 
 /** Calculate a normalized score describing the intensity of edge crossing.
  * @param {object} graph - A sigma graph instance
- * @returns {number} - Normalized score
+ * @returns {Array} - Normalized score and a list of intersection points
  */
 function edgeCrossing(graph) {
     let edges = graph.edges();
@@ -81,9 +81,14 @@ function edgeCrossing(graph) {
         let e1 = edges[i];
         for (let j = i + 1; j < edges.length; j++) {
             let e2 = edges[j];
-            // TODO: skip if same source or same target
             let isec = edgeIntersection(e1, e2, graph);
-            if (isec) {
+            if (
+                isec &&
+                e1.source !== e2.source &&
+                e1.target !== e2.target &&
+                e1.target !== e2.source &&
+                e1.source !== e2.target
+            ) {
                 sum++;
                 isecList.push(isec);
             }

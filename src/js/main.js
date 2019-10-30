@@ -650,7 +650,7 @@ function updateObjective() {
 }
 
 function updateCriteria() {
-    let showAnnotation = true;
+    let showAnnotation = false;
     // get the needed parameters
     let length = 500;
     let c = document.querySelector(".sigma-scene");
