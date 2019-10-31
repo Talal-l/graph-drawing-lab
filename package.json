@@ -1,22 +1,32 @@
 {
-    "name": "graph-drawing",
-    "version": "1.0.0",
-    "description": "",
-    "main": "main.js",
-    "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+ssh://git@gitlab.com/talal__l/graph-drawing.git"
-    },
-    "author": "",
-    "license": "ISC",
-    "bugs": {
-        "url": "https://gitlab.com/talal__l/graph-drawing/issues"
-    },
-    "homepage": "https://gitlab.com/talal__l/graph-drawing#readme",
-    "devDependencies": {
-        "eslint": "^5.16.0"
-    }
+  "name": "graph-drawing",
+  "version": "1.0.0",
+  "description": "A Javascript tool to help explore and compare different graph layout algorithms.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@gitlab.com/talal__l/graph-drawing.git"
+  },
+  "author": "Talal",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://gitlab.com/talal__l/graph-drawing/issues"
+  },
+  "homepage": "https://gitlab.com/talal__l/graph-drawing#readme",
+  "devDependencies": {
+    "electron": "^7.0.0",
+    "eslint": "^5.16.0"
+  },
+  "dependencies": {},
+  "keywords": [
+    "graph",
+    "layout",
+    "graph-drawing",
+    "network",
+    "visualization"
+  ]
 }
