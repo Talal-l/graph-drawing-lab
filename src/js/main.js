@@ -334,9 +334,9 @@ toolbar.addEventListener("click", event => {
         case "resetLayout":
             break;
         case "testingPage":
-          window.location.replace("testing.html");
+            window.location.replace("testing.html");
 
-        break;
+            break;
 
         default:
             break;
@@ -451,7 +451,7 @@ fileSelector.addEventListener("change", function handleFiles(event) {
         let content = e.target.result;
         console.log(content);
         sig.graph.clear();
-        sig.graph.read(JSON.parse(content));
+        sig.graph.read(JSON.parse(content).graph);
         fileSelector.value = "";
         refreshScreen(updateCriteria);
     };
@@ -610,14 +610,23 @@ function saveCurrentGraph() {
     let d = new Date();
     let date = `${d.getFullYear()}${d.getDate()}${d.getDate()}${d.getHours()}${d.getMinutes()}${d.getSeconds()}`;
     let json = JSON.stringify({
-        nodes: sig.graph.nodes(),
-        edges: sig.graph.edges()
+        graph: {
+            nodes: sig.graph.nodes(),
+            edges: sig.graph.edges()
+        },
+        criteria: getCriteria(),
+        layout: "Random"
     });
     let blob = new Blob([json], { type: "text/plain" });
-    let url = window.URL.createObjectURL(blob);
-    saveGraphLink.setAttribute("download", date);
-    saveGraphLink.setAttribute("href", url);
-    saveGraphLink.click();
+
+      saveFileDialog(json);
+
+}
+
+function trigerDownload() {}
+
+function saveToPath(path, data) {
+    // sav
 }
 
 function density(G) {
@@ -628,26 +637,58 @@ function density(G) {
 }
 refreshScreen(updateCriteria);
 
-function updateObjective() {
-    // get the weights
-    let w = [
-        document.querySelector("#node-occlusion-weight").value,
-        document.querySelector("#edge-node-occlusion-weight").value,
-        document.querySelector("#edge-length-weight").value,
-        document.querySelector("#edge-crossing-weight").value,
-        document.querySelector("#angular-resolution-weight").value
-    ];
+function getCriteria() {
+    return {
+        nodeOcclusion: {
+            value: parseFloat(
+                document.querySelector("#node-occlusion").innerHTML
+            ),
+            weight: parseFloat(
+                document.querySelector("#node-occlusion-weight").value
+            )
+        },
+        edgeNodeOcclusion: {
+            value: parseFloat(
+                document.querySelector("#edge-node-occlusion").innerHTML
+            ),
 
-    // get the criteria
-    let c = [
-        document.querySelector("#node-occlusion").innerHTML,
-        document.querySelector("#edge-node-occlusion").innerHTML,
-        document.querySelector("#edge-length").innerHTML,
-        document.querySelector("#edge-cross").innerHTML,
-        document.querySelector("#angular-resolution").innerHTML
-    ];
+            weight: parseFloat(
+                document.querySelector("#edge-node-occlusion-weight").value
+            )
+        },
+        edgeLength: {
+            value: parseFloat(document.querySelector("#edge-length").innerHTML),
+
+            weight: parseFloat(
+                document.querySelector("#edge-length-weight").value
+            )
+        },
+
+        edgeCross: {
+            value: parseFloat(document.querySelector("#edge-cross").innerHTML),
+
+            weight: parseFloat(
+                document.querySelector("#edge-crossing-weight").value
+            )
+        },
+        angularRes: {
+            value: parseFloat(
+                document.querySelector("#angular-resolution").innerHTML
+            ),
+
+            weight: parseFloat(
+                document.querySelector("#angular-resolution-weight").value
+            )
+        }
+    };
+}
+
+function updateObjective() {
     let wSum = 0;
-    for (let i = 0; i < 5; i++) wSum += parseFloat(w[i]) * parseFloat(c[i]);
+    let criteria = getCriteria();
+
+    for (let key in criteria)
+        wSum += criteria[key].value * criteria[key].weight;
 
     document.querySelector("#objective-function").innerHTML = wSum.toFixed(3);
 }
