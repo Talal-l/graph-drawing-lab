@@ -1,4 +1,10 @@
-// UI events
+const {Grid} =  require("ag-grid-community");
+
+
+console.log(Grid);
+
+
+
 
 // tool bar
 const genGraph = document.querySelector("#genGraph"),

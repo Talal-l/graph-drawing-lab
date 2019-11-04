@@ -13,7 +13,7 @@
     />
     <title>Testing</title>
     <script src="src/js/util.js"></script>
-    <script defer  src="src/js/testing.js"></script>
+    <script defer src="src/js/testing.js"></script>
     <!--<script defer src="src/js/main.js"></script>-->
 
     <!-- END SIGMA IMPORTS -->
@@ -35,13 +35,10 @@
       <div class="icon fas fa-save " id="saveResults">
         <span class="tooltip">Save results</span>
       </div>
-
-
     </div>
 
     <div class="wrapper">
-
-    <!--side menu -->
+      <!--side menu -->
       <div class="side-menu" id="side-menu">
         <div class="menu-section-label" data-section="menu-sec-graph-info">
           <h3>Columns</h3>
@@ -49,14 +46,52 @@
         </div>
         <div class="menu-section" id="menu-sec-graph-info">
           <div class="menu-item-checkbox">
-            <input type="checkbox" id="showNodes" value="nodes">
+            <input type="checkbox" id="showNodes" value="nodes" />
             <p class="node-num">Nodes</p>
           </div>
-        
         </div>
       </div>
 
       <main>
+        <table>
+          <tr>
+            <th>File name</th>
+            <th>Layout</th>
+            <th>Nodes</th>
+            <th>Edges</th>
+            <th>Density</th>
+            <th>Node occlusion</th>
+            <th>Node-Edge occlusion</th>
+            <th>Angular resolution</th>
+            <th>Objective</th>
+            <th>Preview</th>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+        </table>
+
         <input
           type="file"
           id="fileSelector"
@@ -67,15 +102,6 @@
         <a href="" id="saveGraphLink" download style="display: none"
           >save graph</a
         >
-
-        <div id="container">
-          <div
-            id="annotation"
-            style="position: relative;"
-            width="0"
-            height="0"
-          ></div>
-        </div>
 
         <div id="gen-modal" class="modal-container">
           <div class="modal">

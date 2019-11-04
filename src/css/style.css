@@ -1,5 +1,5 @@
 /** {*/
-  /*outline: 1px solid red;*/
+/*outline: 1px solid red;*/
 /*}*/
 html {
   width: 100%;
@@ -108,14 +108,13 @@ main {
 }
 
 /*menu item with checkbox*/
-.menu-item-checkbox{
+.menu-item-checkbox {
   display: flex;
   flex-direction: row;
   margin: 8px;
   width: 100%;
-  align-items:center;
+  align-items: center;
 }
-
 
 /*side menu end*/
 
@@ -249,4 +248,15 @@ main {
 .primary {
   background-color: #5cb85c;
   color: #fff;
+}
+
+/*testing*/
+
+table {
+  /*width based on header*/
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+  border: 3px solid black;
+  text-align: left;
 }
