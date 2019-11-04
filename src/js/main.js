@@ -6,7 +6,6 @@
 
 // criteria.js imports
 /*global edgeCrossing, nodeNodeOcclusion, edgeLength*/
-
 // graph module extensions
 // get an object of all adjacent nodes to the given node
 sigma.classes.graph.addMethod("allNeighbors", function(node) {
@@ -334,6 +333,10 @@ toolbar.addEventListener("click", event => {
             break;
         case "resetLayout":
             break;
+        case "testingPage":
+          window.location.replace("testing.html");
+
+        break;
 
         default:
             break;

@@ -98,7 +98,6 @@ main {
   width: 100%;
   justify-content: space-between;
 }
-
 .menu-item * {
   margin: 0 8px 0 0;
 }
@@ -107,6 +106,16 @@ main {
   width: 36px;
   border: none;
 }
+
+/*menu item with checkbox*/
+.menu-item-checkbox{
+  display: flex;
+  flex-direction: row;
+  margin: 8px;
+  width: 100%;
+  align-items:center;
+}
+
 
 /*side menu end*/
 
