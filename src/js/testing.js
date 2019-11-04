@@ -1,10 +1,4 @@
-const {Grid} =  require("ag-grid-community");
-
-
-console.log(Grid);
-
-
-
+const sig = new sigma();
 
 // tool bar
 const genGraph = document.querySelector("#genGraph"),
@@ -33,6 +27,7 @@ toolbar.addEventListener("click", event => {
             }
             break;
         case "genTests":
+            genModal.style.display = "flex";
             break;
         case "saveTests":
             break;
@@ -40,10 +35,10 @@ toolbar.addEventListener("click", event => {
             break;
 
         case "runTests":
-        break;
+            break;
         case "backToMain":
-          window.location.replace("index.html");
-        break;
+            window.location.replace("index.html");
+            break;
 
         default:
             break;
@@ -58,6 +53,7 @@ const genModal = document.querySelector("#gen-modal"),
     nodeError = document.querySelector("#node-error"),
     edgeNumMinEl = document.querySelector("#edge-num-min"),
     edgeNumMaxEl = document.querySelector("#edge-num-max"),
+    testNumEl = document.querySelector("#test-num"),
     edgeError = document.querySelector("#edge-error");
 genModal.addEventListener("click", event => {
     const target = event.target;
@@ -68,7 +64,8 @@ genModal.addEventListener("click", event => {
             let nodeNumMin = parseInt(nodeNumMinEl.value),
                 edgeNumMin = parseInt(edgeNumMinEl.value),
                 nodeNumMax = parseInt(nodeNumMaxEl.value),
-                edgeNumMax = parseInt(edgeNumMaxEl.value);
+                edgeNumMax = parseInt(edgeNumMaxEl.value),
+                testNum = parseInt(testNumEl.value);
 
             // toggle any existing error messages
             nodeError.innerHTML = "";
@@ -111,17 +108,15 @@ genModal.addEventListener("click", event => {
                 edgeError.style.display = "block";
                 break;
             }
-            let G = generateGraph(
+            let G = genTest(
+                testNum,
                 nodeNumMin,
                 nodeNumMax,
                 edgeNumMin,
                 edgeNumMax,
-                container
+                1900,
+                1300
             );
-            sig.graph.clear();
-            // extract the nodes and edges from the created graph and update the current instance with it
-            sig.graph.read({ nodes: G.nodes(), edges: G.edges() });
-            refreshScreen(updateCriteria);
             genModal.style.display = "none";
             break;
         case "dismiss":
@@ -211,71 +206,20 @@ for (const e of toggleEl) {
     };
 }
 
-function density(G) {
-    let V = G.nodes().length;
-    let E = G.edges().length;
-    let D = (2 * E) / (V * (V - 1)) || 0;
-    return D.toFixed(3);
-}
+function genTest(testNum, nMin, nMax, eMin, eMax, width, height) {
+    // TODO: Make this async
 
-function updateObjective() {
-    // get the weights
-    let w = [
-        document.querySelector("#node-occlusion-weight").value,
-        document.querySelector("#edge-node-occlusion-weight").value,
-        document.querySelector("#edge-length-weight").value,
-        document.querySelector("#edge-crossing-weight").value,
-        document.querySelector("#angular-resolution-weight").value
-    ];
-
-    // get the criteria
-    let c = [
-        document.querySelector("#node-occlusion").innerHTML,
-        document.querySelector("#edge-node-occlusion").innerHTML,
-        document.querySelector("#edge-length").innerHTML,
-        document.querySelector("#edge-cross").innerHTML,
-        document.querySelector("#angular-resolution").innerHTML
-    ];
-    let wSum = 0;
-    for (let i = 0; i < 5; i++) wSum += parseFloat(w[i]) * parseFloat(c[i]);
-
-    document.querySelector("#objective-function").innerHTML = wSum.toFixed(3);
-}
-
-function updateCriteria() {
-    let showAnnotation = false;
-    // get the needed parameters
-    let length = 500;
-    let c = document.querySelector(".sigma-scene");
-    let maxLen = Math.sqrt(c.width * c.width + c.height * c.height);
-
-    // calculate the needed criteria
-    let edgeLen = edgeLength(sig.graph, length, maxLen);
-    let nOcclusion = nodeNodeOcclusion(sig.graph);
-    let eOcclusion = edgeNodeOcclusion(sig.graph);
-    let [crossing, list] = edgeCrossing(sig.graph);
-    let angularRes = angularResolution(sig.graph);
-
-    // update ui
-    document.querySelector("#node-num").innerHTML = sig.graph.nodes().length;
-    document.querySelector("#edge-num").innerHTML = sig.graph.edges().length;
-    document.querySelector("#density").innerHTML = density(sig.graph);
-    document.querySelector("#node-occlusion").innerHTML = nOcclusion.toFixed(3);
-    document.querySelector(
-        "#edge-node-occlusion"
-    ).innerHTML = eOcclusion.toFixed(3);
-
-    document.querySelector("#edge-length").innerHTML = edgeLen.toFixed(3);
-    document.querySelector("#edge-cross").innerHTML = crossing.toFixed(3);
-    document.querySelector(
-        "#angular-resolution"
-    ).innerHTML = angularRes.toFixed(3);
-
-    if (showAnnotation) {
-        clearAnnotation();
-        for (let v of list) {
-            addAnnotation(v);
-        }
+    while (testNum--) {
+        let G = generateGraph(nMin, nMax, eMin, eMax, height, width);
+        let c = calculateCriteria(G);
+        let json = JSON.stringify({
+            graph: {
+                nodes: G.nodes(),
+                edges: G.edges()
+            },
+            criteria: c,
+            layout: "Random"
+        });
+        saveFile(json);
     }
-    updateObjective();
 }

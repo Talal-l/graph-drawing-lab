@@ -158,3 +158,58 @@ function adjEdges(n, E) {
     }
     return adj;
 }
+
+function density(G) {
+    let V = G.nodes().length;
+    let E = G.edges().length;
+    let D = (2 * E) / (V * (V - 1)) || 0;
+    return D.toFixed(3);
+}
+
+function calculateObjective(criteria) {
+    let wSum = 0;
+    for (let key in criteria)
+        wSum += criteria[key].value * criteria[key].weight;
+
+    return wSum;
+}
+
+// param = {criteriaName: {threshold:num, weight:num}"}
+// has a default value
+
+function calculateCriteria(graph, param) {
+    // TODO: Find a cleaner way of doing this.
+    let criteria = {
+        nodeOcclusion: {
+            //weight: param.nodeOcclusion.weight || 1,
+            weight: 1,
+            //threshold: param.nodeOcclusion.threshold || null,
+            value: nodeNodeOcclusion(graph, param)
+        },
+        edgeNodeOcclusion: {
+            //weight: param.edgeNodeOcclusion.weight || 1,
+            weight: 1,
+            //threshold: param.edgeNodeOcclusion.threshold || null,
+            value: edgeNodeOcclusion(graph, param)
+        },
+        edgeLength: {
+            //weight: param.edgeLength.weight || 1,
+            weight: 1,
+            //threshold: param.edgeLength.threshold || null,
+            value: edgeLength(graph, param)
+        },
+
+        edgeCross: {
+            //weight: param.edgeCross.weight || 1,
+            weight: 1,
+            //threshold: param.edgeCross.threshold || null,
+            value: edgeCrossing(graph, param)
+        },
+        angularRes: {
+            //weight: param.nodeOcclusion.weight || 1,
+            weight: 1,
+            //threshold: param.nodeOcclusion.threshold || null,
+            value: angularResolution(graph, param)
+        }
+    };
+}

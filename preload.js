@@ -26,11 +26,22 @@ window.saveFileDialog = function(data) {
     });
 };
 
+window.saveFile = function(data) {
+    let d = new Date();
+    let date = `${d.getFullYear()}${d.getDate()}${d.getDate()}${d.getHours()}${d.getMinutes()}${d.getSeconds()}${Math.round(
+        Math.random() * 100
+    )}`;
+
+    let filePath = "./data/" + date;
+    console.log(filePath);
+    fs.writeFileSync(filePath, data);
+};
+
 window.openFileDialog = function() {
     let dialogOptions = {
         buttonLabel: "Open"
     };
-    let filePath = dialog.showOpenDialogSync(win,dialogOptions);
+    let filePath = dialog.showOpenDialogSync(win, dialogOptions);
 
     fs.readFile(filePath, (err, data) => {
         if (err) throw err;

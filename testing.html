@@ -12,7 +12,56 @@
       crossorigin="anonymous"
     />
     <title>Testing</title>
+    <script src="sigma.js/src/sigma.core.js"></script>
+    <script src="sigma.js/src/conrad.js"></script>
+    <script src="sigma.js/src/utils/sigma.utils.js"></script>
+    <script src="sigma.js/src/utils/sigma.polyfills.js"></script>
+    <script src="sigma.js/src/sigma.settings.js"></script>
+    <script src="sigma.js/src/classes/sigma.classes.dispatcher.js"></script>
+    <script src="sigma.js/src/classes/sigma.classes.configurable.js"></script>
+    <script src="sigma.js/src/classes/sigma.classes.graph.js"></script>
+    <script src="sigma.js/src/classes/sigma.classes.camera.js"></script>
+    <script src="sigma.js/src/classes/sigma.classes.quad.js"></script>
+    <script src="sigma.js/src/classes/sigma.classes.edgequad.js"></script>
+    <script src="sigma.js/src/captors/sigma.captors.mouse.js"></script>
+    <script src="sigma.js/src/captors/sigma.captors.touch.js"></script>
+    <script src="sigma.js/src/renderers/sigma.renderers.canvas.js"></script>
+    <script src="sigma.js/src/renderers/sigma.renderers.webgl.js"></script>
+    <script src="sigma.js/src/renderers/sigma.renderers.svg.js"></script>
+    <script src="sigma.js/src/renderers/sigma.renderers.def.js"></script>
+    <script src="sigma.js/src/renderers/webgl/sigma.webgl.nodes.def.js"></script>
+    <script src="sigma.js/src/renderers/webgl/sigma.webgl.nodes.fast.js"></script>
+    <script src="sigma.js/src/renderers/webgl/sigma.webgl.edges.def.js"></script>
+    <script src="sigma.js/src/renderers/webgl/sigma.webgl.edges.fast.js"></script>
+    <script src="sigma.js/src/renderers/webgl/sigma.webgl.edges.arrow.js"></script>
+    <script src="sigma.js/src/renderers/canvas/sigma.canvas.labels.def.js"></script>
+    <script src="sigma.js/src/renderers/canvas/sigma.canvas.hovers.def.js"></script>
+    <script src="sigma.js/src/renderers/canvas/sigma.canvas.nodes.def.js"></script>
+    <script src="sigma.js/src/renderers/canvas/sigma.canvas.edges.def.js"></script>
+    <script src="sigma.js/src/renderers/canvas/sigma.canvas.edges.curve.js"></script>
+    <script src="sigma.js/src/renderers/canvas/sigma.canvas.edges.arrow.js"></script>
+    <script src="sigma.js/src/renderers/canvas/sigma.canvas.edges.curvedArrow.js"></script>
+    <script src="sigma.js/src/renderers/canvas/sigma.canvas.edgehovers.def.js"></script>
+    <script src="sigma.js/src/renderers/canvas/sigma.canvas.edgehovers.curve.js"></script>
+    <script src="sigma.js/src/renderers/canvas/sigma.canvas.edgehovers.arrow.js"></script>
+    <script src="sigma.js/src/renderers/canvas/sigma.canvas.edgehovers.curvedArrow.js"></script>
+    <script src="sigma.js/src/renderers/canvas/sigma.canvas.extremities.def.js"></script>
+    <script src="sigma.js/src/renderers/svg/sigma.svg.utils.js"></script>
+    <script src="sigma.js/src/renderers/svg/sigma.svg.nodes.def.js"></script>
+    <script src="sigma.js/src/renderers/svg/sigma.svg.edges.def.js"></script>
+    <script src="sigma.js/src/renderers/svg/sigma.svg.edges.curve.js"></script>
+    <script src="sigma.js/src/renderers/svg/sigma.svg.labels.def.js"></script>
+    <script src="sigma.js/src/renderers/svg/sigma.svg.hovers.def.js"></script>
+    <script src="sigma.js/src/middlewares/sigma.middlewares.rescale.js"></script>
+    <script src="sigma.js/src/middlewares/sigma.middlewares.copy.js"></script>
+    <script src="sigma.js/src/misc/sigma.misc.animation.js"></script>
+    <script src="sigma.js/src/misc/sigma.misc.bindEvents.js"></script>
+    <script src="sigma.js/src/misc/sigma.misc.bindDOMEvents.js"></script>
+    <script src="sigma.js/src/misc/sigma.misc.drawHovers.js"></script>
+
     <script src="src/js/util.js"></script>
+    <script defer src="src/js/criteria.js"></script>
+    <script defer src="src/js/graph.js"></script>
     <script defer src="src/js/testing.js"></script>
     <!--<script defer src="src/js/main.js"></script>-->
 
@@ -24,6 +73,10 @@
       <div class="icon fas fa-bars" id="menu"></div>
 
       <!-- graph options-->
+      <div class="icon fas fa-project-diagram" id="genTests">
+        <span class="tooltip">Generate tests</span>
+      </div>
+
       <div class="icon fas fa-arrow-left" id="backToMain">
         <span class="tooltip">Back to main</span>
       </div>
@@ -156,6 +209,31 @@
                 <label for="edge-num" id="edge-error" class="error"
                   >Error msg</label
                 >
+              </div>
+
+              <div class="input-group">
+                <label for="test-num">Number of tests</label>
+                <input
+                  type="number"
+                  name="test-num"
+                  placeholder="number of tests"
+                  id="test-num"
+                  min="0"
+                  max="1000000"
+                />
+
+                <label for="edge-num" id="edge-error" class="error"
+                  >Error msg</label
+                >
+              </div>
+
+              <div class="input-group">
+                <label for="layout">Layout</label>
+                <select id="layout">
+                  <option value="exact">Random layout</option>
+                  <option value="range">Circular</option>
+                  <option value="range">Any at random</option>
+                </select>
               </div>
               <div class="btns">
                 <button id="generate" class="primary">Generate</button>
