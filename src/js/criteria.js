@@ -203,7 +203,7 @@ function calculateCriteria(graph, param) {
             //weight: param.edgeCross.weight || 1,
             weight: 1,
             //threshold: param.edgeCross.threshold || null,
-            value: edgeCrossing(graph, param)
+            value: edgeCrossing(graph, param)[0]
         },
         angularRes: {
             //weight: param.nodeOcclusion.weight || 1,
@@ -212,4 +212,5 @@ function calculateCriteria(graph, param) {
             value: angularResolution(graph, param)
         }
     };
+  return criteria;
 }

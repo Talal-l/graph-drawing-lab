@@ -13,3 +13,6 @@ jspm_packages/
 cred/
 .vscode
 jsconfig.json
+
+# data 
+data/*

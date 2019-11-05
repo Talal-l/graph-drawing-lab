@@ -1,11 +1,14 @@
 const { dialog, BrowserWindow } = require("electron").remote;
 const fs = require("fs");
+const path = require("path");
+
 window.readFiles = function() {
     const root = fs.readdirSync("/");
     console.log(root);
 };
 
 let win = BrowserWindow.getFocusedWindow();
+
 window.saveFileDialog = function(data) {
     let dialogOptions = {
         title: "helloworld.txt",
@@ -37,14 +40,51 @@ window.saveFile = function(data) {
     fs.writeFileSync(filePath, data);
 };
 
-window.openFileDialog = function() {
+window.openFileDialog = function(fn) {
     let dialogOptions = {
-        buttonLabel: "Open"
+        buttonLabel: "Open",
+        defaultPath: "./data",
+        properties: ["multiSelections", "openFile"]
     };
-    let filePath = dialog.showOpenDialogSync(win, dialogOptions);
-
-    fs.readFile(filePath, (err, data) => {
-        if (err) throw err;
-        console.log(data);
-    });
+    let selectedFiles = dialog.showOpenDialogSync(win, dialogOptions);
+    for (let f of selectedFiles) {
+        fs.readFile(f, "utf8", (err, data) => {
+            if (err) throw err;
+            let filename = f.split(path.sep);
+            filename = filename[filename.length - 1];
+            fn(filename, data);
+        });
+    }
 };
+
+window.openDirDialog = function(fn) {
+    let dialogOptions = {
+        buttonLabel: "Open",
+        defaultPath: "./data",
+        properties: ["multiSelections", "openDirectory"]
+    };
+    let allFiles = [];
+
+    let selectedFiles = dialog.showOpenDialogSync(win, dialogOptions);
+    if (selectedFiles) {
+        for (let f of selectedFiles) allFiles = allFiles.concat(walkDir(f));
+    }
+    for (let f of allFiles) {
+        fs.readFile(f, "utf8", (err, data) => {
+            if (err) throw err;
+            let filename = f.split(path.sep);
+            filename = filename[filename.length - 1];
+            fn(filename, data);
+        });
+    }
+};
+
+function walkDir(path) {
+    let files = [];
+    if (fs.lstatSync(path).isDirectory()) {
+        console.log(path);
+        let list = fs.readdirSync(path);
+        for (let p of list) files = files.concat(walkDir(path + "/" + p));
+    } else files.push(path);
+    return files;
+}

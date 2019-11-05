@@ -26,24 +26,66 @@ toolbar.addEventListener("click", event => {
                 sideMenu.style.display = "flex";
             }
             break;
-        case "genTests":
+        case "genTest":
             genModal.style.display = "flex";
             break;
-        case "saveTests":
+        case "saveTest":
             break;
-        case "loadGraph":
+        case "loadDir":
+            openDirDialog(loadTest);
             break;
-
-        case "runTests":
+        case "loadFile":
+            openFileDialog(loadTest);
+            break;
+        case "runTest":
             break;
         case "backToMain":
             window.location.replace("index.html");
             break;
-
         default:
             break;
     }
 });
+
+function loadTest(name, data) {
+    // TODO: Don't load tests if they exist in the table (same name)
+    let obj = JSON.parse(data);
+    let graph = sig.graph.read(obj.graph);
+    let criteria = obj.criteria || calculateCriteria(graph);
+
+    let table = document.querySelector("table");
+    if (!table.querySelector(`#filename-${name}`)) {
+        let row = document.createElement("TR");
+        row.setAttribute("id", `filename-${name}`);
+
+        function addEntry(data) {
+            let td = document.createElement("TD");
+            let tn = document.createTextNode(data);
+            td.appendChild(tn);
+            console.log(td);
+            row.appendChild(td);
+        }
+
+        //  must be added following the order in the table
+        addEntry(name);
+        addEntry(obj.layout);
+        addEntry(graph.nodes().length);
+        addEntry(graph.edges().length);
+
+        addEntry("cal this");
+
+        addEntry(criteria.nodeOcclusion.value);
+        addEntry(criteria.edgeNodeOcclusion.value);
+        addEntry(criteria.edgeLength.value);
+        addEntry(criteria.angularRes.value);
+        addEntry(calculateObjective(criteria));
+
+        table.appendChild(row);
+    }
+
+    // clean the sig instance so we can load the next test
+    sig.graph.clear();
+}
 
 const genModal = document.querySelector("#gen-modal"),
     warnModal = document.querySelector("#warn-modal"),
@@ -144,22 +186,6 @@ warnModal.addEventListener("click", event => {
     }
 });
 
-fileSelector.addEventListener("change", function handleFiles(event) {
-    console.log("file");
-    let files = event.target.files;
-    let reader = new FileReader();
-
-    reader.onload = e => {
-        let content = e.target.result;
-        console.log(content);
-        sig.graph.clear();
-        sig.graph.read(JSON.parse(content));
-        fileSelector.value = "";
-        refreshScreen(updateCriteria);
-    };
-
-    reader.readAsText(files[0]);
-});
 genMode.addEventListener("change", event => {
     // toggle any existing error messages
     nodeError.innerHTML = "";
@@ -212,14 +238,16 @@ function genTest(testNum, nMin, nMax, eMin, eMax, width, height) {
     while (testNum--) {
         let G = generateGraph(nMin, nMax, eMin, eMax, height, width);
         let c = calculateCriteria(G);
-        let json = JSON.stringify({
+        let obj = {
             graph: {
                 nodes: G.nodes(),
                 edges: G.edges()
             },
             criteria: c,
             layout: "Random"
-        });
+        };
+        let json = JSON.stringify(obj);
+        console.log(obj);
         saveFile(json);
     }
 }
