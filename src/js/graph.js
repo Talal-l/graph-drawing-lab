@@ -1,8 +1,6 @@
 // sigam.js imports
 /*global sigma*/
 
-const edgeSize = 1.5;
-const nodeSize = 10;
 // util.js imports
 /*global refreshScreen, getEdgeNodes, distance, edgeIntersection, random, shuffle */
 
@@ -44,11 +42,9 @@ sigma.classes.graph.addMethod("getNodesCount", function() {
     return this.nodesCount + "";
 });
 
-
 function getEdgeId(n1, n2) {
     return `e${n1.id}-${n2.id}`;
 }
-
 
 //TODO: add options for size and color instead of hard coding them
 /**
@@ -59,6 +55,9 @@ function getEdgeId(n1, n2) {
  *
  */
 function ranSpanningTree(G) {
+    // TODO: Extract rendering details
+    const edgeSize = 1.5;
+    const nodeSize = 10;
     // deep copy of the existing nodes
     let outTree = Array.from(G.nodes());
     // select the root
@@ -93,6 +92,9 @@ function ranSpanningTree(G) {
  * @returns {object} a Sigma graph object
  */
 function generateGraph(nMin, nMax, eMin, eMax, width, height) {
+    // TODO: Extract rendering details
+    const edgeSize = 1.5;
+    const nodeSize = 10;
     const x = width;
     const y = height;
 
@@ -149,7 +151,3 @@ function generateGraph(nMin, nMax, eMin, eMax, width, height) {
     }
     return G;
 }
-
-
-
-
