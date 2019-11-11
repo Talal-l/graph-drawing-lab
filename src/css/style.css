@@ -260,3 +260,11 @@ table {
   border: 3px solid black;
   text-align: left;
 }
+
+thead {
+  border-bottom: solid;
+}
+
+#menu-sec-columns p {
+  margin: 0;
+}

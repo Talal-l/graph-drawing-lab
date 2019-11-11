@@ -62,8 +62,10 @@ function loadTest(name, data) {
             let td = document.createElement("TD");
             let tn = document.createTextNode(data);
             td.appendChild(tn);
-            console.log(td);
             row.appendChild(td);
+
+            // sync the state of the cell with its header
+            td.hidden = getCellHeader(td).hidden;
         }
 
         //  must be added following the order in the table
@@ -206,7 +208,10 @@ genMode.addEventListener("change", event => {
 
 // side menu events
 sideMenu.addEventListener("change", event => {
-    updateObjective();
+    console.log(event.target.checked);
+    let colId = event.target.getAttribute("data-col");
+    // show if checked
+    showCol(colId, event.target.checked);
 });
 
 let toggleEl = document.querySelectorAll(".menu-section-label");
@@ -250,4 +255,20 @@ function genTest(testNum, nMin, nMax, eMin, eMax, width, height) {
         console.log(obj);
         saveFile(json);
     }
+}
+
+function showCol(colId, show = true) {
+    let index = document.querySelector(`#${colId}`).cellIndex;
+    let rows = document.querySelectorAll("tr");
+    for (let r of rows) {
+        r.querySelector(`:nth-child(${index + 1})`).hidden = !show;
+    }
+}
+
+function getCellHeader(cell) {
+    let index = cell.cellIndex;
+    let colHeader = document
+        .querySelector("tr")
+        .querySelector(`:nth-child(${index + 1})`);
+    return colHeader;
 }

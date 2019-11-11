@@ -101,56 +101,80 @@
     <div class="wrapper">
       <!--side menu -->
       <div class="side-menu" id="side-menu">
-        <div class="menu-section-label" data-section="menu-sec-graph-info">
+        <div class="menu-section-label" data-section="menu-sec-columns">
           <h3>Columns</h3>
           <div class="menu-section-toggle arrow-down"></div>
         </div>
-        <div class="menu-section" id="menu-sec-graph-info">
+        <div class="menu-section" id="menu-sec-columns">
+
+            <div class="menu-item-checkbox">
+              <input type="checkbox" data-col="filename" checked="true" />
+              <p>Filename</p>
+            </div>
+
+            <div class="menu-item-checkbox">
+              <input type="checkbox" data-col="layout" checked="true" />
+              <p>Layout</p>
+            </div>
+
           <div class="menu-item-checkbox">
-            <input type="checkbox" id="showNodes" value="nodes" />
-            <p class="node-num">Nodes</p>
+            <input type="checkbox" data-col="nodes" checked="true" />
+            <p>Nodes</p>
+          </div>
+
+          <div class="menu-item-checkbox">
+            <input type="checkbox" data-col="edges" checked="true" />
+            <p>Edges</p>
+          </div>
+
+          <div class="menu-item-checkbox">
+            <input type="checkbox" data-col="density" checked="true" />
+            <p>Density</p>
+          </div>
+
+          <div class="menu-item-checkbox">
+            <input type="checkbox" data-col="node-occ" checked="true" />
+            <p>Node occulusion</p>
+          </div>
+
+          <div class="menu-item-checkbox">
+            <input type="checkbox" data-col="edge-node-occ" checked="true" />
+            <p>Edge-Node occlusion</p>
+          </div>
+
+          <div class="menu-item-checkbox">
+            <input type="checkbox" data-col="angular-res" checked="true" />
+            <p>Angular resolutio</p>
+          </div>
+
+          <div class="menu-item-checkbox">
+            <input type="checkbox" data-col="objective" checked="true" />
+            <p>Objective</p>
+          </div>
+
+          <div class="menu-item-checkbox">
+            <input type="checkbox" data-col="preview" checked="true" />
+            <p>Preview</p>
           </div>
         </div>
       </div>
 
       <main>
         <table>
-          <tr>
-            <th>File name</th>
-            <th>Layout</th>
-            <th>Nodes</th>
-            <th>Edges</th>
-            <th>Density</th>
-            <th>Node occlusion</th>
-            <th>Node-Edge occlusion</th>
-            <th>Angular resolution</th>
-            <th>Objective</th>
-            <th>Preview</th>
-          </tr>
-          <tr>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-          </tr>
-          <tr>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-          </tr>
+          <thead>
+            <tr>
+              <th id="filename">File name</th>
+              <th id="layout">Layout</th>
+              <th id="nodes">Nodes</th>
+              <th id="edges">Edges</th>
+              <th id="density">Density</th>
+              <th id="node-occ">Node occlusion</th>
+              <th id="edge-node-occ">Edge-Node occlusion</th>
+              <th id="angular-res">Angular resolution</th>
+              <th id="objective">Objective</th>
+              <th id="preview">Preview</th>
+            </tr>
+          </thead>
         </table>
 
         <input
