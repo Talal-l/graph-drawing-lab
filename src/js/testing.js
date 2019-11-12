@@ -47,12 +47,20 @@ toolbar.addEventListener("click", event => {
     }
 });
 
+function runTest(name, param) {
+
+
+
+}
 function loadTest(name, data) {
-    // TODO: Don't load tests if they exist in the table (same name)
     let obj = JSON.parse(data);
     let graph = sig.graph.read(obj.graph);
-    let criteria = obj.criteria || calculateCriteria(graph);
+    // run layout
 
+    // get results
+    let criteria = calculateCriteria(graph);
+
+    let digits = 3;
     let table = document.querySelector("table");
     if (!table.querySelector(`#filename-${name}`)) {
         let row = document.createElement("TR");
@@ -74,13 +82,13 @@ function loadTest(name, data) {
         addEntry(graph.nodes().length);
         addEntry(graph.edges().length);
 
-        addEntry("cal this");
+        addEntry(density(graph).toFixed(digits));
 
-        addEntry(criteria.nodeOcclusion.value);
-        addEntry(criteria.edgeNodeOcclusion.value);
-        addEntry(criteria.edgeLength.value);
-        addEntry(criteria.angularRes.value);
-        addEntry(calculateObjective(criteria));
+        addEntry(criteria.nodeOcclusion.value.toFixed(digits));
+        addEntry(criteria.edgeNodeOcclusion.value.toFixed(digits));
+        addEntry(criteria.edgeLength.value.toFixed(digits));
+        addEntry(criteria.angularRes.value.toFixed(digits));
+        addEntry(calculateObjective(criteria).toFixed(digits));
 
         table.appendChild(row);
     }
