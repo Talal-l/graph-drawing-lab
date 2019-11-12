@@ -110,27 +110,27 @@ function angularResolution(graph) {
     let maxSum = 0;
     for (const n of nodes) {
         let E = graph.allNeighborNodes(n);
-        if (E.length < 2) break;
+        if (E.length > 1) {
+            maxSum += 360;
+            let adj = adjEdges(n, E);
+            var maxAngle = 360 / E.length;
 
-        maxSum += 360;
-        let adj = adjEdges(n, E);
-        var maxAngle = 360 / E.length;
-
-        let i = 0;
-        for (let j = 1; j < adj.length; j++) {
-            // make sure to count overlapping edges
-            if (adj[j] > 1) {
-                sum += maxAngle * adj[j];
-            }
-            if (adj[j] && adj[i]) {
-                let a = j - i;
-                // only get the inner angle
-                if (a > 180) a = 360 - a;
-                sum += Math.abs(maxAngle - a);
-                console.log(`angle = ${a}`);
-                i = j;
-            } else if (adj[j]) {
-                i = j;
+            let i = 0;
+            for (let j = 1; j < adj.length; j++) {
+                // make sure to count overlapping edges
+                if (adj[j] > 1) {
+                    sum += maxAngle * adj[j];
+                }
+                if (adj[j] && adj[i]) {
+                    let a = j - i;
+                    // only get the inner angle
+                    if (a > 180) a = 360 - a;
+                    sum += Math.abs(maxAngle - a);
+                    console.log(`angle = ${a}`);
+                    i = j;
+                } else if (adj[j]) {
+                    i = j;
+                }
             }
         }
     }
@@ -186,7 +186,7 @@ function calculateCriteria(graph, param) {
         },
         edgeLength: {
             weight: 1,
-            value: edgeLength(graph,param)
+            value: edgeLength(graph, param)
         },
 
         edgeCross: {
