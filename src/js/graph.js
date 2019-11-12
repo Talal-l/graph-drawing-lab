@@ -108,12 +108,11 @@ function generateGraph(nMin, nMax, eMin, eMax, width, height) {
         let n = {
             label: id,
             id: id,
-            x: (0.5 - Math.random()) * x + nodeSize,
-            y: (0.5 - Math.random()) * y + nodeSize,
+            x: (0.5 - Math.random()) * x,
+            y: (0.5 - Math.random()) * y,
             size: nodeSize,
             color: "#921"
         };
-        console.log(i);
         G.addNode(n);
     }
     let nodes = G.nodes();

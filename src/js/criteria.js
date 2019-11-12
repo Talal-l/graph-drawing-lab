@@ -38,7 +38,6 @@ function edgeNodeOcclusion(graph) {
         for (let n of nodes) {
             if (n.id !== e.source && n.id !== e.target) {
                 sum += 1 / pointSegDistance(n, seg);
-                console.log(pointSegDistance(n, seg));
             }
         }
     }
@@ -56,7 +55,6 @@ function edgeLength(graph, len, maxLen) {
     let edges = graph.edges();
     let sum = 0;
     for (let e of edges) {
-        console.log(e);
         let [n1, n2] = getEdgeNodes(e, graph);
         let d = distance(n1, n2);
         sum += (d - len) ** 2;
@@ -126,7 +124,6 @@ function angularResolution(graph) {
                     // only get the inner angle
                     if (a > 180) a = 360 - a;
                     sum += Math.abs(maxAngle - a);
-                    console.log(`angle = ${a}`);
                     i = j;
                 } else if (adj[j]) {
                     i = j;

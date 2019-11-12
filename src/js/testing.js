@@ -47,11 +47,11 @@ toolbar.addEventListener("click", event => {
     }
 });
 
-function runTest(name, param) {
+// loadded tests 
+let tests = [];
 
 
-
-}
+function runTest(name, param) {}
 function loadTest(name, data) {
     let obj = JSON.parse(data);
     let graph = sig.graph.read(obj.graph);
@@ -68,8 +68,7 @@ function loadTest(name, data) {
 
         function addEntry(data) {
             let td = document.createElement("TD");
-            let tn = document.createTextNode(data);
-            td.appendChild(tn);
+            td.innerHTML = data;
             row.appendChild(td);
 
             // sync the state of the cell with its header
@@ -89,6 +88,8 @@ function loadTest(name, data) {
         addEntry(criteria.edgeLength.value.toFixed(digits));
         addEntry(criteria.angularRes.value.toFixed(digits));
         addEntry(calculateObjective(criteria).toFixed(digits));
+        addEntry(`<div class="graph-container"></div>`);
+        // TODO: draw the graph in the container
 
         table.appendChild(row);
     }
@@ -127,7 +128,6 @@ genModal.addEventListener("click", event => {
 
             if (genMode.value === "range") {
                 maxEdges = (nodeNumMax * (nodeNumMax - 1)) / 2;
-                console.log(nodeNumMax);
                 if (nodeNumMax < nodeNumMin || !nodeNumMin || !nodeNumMax) {
                     nodeError.innerHTML = "Max is less than min!";
                     nodeError.style.display = "block";
@@ -216,7 +216,6 @@ genMode.addEventListener("change", event => {
 
 // side menu events
 sideMenu.addEventListener("change", event => {
-    console.log(event.target.checked);
     let colId = event.target.getAttribute("data-col");
     // show if checked
     showCol(colId, event.target.checked);
@@ -260,7 +259,6 @@ function genTest(testNum, nMin, nMax, eMin, eMax, width, height) {
             layout: "Random"
         };
         let json = JSON.stringify(obj);
-        console.log(obj);
         saveFile(json);
     }
 }

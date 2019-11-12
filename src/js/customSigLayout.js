@@ -6,7 +6,6 @@
  
 
 (function(undefined) {
-    console.log(this);
     if (typeof sigma === "undefined") throw new Error("sigma is not declared");
 
     // Initialize package:
@@ -48,9 +47,7 @@
          * @param  {boolean} [refresh=false] Set to redraw graph
          */
         step(refresh = false) {
-            // console.log("running step of customelayout");
             let nodes = this.graph.nodes();
-            // console.log(nodes);
             let edges = this.graph.edges();
 
             let r = 450;
@@ -71,7 +68,6 @@
                     n.y += (y - n.y) / step;
                 }
             }
-            // console.log(this.graph.nodes());
 
             if (refresh) refreshScreen();
 

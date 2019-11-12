@@ -106,16 +106,15 @@
           <div class="menu-section-toggle arrow-down"></div>
         </div>
         <div class="menu-section" id="menu-sec-columns">
+          <div class="menu-item-checkbox">
+            <input type="checkbox" data-col="filename" checked="true" />
+            <p>Filename</p>
+          </div>
 
-            <div class="menu-item-checkbox">
-              <input type="checkbox" data-col="filename" checked="true" />
-              <p>Filename</p>
-            </div>
-
-            <div class="menu-item-checkbox">
-              <input type="checkbox" data-col="layout" checked="true" />
-              <p>Layout</p>
-            </div>
+          <div class="menu-item-checkbox">
+            <input type="checkbox" data-col="layout" checked="true" />
+            <p>Layout</p>
+          </div>
 
           <div class="menu-item-checkbox">
             <input type="checkbox" data-col="nodes" checked="true" />
@@ -165,23 +164,25 @@
       </div>
 
       <main>
-        <table>
-          <thead>
-            <tr>
-              <th id="filename">File name</th>
-              <th id="layout">Layout</th>
-              <th id="nodes">Nodes</th>
-              <th id="edges">Edges</th>
-              <th id="density">Density</th>
-              <th id="node-occ">Node occlusion</th>
-              <th id="edge-node-occ">Edge-Node occlusion</th>
-              <th id="edge-len">Edge length</th>
-              <th id="angular-res">Angular resolution</th>
-              <th id="objective">Objective</th>
-              <th id="preview">Preview</th>
-            </tr>
-          </thead>
-        </table>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th id="filename">Filename</th>
+                <th id="layout">Layout</th>
+                <th id="nodes">Nodes</th>
+                <th id="edges">Edges</th>
+                <th id="density">Density</th>
+                <th id="node-occ">Node occlusion</th>
+                <th id="edge-node-occ">Edge-Node occlusion</th>
+                <th id="edge-len">Edge length</th>
+                <th id="angular-res">Angular resolution</th>
+                <th id="objective">Objective</th>
+                <th id="preview">Preview</th>
+              </tr>
+            </thead>
+          </table>
+        </div>
 
         <input
           type="file"

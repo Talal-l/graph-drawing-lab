@@ -9,9 +9,6 @@
 
 // graph module extensions
 let container = document.querySelector("#container");
-console.log("container width and height");
-console.log(container.offsetWidth);
-console.log(container.offsetHeight);
 let canvasRenderer = {
     container: "container",
     type: "canvas",
@@ -46,7 +43,6 @@ let r = Math.min(container.offsetWidth, container.offsetHeight);
 
 // create graph layout
 let customLayout = new sigma.CustomLayout(sig);
-console.log(customLayout);
 // UI events
 
 // create an object to use to track select and drag operations
@@ -125,7 +121,6 @@ let graphUiModes = (function() {
         };
 
         sig.graph.addNode(n);
-        console.log(n);
         refreshScreen(updateCriteria);
     }
     function nodeSelectHandler(e) {
@@ -198,7 +193,6 @@ let graphUiModes = (function() {
         },
         erase(state = true) {
             sig.killRenderer("0");
-            console.log(sig);
             if (state) {
                 sig.unbind("clickStage");
                 sig.unbind("clickEdge");
@@ -262,7 +256,6 @@ toolbar.addEventListener("click", event => {
             }
             break;
         case "genGraph":
-            console.log(sig.graph.nodes());
             if (!sig.graph.nodes().length) genModal.style.display = "flex";
             else {
                 warnModal.style.display = "flex";
@@ -338,7 +331,6 @@ genModal.addEventListener("click", event => {
 
             if (genMode.value === "range") {
                 maxEdges = (nodeNumMax * (nodeNumMax - 1)) / 2;
-                console.log(nodeNumMax);
                 if (nodeNumMax < nodeNumMin || !nodeNumMin || !nodeNumMax) {
                     nodeError.innerHTML = "Max is less than min!";
                     nodeError.style.display = "block";
@@ -412,13 +404,11 @@ warnModal.addEventListener("click", event => {
 });
 
 fileSelector.addEventListener("change", function handleFiles(event) {
-    console.log("file");
     let files = event.target.files;
     let reader = new FileReader();
 
     reader.onload = e => {
         let content = e.target.result;
-        console.log(content);
         sig.graph.clear();
         sig.graph.read(JSON.parse(content).graph);
         fileSelector.value = "";
@@ -569,7 +559,7 @@ function updateCriteria() {
     // update ui
     document.querySelector("#node-num").innerHTML = sig.graph.nodes().length;
     document.querySelector("#edge-num").innerHTML = sig.graph.edges().length;
-    document.querySelector("#density").innerHTML = density(sig.graph);
+    document.querySelector("#density").innerHTML = density(sig.graph).toFixed(3);
     document.querySelector("#node-occlusion").innerHTML = nOcclusion.toFixed(3);
     document.querySelector(
         "#edge-node-occlusion"
