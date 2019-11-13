@@ -89,7 +89,7 @@
         <span class="tooltip">Load file</span>
       </div>
 
-      <div class="icon fas fa-play" id="runTest">
+      <div class="icon fas fa-play" id="batchRunTest">
         <span class="tooltip">Run Tests</span>
       </div>
 
@@ -266,14 +266,6 @@
                 >
               </div>
 
-              <div class="input-group">
-                <label for="layout">Layout</label>
-                <select id="layout">
-                  <option value="exact">Random layout</option>
-                  <option value="range">Circular</option>
-                  <option value="range">Any at random</option>
-                </select>
-              </div>
               <div class="btns">
                 <button id="generate" class="primary">Generate</button>
                 <button id="dismiss" class="danger">Dismiss</button>
@@ -281,12 +273,82 @@
             </div>
           </div>
         </div>
+
         <div id="warn-modal" class="modal-container">
           <div class="modal">
             <h2>A graph already exist!</h2>
             <div class="btns">
               <button id="save" class="primary">Save</button>
               <button id="delete" class="danger">Delete</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="batch-run-modal" class="modal-container">
+          <div class="modal">
+            <h2>Batch run</h2>
+            <div class="input-group-wrapper">
+              <div class="grid-container">
+                <!--Columns-->
+                <div></div>
+                <div>
+                  <h3>Weight</h3>
+                </div>
+
+                <div>
+                  <h3>Threshold</h3>
+                </div>
+
+                <!--rows-->
+                <div class="grid-criteria">
+                  <h3>Node occlusion</h3>
+                </div>
+                <div class="grid-input">
+                  <input type="number" id="node-occ-weight" value="1" />
+                </div>
+                <div class="grid-input">
+                  <input type="number" id="node-occ-threshold" value="1" />
+                </div>
+                <div class="grid-criteria">
+                  <h3>Edge node occlusion</h3>
+                </div>
+                <div class="grid-input">
+                  <input type="number" id="edge-node-occ-weight" value="1" />
+                </div>
+                <div class="grid-input">
+                  <input type="number" id="edge-node-occ-threshold" value="1" />
+                </div>
+
+                <div class="grid-criteria">
+                  <h3>Edge length</h3>
+                </div>
+                <div class="grid-input">
+                  <input type="number" id="edge-len-weight" value="1" />
+                </div>
+                <div class="grid-input">
+                  <input type="number" id="edge-len-threshold" value="1" />
+                </div>
+
+                <div class="grid-criteria">
+                  <h3>Angular resolution</h3>
+                </div>
+                <div class="grid-input">
+                  <input type="number" id="angular-res-weight" value="1" />
+                </div>
+                <div class="grid-input">
+                  <input type="number" id="angular-res-threshold" value="1" />
+                </div>
+              </div>
+              <br />
+              <label for="layout-alg">Layout</label>
+              <select id="layout-alg">
+                <option value="random">Random layout</option>
+                <option value="circular">Circular</option>
+              </select>
+              <div class="btns">
+                <button id="run" class="primary">Generate</button>
+                <button id="dismiss" class="danger">Dismiss</button>
+              </div>
             </div>
           </div>
         </div>

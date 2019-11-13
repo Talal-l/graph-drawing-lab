@@ -1,4 +1,6 @@
 const sig = new sigma();
+// loadded tests
+let loadedTests = [];
 
 // tool bar
 const genGraph = document.querySelector("#genGraph"),
@@ -37,7 +39,8 @@ toolbar.addEventListener("click", event => {
         case "loadFile":
             openFileDialog(loadTest);
             break;
-        case "runTest":
+        case "batchRunTest":
+            batchRunModal.style.display = "flex";
             break;
         case "backToMain":
             window.location.replace("index.html");
@@ -47,59 +50,120 @@ toolbar.addEventListener("click", event => {
     }
 });
 
-// loadded tests 
-let tests = [];
+function createRow(name) {
+    let row = document.createElement("TR");
+    row.setAttribute("id", `filename-${name}`);
 
+    row.add = function(data) {
+        let td = document.createElement("TD");
+        td.innerHTML = data;
+        row.appendChild(td);
 
-function runTest(name, param) {}
-function loadTest(name, data) {
-    let obj = JSON.parse(data);
-    let graph = sig.graph.read(obj.graph);
-    // run layout
+        // sync the state of the cell with its header
+        td.hidden = getCellHeader(td).hidden;
+        return row;
+    };
+    return row;
+}
 
-    // get results
-    let criteria = calculateCriteria(graph);
+function Row(name, create = false) {
+    let row = document.createElement("TR");
+    row.setAttribute("id", `filename-${name}`);
 
-    let digits = 3;
-    let table = document.querySelector("table");
-    if (!table.querySelector(`#filename-${name}`)) {
-        let row = document.createElement("TR");
-        row.setAttribute("id", `filename-${name}`);
+    return function(data) {
+        let td = document.createElement("TD");
+        td.innerHTML = data;
+        row.appendChild(td);
 
-        function addEntry(data) {
-            let td = document.createElement("TD");
-            td.innerHTML = data;
-            row.appendChild(td);
+        // sync the state of the cell with its header
+        td.hidden = getCellHeader(td).hidden;
+        return row;
+    };
+    return row;
+}
 
-            // sync the state of the cell with its header
-            td.hidden = getCellHeader(td).hidden;
-        }
+function runBatch(tests) {
+    // get paramters for test
+    let nodeOccW = parseFloat(document.querySelector("#node-occ-weight").value);
+    let nodeOccTh = parseFloat(
+        document.querySelector("#node-occ-threshold").value
+    );
+    let edgeNodeOccW = parseFloat(
+        document.querySelector("#edge-node-occ-weight").value
+    );
+    let edgeNodeOccTh = parseFloat(
+        document.querySelector("#edge-node-occ-threshold").value
+    );
+    let edgeLenW = parseFloat(document.querySelector("#edge-len-weight").value);
+    let edgeLenTh = parseFloat(
+        document.querySelector("#edge-len-threshold").value
+    );
+    let angularResW = parseFloat(
+        document.querySelector("#angular-res-weight").value
+    );
+    let angularResTh = parseFloat(
+        document.querySelector("#angular-res-threshold").value
+    );
+    let layoutAlg = document.querySelector("#layout-alg").value;
+
+    for (let filename in tests) {
+        let digits = 3;
+        let table = document.querySelector("table");
+        let obj = JSON.parse(tests[filename]);
+
+        let graph = sig.graph.read(obj.graph);
+        // run layout
+        let criteria = tests[filename].criteria || calculateCriteria(graph);
 
         //  must be added following the order in the table
-        addEntry(name);
-        addEntry(obj.layout);
-        addEntry(graph.nodes().length);
-        addEntry(graph.edges().length);
+        let row = createRow(filename)
+            .add(filename)
+            .add(layoutAlg)
+            .add(graph.nodes().length)
+            .add(graph.edges().length)
+            .add(density(graph).toFixed(digits))
+            .add(criteria.nodeOcclusion.value.toFixed(digits))
+            .add(criteria.edgeNodeOcclusion.value.toFixed(digits))
+            .add(criteria.edgeLength.value.toFixed(digits))
+            .add(criteria.angularRes.value.toFixed(digits))
+            .add(calculateObjective(criteria).toFixed(digits))
+            // TODO: draw the graph in the container
+            .add(`<div class="graph-container"></div>`);
 
-        addEntry(density(graph).toFixed(digits));
+        let oldRow = document.querySelector(`#filename-${filename}`);
+        table.replaceChild(row, oldRow);
 
-        addEntry(criteria.nodeOcclusion.value.toFixed(digits));
-        addEntry(criteria.edgeNodeOcclusion.value.toFixed(digits));
-        addEntry(criteria.edgeLength.value.toFixed(digits));
-        addEntry(criteria.angularRes.value.toFixed(digits));
-        addEntry(calculateObjective(criteria).toFixed(digits));
-        addEntry(`<div class="graph-container"></div>`);
-        // TODO: draw the graph in the container
-
-        table.appendChild(row);
+        // clean the sig instance so we can load the next test
+        sig.graph.clear();
+        tests[filename].criteria = criteria;
     }
+}
 
-    // clean the sig instance so we can load the next test
-    sig.graph.clear();
+// callback method called after a file has been read it process the data and addes the graph with the test filename to an array
+function loadTest(name, data) {
+    let table = document.querySelector("table");
+    if (!loadedTests[name]) {
+        //  must be added following the order in the table
+        let row = createRow(name)
+            .add(name)
+            .add("-")
+            .add("-")
+            .add("-")
+            .add("-")
+            .add("-")
+            .add("-")
+            .add("-")
+            .add("-")
+            .add("-")
+            .add("-");
+        table.appendChild(row);
+        loadedTests[name] = data;
+    }
 }
 
 const genModal = document.querySelector("#gen-modal"),
     warnModal = document.querySelector("#warn-modal"),
+    batchRunModal = document.querySelector("#batch-run-modal"),
     genMode = document.querySelector("#gen-mode"),
     nodeNumMinEl = document.querySelector("#node-num-min"),
     nodeNumMaxEl = document.querySelector("#node-num-max"),
@@ -108,6 +172,7 @@ const genModal = document.querySelector("#gen-modal"),
     edgeNumMaxEl = document.querySelector("#edge-num-max"),
     testNumEl = document.querySelector("#test-num"),
     edgeError = document.querySelector("#edge-error");
+
 genModal.addEventListener("click", event => {
     const target = event.target;
 
@@ -176,6 +241,7 @@ genModal.addEventListener("click", event => {
             break;
     }
 });
+
 warnModal.addEventListener("click", event => {
     const target = event.target;
 
@@ -192,6 +258,19 @@ warnModal.addEventListener("click", event => {
             sig.graph.clear();
             refreshScreen(updateCriteria);
             genModal.style.display = "flex";
+            break;
+    }
+});
+
+batchRunModal.addEventListener("click", event => {
+    const target = event.target;
+
+    switch (target.id) {
+        case "run":
+            batchRunModal.style.display = "none";
+            runBatch(loadedTests);
+        case "dismiss":
+            batchRunModal.style.display = "none";
             break;
     }
 });
