@@ -172,6 +172,9 @@ function calculateObjective(criteria) {
 }
 
 function calculateCriteria(graph, param) {
+    param = param || {};
+    let requiredLen = param.requiredLen || 12;
+    let maxEdgeLen = param.maxEdgeLen || 4400;
     let criteria = {
         nodeOcclusion: {
             weight: 1,
@@ -183,7 +186,7 @@ function calculateCriteria(graph, param) {
         },
         edgeLength: {
             weight: 1,
-            value: edgeLength(graph, param)
+            value: edgeLength(graph, requiredLen, maxEdgeLen)
         },
 
         edgeCross: {
