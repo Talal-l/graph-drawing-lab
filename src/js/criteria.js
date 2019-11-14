@@ -63,7 +63,7 @@ function edgeLength(graph, len, maxLen) {
     // in case the set length is larger than the max possible in the canvas
     maxLen = Math.max(length, maxLen);
 
-    return minMaxNorm(sum, 0, sig.graph.edges().length * maxLen ** 2);
+    return minMaxNorm(sum, 0, graph.edges().length * maxLen ** 2);
 }
 
 /** Calculate a normalized score describing the intensity of edge crossing.
@@ -93,7 +93,7 @@ function edgeCrossing(graph) {
         }
     }
 
-    let maxCrossing = sig.graph.edges().length * (sig.graph.edges().length - 1);
+    let maxCrossing = graph.edges().length * (graph.edges().length - 1);
     return [minMaxNorm(sum, 0, maxCrossing), isecList];
 }
 
