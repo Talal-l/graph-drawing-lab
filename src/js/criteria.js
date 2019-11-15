@@ -175,26 +175,27 @@ function calculateCriteria(graph, param) {
     param = param || {};
     let requiredLen = param.requiredLen || 12;
     let maxEdgeLen = param.maxEdgeLen || 4400;
+    let weights = param.weights;
     let criteria = {
         nodeOcclusion: {
-            weight: 1,
+            weight: weights.nodeOcclusion || 1,
             value: nodeNodeOcclusion(graph)
         },
         edgeNodeOcclusion: {
-            weight: 1,
+            weight: weights.edgeNodeOcclusion || 1,
             value: edgeNodeOcclusion(graph)
         },
         edgeLength: {
-            weight: 1,
+            weight: weights.edgeLength || 1,
             value: edgeLength(graph, requiredLen, maxEdgeLen)
         },
 
         edgeCross: {
-            weight: 1,
+            weight: weights.edgeCross || 1,
             value: edgeCrossing(graph)[0]
         },
         angularRes: {
-            weight: 1,
+            weight: weights.angularRes || 1,
             value: angularResolution(graph)
         }
     };

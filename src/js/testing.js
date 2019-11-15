@@ -40,7 +40,7 @@ toolbar.addEventListener("click", event => {
             openFileDialog(loadTest);
             break;
         case "batchRunTest":
-            batchRunModal.style.display = "flex";
+            runBatch(loadedTests);
             break;
         case "backToMain":
             window.location.replace("index.html");
@@ -49,7 +49,26 @@ toolbar.addEventListener("click", event => {
             break;
     }
 });
-
+// TODO: Don't use the DOM for stroage!
+function getWeights() {
+    return {
+        nodeOcclusion: parseFloat(
+            document.querySelector("#node-occlusion-weight").value
+        ),
+        edgeNodeOcclusion: parseFloat(
+            document.querySelector("#edge-node-occlusion-weight").value
+        ),
+        edgeLength: parseFloat(
+            document.querySelector("#edge-length-weight").value
+        ),
+        edgeCross: parseFloat(
+            document.querySelector("#edge-crossing-weight").value
+        ),
+        angularRes: parseFloat(
+            document.querySelector("#angular-resolution-weight").value
+        )
+    };
+}
 function createRow(name) {
     let row = document.createElement("TR");
     row.setAttribute("id", `filename-${name}`);
@@ -66,45 +85,9 @@ function createRow(name) {
     return row;
 }
 
-function Row(name, create = false) {
-    let row = document.createElement("TR");
-    row.setAttribute("id", `filename-${name}`);
-
-    return function(data) {
-        let td = document.createElement("TD");
-        td.innerHTML = data;
-        row.appendChild(td);
-
-        // sync the state of the cell with its header
-        td.hidden = getCellHeader(td).hidden;
-        return row;
-    };
-    return row;
-}
-
 function runBatch(tests) {
-    // get paramters for test
-    let nodeOccW = parseFloat(document.querySelector("#node-occ-weight").value);
-    let nodeOccTh = parseFloat(
-        document.querySelector("#node-occ-threshold").value
-    );
-    let edgeNodeOccW = parseFloat(
-        document.querySelector("#edge-node-occ-weight").value
-    );
-    let edgeNodeOccTh = parseFloat(
-        document.querySelector("#edge-node-occ-threshold").value
-    );
-    let edgeLenW = parseFloat(document.querySelector("#edge-len-weight").value);
-    let edgeLenTh = parseFloat(
-        document.querySelector("#edge-len-threshold").value
-    );
-    let angularResW = parseFloat(
-        document.querySelector("#angular-res-weight").value
-    );
-    let angularResTh = parseFloat(
-        document.querySelector("#angular-res-threshold").value
-    );
-    let layoutAlg = document.querySelector("#layout-alg").value;
+    let layout = document.querySelector("#layout-alg").value;
+    // TODO: apply the selected layout algorithm
 
     for (let filename in tests) {
         let digits = 3;
@@ -113,12 +96,14 @@ function runBatch(tests) {
 
         let graph = sig.graph.read(obj.graph);
         // run layout
-        let criteria = tests[filename].criteria || calculateCriteria(graph);
+        let criteria =
+            tests[filename].criteria ||
+            calculateCriteria(graph, { weights: getWeights(), layout });
 
         //  must be added following the order in the table
         let row = createRow(filename)
             .add(filename)
-            .add(layoutAlg)
+            .add(layout)
             .add(graph.nodes().length)
             .add(graph.edges().length)
             .add(density(graph).toFixed(digits))
@@ -262,19 +247,6 @@ warnModal.addEventListener("click", event => {
     }
 });
 
-batchRunModal.addEventListener("click", event => {
-    const target = event.target;
-
-    switch (target.id) {
-        case "run":
-            batchRunModal.style.display = "none";
-            runBatch(loadedTests);
-        case "dismiss":
-            batchRunModal.style.display = "none";
-            break;
-    }
-});
-
 genMode.addEventListener("change", event => {
     // toggle any existing error messages
     nodeError.innerHTML = "";
@@ -287,18 +259,24 @@ genMode.addEventListener("change", event => {
         edgeNumMaxEl.style.display = "inline";
     } else {
         nodeNumMaxEl.style.display = "none";
-        edgeNumMaxEl.style.display = "none";
+        edgeNumMaxEl.style.d1isplay = "none";
         nodeNumMaxEl.value = null;
         edgeNumMaxEl.value = null;
     }
 });
 
 // side menu events
-sideMenu.addEventListener("change", event => {
-    let colId = event.target.getAttribute("data-col");
-    // show if checked
-    showCol(colId, event.target.checked);
-});
+sideMenu
+    .querySelector("#menu-sec-columns")
+    .addEventListener("change", event => {
+        let colId = event.target.getAttribute("data-col");
+        // show if checked
+        showCol(colId, event.target.checked);
+    });
+
+sideMenu
+    .querySelector("#menu-sec-criteria")
+    .addEventListener("change", event => {});
 
 let toggleEl = document.querySelectorAll(".menu-section-label");
 for (const e of toggleEl) {
