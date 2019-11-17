@@ -63,20 +63,22 @@
     <script defer src="src/js/graph.js"></script>
     <script defer src="src/js/criteria.js"></script>
     <script defer src="src/js/testing.js"></script>
-    <!--<script defer src="src/js/main.js"></script>-->
 
     <!-- END SIGMA IMPORTS -->
   </head>
 
   <body>
     <div class="toolbar-container">
-      <div class="icon fas fa-bars" id="menu"></div>
+      <!-- graph options-->
+      <div class="toolbar-start">
+        <div class="icon fas fa-bars" id="menu"></div>
 
-      <div class="icon fas fa-arrow-left" id="backToMain">
-        <span class="tooltip">Back to main</span>
+        <div class="icon fas fa-arrow-left" id="backToMain">
+          <span class="tooltip">Back to main</span>
+        </div>
       </div>
 
-      <!-- graph options-->
+    <div class="toolbar-center">
       <div class="icon fas fa-project-diagram" id="genTest">
         <span class="tooltip">Generate tests</span>
       </div>
@@ -93,9 +95,10 @@
         <span class="tooltip">Run Tests</span>
       </div>
 
-      <div class="icon fas fa-save " id="saveResults">
-        <span class="tooltip">Save results</span>
       </div>
+
+      <div class="toolbar-end"></div>
+
     </div>
 
     <div class="wrapper">
@@ -147,6 +150,10 @@
           </div>
 
           <div class="menu-item-checkbox">
+            <input type="checkbox" data-col="edge-cross" checked="true" />
+            <p>Edge crossing</p>
+          </div>
+          <div class="menu-item-checkbox">
             <input type="checkbox" data-col="angular-res" checked="true" />
             <p>Angular resolution</p>
           </div>
@@ -176,6 +183,7 @@
               <p>Weight</p>
               <input
                 type="number"
+                class="weight-input"
                 id="node-occlusion-weight"
                 value="1"
                 step="0.01"
@@ -188,6 +196,7 @@
               <p>Threshold</p>
               <input
                 type="number"
+                class="threshold-input"
                 id="node-occlusion-threshold"
                 value="1"
                 step="0.01"
@@ -204,6 +213,7 @@
               <p>Weight</p>
               <input
                 type="number"
+                class="weight-input"
                 id="edge-node-occlusion-weight"
                 value="1"
                 step="0.01"
@@ -216,6 +226,7 @@
               <p>Threshold</p>
               <input
                 type="number"
+                class="threshold-input"
                 id="edge-node-occlusion-threshold"
                 value="1"
                 step="0.01"
@@ -233,6 +244,7 @@
               <p>Weight</p>
               <input
                 type="number"
+                class="weight-input"
                 id="edge-length-weight"
                 value="1"
                 step="0.01"
@@ -245,6 +257,7 @@
               <p>Threshold</p>
               <input
                 type="number"
+                class="threshold-input"
                 id="edge-length-threshold"
                 value="1"
                 step="0.01"
@@ -262,6 +275,7 @@
               <p>Weight</p>
               <input
                 type="number"
+                class="weight-input"
                 id="edge-crossing-weight"
                 value="1"
                 step="0.01"
@@ -274,6 +288,7 @@
               <p>Threshold</p>
               <input
                 type="number"
+                class="threshold-input"
                 id="edge-crossing-threshold"
                 value="1"
                 step="0.01"
@@ -290,6 +305,7 @@
               <p>Weight</p>
               <input
                 type="number"
+                class="weight-input"
                 id="angular-resolution-weight"
                 value="1"
                 step="0.01"
@@ -301,6 +317,7 @@
               <p>Threshold</p>
               <input
                 type="number"
+                class="threshold-input"
                 id="angular-resolution-threshold"
                 value="1"
                 step="0.01"
@@ -325,6 +342,7 @@
                 <th id="node-occ">Node occlusion</th>
                 <th id="edge-node-occ">Edge-Node occlusion</th>
                 <th id="edge-len">Edge length</th>
+                <th id="edge-cross">Edge crossing</th>
                 <th id="angular-res">Angular resolution</th>
                 <th id="objective">Objective</th>
                 <th id="preview">Preview</th>
@@ -429,75 +447,6 @@
             <div class="btns">
               <button id="save" class="primary">Save</button>
               <button id="delete" class="danger">Delete</button>
-            </div>
-          </div>
-        </div>
-
-        <div id="batch-run-modal" class="modal-container">
-          <div class="modal">
-            <h2>Batch run</h2>
-            <div class="input-group-wrapper">
-              <div class="grid-container">
-                <!--Columns-->
-                <div></div>
-                <div>
-                  <h3>Weight</h3>
-                </div>
-
-                <div>
-                  <h3>Threshold</h3>
-                </div>
-
-                <!--rows-->
-                <div class="grid-criteria">
-                  <h3>Node occlusion</h3>
-                </div>
-                <div class="grid-input">
-                  <input type="number" id="node-occ-weight" value="1" />
-                </div>
-                <div class="grid-input">
-                  <input type="number" id="node-occ-threshold" value="1" />
-                </div>
-                <div class="grid-criteria">
-                  <h3>Edge node occlusion</h3>
-                </div>
-                <div class="grid-input">
-                  <input type="number" id="edge-node-occ-weight" value="1" />
-                </div>
-                <div class="grid-input">
-                  <input type="number" id="edge-node-occ-threshold" value="1" />
-                </div>
-
-                <div class="grid-criteria">
-                  <h3>Edge length</h3>
-                </div>
-                <div class="grid-input">
-                  <input type="number" id="edge-len-weight" value="1" />
-                </div>
-                <div class="grid-input">
-                  <input type="number" id="edge-len-threshold" value="1" />
-                </div>
-
-                <div class="grid-criteria">
-                  <h3>Angular resolution</h3>
-                </div>
-                <div class="grid-input">
-                  <input type="number" id="angular-res-weight" value="1" />
-                </div>
-                <div class="grid-input">
-                  <input type="number" id="angular-res-threshold" value="1" />
-                </div>
-              </div>
-              <br />
-              <label for="layout-alg">Layout</label>
-              <select id="layout-alg">
-                <option value="random">Random layout</option>
-                <option value="circular">Circular</option>
-              </select>
-              <div class="btns">
-                <button id="run" class="primary">Generate</button>
-                <button id="dismiss" class="danger">Dismiss</button>
-              </div>
             </div>
           </div>
         </div>

@@ -37,7 +37,8 @@ function edgeNodeOcclusion(graph) {
         };
         for (let n of nodes) {
             if (n.id !== e.source && n.id !== e.target) {
-                sum += 1 / pointSegDistance(n, seg);
+                // TODO: remove sqrt instead of taking the pow
+                sum += 1 / Math.pow(pointSegDistance(n, seg), 2);
             }
         }
     }
@@ -176,26 +177,29 @@ function calculateCriteria(graph, param) {
     let requiredLen = param.requiredLen || 12;
     let maxEdgeLen = param.maxEdgeLen || 4400;
     let weights = param.weights;
+    function validWeight(w) {
+        return typeof w == "number" ? w : 1;
+    }
     let criteria = {
         nodeOcclusion: {
-            weight: weights.nodeOcclusion || 1,
+            weight: validWeight(weights.nodeOcclusion),
             value: nodeNodeOcclusion(graph)
         },
         edgeNodeOcclusion: {
-            weight: weights.edgeNodeOcclusion || 1,
+            weight: validWeight(weights.edgeNodeOcclusion),
             value: edgeNodeOcclusion(graph)
         },
         edgeLength: {
-            weight: weights.edgeLength || 1,
+            weight: validWeight(weights.edgeLength),
             value: edgeLength(graph, requiredLen, maxEdgeLen)
         },
 
         edgeCross: {
-            weight: weights.edgeCross || 1,
+            weight: validWeight(weights.edgeCross),
             value: edgeCrossing(graph)[0]
         },
         angularRes: {
-            weight: weights.angularRes || 1,
+            weight: validWeight(weights.angularRes),
             value: angularResolution(graph)
         }
     };

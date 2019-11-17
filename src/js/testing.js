@@ -1,6 +1,6 @@
 const sig = new sigma();
-// loadded tests
-let loadedTests = [];
+
+let loadedTests = {};
 
 // tool bar
 const genGraph = document.querySelector("#genGraph"),
@@ -49,7 +49,7 @@ toolbar.addEventListener("click", event => {
             break;
     }
 });
-// TODO: Don't use the DOM for stroage!
+// TODO: Don't use the DOM for storage!
 function getWeights() {
     return {
         nodeOcclusion: parseFloat(
@@ -69,10 +69,12 @@ function getWeights() {
         )
     };
 }
+
 function createRow(name) {
     let row = document.createElement("TR");
     row.setAttribute("id", `filename-${name}`);
 
+    // 
     row.add = function(data) {
         let td = document.createElement("TD");
         td.innerHTML = data;
@@ -82,23 +84,33 @@ function createRow(name) {
         td.hidden = getCellHeader(td).hidden;
         return row;
     };
+
     return row;
 }
 
-function runBatch(tests) {
-    let layout = document.querySelector("#layout-alg").value;
+// modifies the global variable loadedTests
+function runBatch() {
     // TODO: apply the selected layout algorithm
+    //let layout = document.querySelector("#layout-alg").value;
+    let layout = "Random";
 
-    for (let filename in tests) {
+    for (let filename in loadedTests) {
         let digits = 3;
         let table = document.querySelector("table");
-        let obj = JSON.parse(tests[filename]);
+        let obj = JSON.parse(loadedTests[filename].data);
 
         let graph = sig.graph.read(obj.graph);
-        // run layout
-        let criteria =
-            tests[filename].criteria ||
-            calculateCriteria(graph, { weights: getWeights(), layout });
+        let criteria = {};
+        // TODO: Don't recalculate the criteria if only the weights have changed
+        if (loadedTests[filename].criteria && !loadedTests[filename].modified) {
+            criteria = loadedTests[filename].criteria;
+        } else {
+            criteria = calculateCriteria(graph, {
+                weights: getWeights(),
+                layout
+            });
+            loadedTests[filename].modified = false;
+        }
 
         //  must be added following the order in the table
         let row = createRow(filename)
@@ -110,6 +122,7 @@ function runBatch(tests) {
             .add(criteria.nodeOcclusion.value.toFixed(digits))
             .add(criteria.edgeNodeOcclusion.value.toFixed(digits))
             .add(criteria.edgeLength.value.toFixed(digits))
+            .add(criteria.edgeCross.value.toFixed(digits))
             .add(criteria.angularRes.value.toFixed(digits))
             .add(calculateObjective(criteria).toFixed(digits))
             // TODO: draw the graph in the container
@@ -120,11 +133,12 @@ function runBatch(tests) {
 
         // clean the sig instance so we can load the next test
         sig.graph.clear();
-        tests[filename].criteria = criteria;
+        // TODO: remove original data?
+        loadedTests[filename].criteria = criteria;
     }
 }
 
-// callback method called after a file has been read it process the data and addes the graph with the test filename to an array
+// callback method called after a file has been read it process the data and adds the graph with the test filename to an array
 function loadTest(name, data) {
     let table = document.querySelector("table");
     if (!loadedTests[name]) {
@@ -140,9 +154,12 @@ function loadTest(name, data) {
             .add("-")
             .add("-")
             .add("-")
+            .add("-")
             .add("-");
         table.appendChild(row);
-        loadedTests[name] = data;
+        loadedTests[name] = {};
+        loadedTests[name].data = data;
+        loadedTests[name].modified = true;
     }
 }
 
@@ -210,6 +227,7 @@ genModal.addEventListener("click", event => {
                 edgeError.style.display = "block";
                 break;
             }
+            // TODO: Remove hardcoded values 
             let G = genTest(
                 testNum,
                 nodeNumMin,
@@ -276,7 +294,13 @@ sideMenu
 
 sideMenu
     .querySelector("#menu-sec-criteria")
-    .addEventListener("change", event => {});
+    .addEventListener("change", event => {
+        // reset current tests
+        if (event.target.classList.contains("weight-input")) {
+            //reset objective for all rows
+            modifyCol("objective", "-");
+        }
+    });
 
 let toggleEl = document.querySelectorAll(".menu-section-label");
 for (const e of toggleEl) {
@@ -320,11 +344,27 @@ function genTest(testNum, nMin, nMax, eMin, eMax, width, height) {
     }
 }
 
+// TODO: Better methods for dealing with columns
 function showCol(colId, show = true) {
     let index = document.querySelector(`#${colId}`).cellIndex;
     let rows = document.querySelectorAll("tr");
     for (let r of rows) {
         r.querySelector(`:nth-child(${index + 1})`).hidden = !show;
+    }
+}
+function modifyCol(headerId, data) {
+    let index = document.querySelector(`#${headerId}`).cellIndex;
+    let rows = document.querySelectorAll("tr");
+
+    if (!index) throw `${headerId} doesn't exist`;
+    for (let r of rows) {
+        // ignore header row
+        if (r.id !== "") {
+            // TODO: Find a better way to get the filename 
+            let filename = r.id.split("-")[1];
+            r.querySelector(`:nth-child(${index + 1})`).innerHTML = data;
+            loadedTests[filename].modified = true;
+        }
     }
 }
 
