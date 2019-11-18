@@ -176,7 +176,7 @@ function calculateCriteria(graph, param) {
     param = param || {};
     let requiredLen = param.requiredLen || 12;
     let maxEdgeLen = param.maxEdgeLen || 4400;
-    let weights = param.weights;
+    let weights = param.weights || {};
     function validWeight(w) {
         return typeof w == "number" ? w : 1;
     }

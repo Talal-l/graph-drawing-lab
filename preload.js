@@ -86,5 +86,6 @@ function walkDir(path) {
         let list = fs.readdirSync(path);
         for (let p of list) files = files.concat(walkDir(path + "/" + p));
     } else files.push(path);
-    return files;
+    // filter out hidden files
+    return files.filter(f => !(/(^|\/)\.[^\/\.]/g).test(f));
 }
