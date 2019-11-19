@@ -1,6 +1,6 @@
 const { dialog, BrowserWindow } = require("electron").remote;
 const fs = require("fs");
-const path = require("path");
+const sep = require("path").sep;
 
 window.readFiles = function() {
     const root = fs.readdirSync("/");
@@ -11,7 +11,6 @@ let win = BrowserWindow.getFocusedWindow();
 
 window.saveFileDialog = function(data) {
     let dialogOptions = {
-        title: "helloworld.txt",
         buttonLabel: "Save"
     };
 
@@ -50,7 +49,7 @@ window.openFileDialog = function(fn) {
     for (let f of selectedFiles) {
         fs.readFile(f, "utf8", (err, data) => {
             if (err) throw err;
-            let filename = f.split(path.sep);
+            let filename = f.split(sep);
             filename = filename[filename.length - 1];
             fn(filename, data);
         });
@@ -72,7 +71,7 @@ window.openDirDialog = function(fn) {
     for (let f of allFiles) {
         fs.readFile(f, "utf8", (err, data) => {
             if (err) throw err;
-            let filename = f.split(path.sep);
+            let filename = f.split(sep);
             filename = filename[filename.length - 1];
             fn(filename, data);
         });
@@ -84,8 +83,8 @@ function walkDir(path) {
     if (fs.lstatSync(path).isDirectory()) {
         console.log(path);
         let list = fs.readdirSync(path);
-        for (let p of list) files = files.concat(walkDir(path + "/" + p));
+        for (let p of list) files = files.concat(walkDir(path + sep + p));
     } else files.push(path);
     // filter out hidden files
-    return files.filter(f => !(/(^|\/)\.[^\/\.]/g).test(f));
+    return files.filter(f => !(/(^|\/|\\)\.[^\/\.]/g).test(f));
 }
