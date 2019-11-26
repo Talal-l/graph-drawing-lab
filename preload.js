@@ -2,27 +2,24 @@ const { dialog, BrowserWindow } = require("electron").remote;
 const fs = require("fs");
 const sep = require("path").sep;
 
-window.readFiles = function() {
-    const root = fs.readdirSync("/");
-    console.log(root);
-};
+// TODO: switch to async functions
 
 let win = BrowserWindow.getFocusedWindow();
 
 window.saveFileDialog = function(data) {
+    let d = new Date();
+    let date = `${d.getFullYear()}${d.getDate()}${d.getDate()}${d.getHours()}${d.getMinutes()}${d.getSeconds()}${Math.round(
+        Math.random() * 100
+    )}`;
     let dialogOptions = {
-        buttonLabel: "Save"
+        buttonLabel: "Save",
+        defaultPath: `${__dirname}/data/${date}.json`
     };
 
     let filePath = dialog.showSaveDialogSync(win, dialogOptions);
     if (!filePath) return;
     fs.writeFile(filePath, data, function(err) {
-        if (!err) {
-            dialog.showMessageBox({
-                message: "The file has been saved!",
-                buttons: ["OK"]
-            });
-        } else {
+        if (err) {
             dialog.showErrorBox("File save error", err);
         }
     });
@@ -34,8 +31,7 @@ window.saveFile = function(data) {
         Math.random() * 100
     )}`;
 
-    let filePath = "./data/" + date;
-    console.log(filePath);
+    let filePath = `${__dirname}/data/${date}`;
     fs.writeFileSync(filePath, data);
 };
 
@@ -51,6 +47,7 @@ window.openFileDialog = function(fn) {
             if (err) throw err;
             let filename = f.split(sep);
             filename = filename[filename.length - 1];
+            filename = filename.split(".")[0];
             fn(filename, data);
         });
     }
@@ -73,6 +70,7 @@ window.openDirDialog = function(fn) {
             if (err) throw err;
             let filename = f.split(sep);
             filename = filename[filename.length - 1];
+            filename = filename.split(".")[0];
             fn(filename, data);
         });
     }
@@ -86,5 +84,5 @@ function walkDir(path) {
         for (let p of list) files = files.concat(walkDir(path + sep + p));
     } else files.push(path);
     // filter out hidden files
-    return files.filter(f => !(/(^|\/|\\)\.[^\/\.]/g).test(f));
+    return files.filter(f => !/(^|\/|\\)\.[^\/\.]/g.test(f));
 }

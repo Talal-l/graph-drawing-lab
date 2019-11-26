@@ -1,16 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <link type="text/css" rel="stylesheet" href="./src/css/style.css" />
-    <link
-      rel="stylesheet"
-      href="https://use.fontawesome.com/releases/v5.6.3/css/all.css"
-      integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/"
-      crossorigin="anonymous"
-    />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css"
+        integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous" />
     <title>Testing</title>
     <script src="sigma.js/src/sigma.core.js"></script>
     <script src="sigma.js/src/conrad.js"></script>
@@ -59,398 +56,285 @@
     <script src="sigma.js/src/misc/sigma.misc.bindDOMEvents.js"></script>
     <script src="sigma.js/src/misc/sigma.misc.drawHovers.js"></script>
 
-    <script src="src/js/util.js"></script>
-    <script defer src="src/js/graph.js"></script>
-    <script defer src="src/js/criteria.js"></script>
-    <script defer src="src/js/testing.js"></script>
+    <script type="module" src="src/js/util.js"></script>
+    <script type="module" src="src/js/graph.js"></script>
+    <script type="module" src="src/js/metrics.js"></script>
+    <script type="module" src="src/js/testing.js"></script>
 
     <!-- END SIGMA IMPORTS -->
-  </head>
+</head>
 
-  <body>
+<body>
     <div class="toolbar-container">
-      <!-- graph options-->
-      <div class="toolbar-start">
-        <div class="icon fas fa-bars" id="menu"></div>
+        <!-- graph options-->
+        <div class="toolbar-start">
+            <div class="icon fas fa-bars" id="menu"></div>
 
-        <div class="icon fas fa-arrow-left" id="backToMain">
-          <span class="tooltip">Back to main</span>
+            <div class="icon fas fa-arrow-left" id="backToMain">
+                <span class="tooltip">Back to main</span>
+            </div>
         </div>
-      </div>
 
-    <div class="toolbar-center">
-      <div class="icon fas fa-project-diagram" id="genTest">
-        <span class="tooltip">Generate tests</span>
-      </div>
+        <div class="toolbar-center">
+            <div class="icon fas fa-project-diagram" id="genTest">
+                <span class="tooltip">Generate tests</span>
+            </div>
 
-      <div class="icon fas fa-folder" id="loadDir">
-        <span class="tooltip">Load directory</span>
-      </div>
+            <div class="icon fas fa-folder" id="loadDir">
+                <span class="tooltip">Load directory</span>
+            </div>
 
-      <div class="icon fas fa-file" id="loadFile">
-        <span class="tooltip">Load file</span>
-      </div>
+            <div class="icon fas fa-file" id="loadFile">
+                <span class="tooltip">Load file</span>
+            </div>
 
-      <div class="icon fas fa-play" id="batchRunTest">
-        <span class="tooltip">Run Tests</span>
-      </div>
+            <div class="icon fas fa-play" id="batchRunTest">
+                <span class="tooltip">Run Tests</span>
+            </div>
 
-      </div>
+        </div>
 
-      <div class="toolbar-end"></div>
+        <div class="toolbar-end"></div>
 
     </div>
 
     <div class="wrapper">
-      <!--side menu -->
-      <div class="side-menu" id="side-menu">
-        <div class="menu-section-label" data-section="menu-sec-columns">
-          <h3>Columns</h3>
-          <div class="menu-section-toggle arrow-down"></div>
-        </div>
-        <div class="menu-section" id="menu-sec-columns">
-          <div class="menu-item-checkbox">
-            <input type="checkbox" data-col="filename" checked="true" />
-            <p>Filename</p>
-          </div>
+        <!--side menu -->
+        <div class="side-menu" id="side-menu">
+            <div class="menu-section-label" data-section="menu-sec-columns">
+                <h3>Columns</h3>
+                <div class="menu-section-toggle arrow-down"></div>
+            </div>
+            <div class="menu-section" id="menu-sec-columns">
+                <div class="menu-item-checkbox">
+                    <input type="checkbox" data-col="filename" checked="true" />
+                    <p>Filename</p>
+                </div>
 
-          <div class="menu-item-checkbox">
-            <input type="checkbox" data-col="layout" checked="true" />
-            <p>Layout</p>
-          </div>
+                <div class="menu-item-checkbox">
+                    <input type="checkbox" data-col="layout" checked="true" />
+                    <p>Layout</p>
+                </div>
 
-          <div class="menu-item-checkbox">
-            <input type="checkbox" data-col="nodes" checked="true" />
-            <p>Nodes</p>
-          </div>
+                <div class="menu-item-checkbox">
+                    <input type="checkbox" data-col="nodes" checked="true" />
+                    <p>Nodes</p>
+                </div>
 
-          <div class="menu-item-checkbox">
-            <input type="checkbox" data-col="edges" checked="true" />
-            <p>Edges</p>
-          </div>
+                <div class="menu-item-checkbox">
+                    <input type="checkbox" data-col="edges" checked="true" />
+                    <p>Edges</p>
+                </div>
 
-          <div class="menu-item-checkbox">
-            <input type="checkbox" data-col="density" checked="true" />
-            <p>Density</p>
-          </div>
+                <div class="menu-item-checkbox">
+                    <input type="checkbox" data-col="density" checked="true" />
+                    <p>Density</p>
+                </div>
 
-          <div class="menu-item-checkbox">
-            <input type="checkbox" data-col="node-occ" checked="true" />
-            <p>Node occlusion</p>
-          </div>
+                <div class="menu-item-checkbox">
+                    <input type="checkbox" data-col="node-occ" checked="true" />
+                    <p>Node occlusion</p>
+                </div>
 
-          <div class="menu-item-checkbox">
-            <input type="checkbox" data-col="edge-node-occ" checked="true" />
-            <p>Edge-Node occlusion</p>
-          </div>
+                <div class="menu-item-checkbox">
+                    <input type="checkbox" data-col="edge-node-occ" checked="true" />
+                    <p>Edge-Node occlusion</p>
+                </div>
 
-          <div class="menu-item-checkbox">
-            <input type="checkbox" data-col="edge-len" checked="true" />
-            <p>Edge length</p>
-          </div>
+                <div class="menu-item-checkbox">
+                    <input type="checkbox" data-col="edge-len" checked="true" />
+                    <p>Edge length</p>
+                </div>
 
-          <div class="menu-item-checkbox">
-            <input type="checkbox" data-col="edge-cross" checked="true" />
-            <p>Edge crossing</p>
-          </div>
-          <div class="menu-item-checkbox">
-            <input type="checkbox" data-col="angular-res" checked="true" />
-            <p>Angular resolution</p>
-          </div>
+                <div class="menu-item-checkbox">
+                    <input type="checkbox" data-col="edge-cross" checked="true" />
+                    <p>Edge crossing</p>
+                </div>
+                <div class="menu-item-checkbox">
+                    <input type="checkbox" data-col="angular-res" checked="true" />
+                    <p>Angular resolution</p>
+                </div>
 
-          <div class="menu-item-checkbox">
-            <input type="checkbox" data-col="objective" checked="true" />
-            <p>Objective</p>
-          </div>
+                <div class="menu-item-checkbox">
+                    <input type="checkbox" data-col="objective" checked="true" />
+                    <p>Objective</p>
+                </div>
 
-          <div class="menu-item-checkbox">
-            <input type="checkbox" data-col="preview" checked="true" />
-            <p>Preview</p>
-          </div>
-        </div>
-
-        <div class="menu-section-label" data-section="menu-sec-criteria">
-          <h3>Criteria</h3>
-          <div class="menu-section-toggle arrow-down"></div>
-        </div>
-        <div class="menu-section" id="menu-sec-criteria">
-          <div class="menu-item-group">
-            <div class="menu-item">
-              <p>Node occlusion</p>
+                <div class="menu-item-checkbox">
+                    <input type="checkbox" data-col="preview" checked="true" />
+                    <p>Preview</p>
+                </div>
             </div>
 
-            <div class="menu-item">
-              <p>Weight</p>
-              <input
-                type="number"
-                class="weight-input"
-                id="node-occlusion-weight"
-                value="1"
-                step="0.01"
-                min="0"
-                max="1"
-              />
+            <div class="menu-section-label" data-section="menu-sec-metrics">
+                <h3>Metrics</h3>
+                <div class="menu-section-toggle arrow-down"></div>
             </div>
+            <div class="menu-section" id="menu-sec-metrics">
+                <div class="menu-item-group">
+                    <div class="menu-item">
+                        <p>Node occlusion</p>
+                    </div>
 
-            <div class="menu-item">
-              <p>Threshold</p>
-              <input
-                type="number"
-                class="threshold-input"
-                id="node-occlusion-threshold"
-                value="1"
-                step="0.01"
-                min="0"
-                max="1"
-              />
-            </div>
-          </div>
-          <div class="menu-item-group">
-            <div class="menu-item">
-              <p>Edge node occlusion:</p>
-            </div>
-            <div class="menu-item">
-              <p>Weight</p>
-              <input
-                type="number"
-                class="weight-input"
-                id="edge-node-occlusion-weight"
-                value="1"
-                step="0.01"
-                min="0"
-                max="1"
-              />
-            </div>
+                    <div class="menu-item">
+                        <p>Weight</p>
+                        <input type="number" class="weight-input" id="node-occlusion-weight" value="1" step="0.01"
+                            min="0" max="1" />
+                    </div>
 
-            <div class="menu-item">
-              <p>Threshold</p>
-              <input
-                type="number"
-                class="threshold-input"
-                id="edge-node-occlusion-threshold"
-                value="1"
-                step="0.01"
-                min="0"
-                max="1"
-              />
-            </div>
-          </div>
-          <div class="menu-item-group">
-            <div class="menu-item">
-              <p>Edge length</p>
-            </div>
+                    <div class="menu-item">
+                        <p>Threshold</p>
+                        <input type="number" class="threshold-input" id="node-occlusion-threshold" value="1" step="0.01"
+                            min="0" max="1" />
+                    </div>
+                </div>
+                <div class="menu-item-group">
+                    <div class="menu-item">
+                        <p>Edge node occlusion:</p>
+                    </div>
+                    <div class="menu-item">
+                        <p>Weight</p>
+                        <input type="number" class="weight-input" id="edge-node-occlusion-weight" value="1" step="0.01"
+                            min="0" max="1" />
+                    </div>
 
-            <div class="menu-item">
-              <p>Weight</p>
-              <input
-                type="number"
-                class="weight-input"
-                id="edge-length-weight"
-                value="1"
-                step="0.01"
-                min="0"
-                max="1"
-              />
-            </div>
+                    <div class="menu-item">
+                        <p>Threshold</p>
+                        <input type="number" class="threshold-input" id="edge-node-occlusion-threshold" value="1"
+                            step="0.01" min="0" max="1" />
+                    </div>
+                </div>
+                <div class="menu-item-group">
+                    <div class="menu-item">
+                        <p>Edge length</p>
+                    </div>
 
-            <div class="menu-item">
-              <p>Threshold</p>
-              <input
-                type="number"
-                class="threshold-input"
-                id="edge-length-threshold"
-                value="1"
-                step="0.01"
-                min="0"
-                max="1"
-              />
-            </div>
-          </div>
+                    <div class="menu-item">
+                        <p>Weight</p>
+                        <input type="number" class="weight-input" id="edge-length-weight" value="1" step="0.01" min="0"
+                            max="1" />
+                    </div>
 
-          <div class="menu-item-group">
-            <div class="menu-item">
-              <p>Edge crossing</p>
-            </div>
-            <div class="menu-item">
-              <p>Weight</p>
-              <input
-                type="number"
-                class="weight-input"
-                id="edge-crossing-weight"
-                value="1"
-                step="0.01"
-                min="0"
-                max="1"
-              />
-            </div>
+                    <div class="menu-item">
+                        <p>Threshold</p>
+                        <input type="number" class="threshold-input" id="edge-length-threshold" value="1" step="0.01"
+                            min="0" max="1" />
+                    </div>
+                </div>
 
-            <div class="menu-item">
-              <p>Threshold</p>
-              <input
-                type="number"
-                class="threshold-input"
-                id="edge-crossing-threshold"
-                value="1"
-                step="0.01"
-                min="0"
-                max="1"
-              />
-            </div>
-          </div>
-          <div class="menu-item-group">
-            <div class="menu-item">
-              <p>Angular resolution</p>
-            </div>
-            <div class="menu-item">
-              <p>Weight</p>
-              <input
-                type="number"
-                class="weight-input"
-                id="angular-resolution-weight"
-                value="1"
-                step="0.01"
-                min="0"
-                max="1"
-              />
-            </div>
-            <div class="menu-item">
-              <p>Threshold</p>
-              <input
-                type="number"
-                class="threshold-input"
-                id="angular-resolution-threshold"
-                value="1"
-                step="0.01"
-                min="0"
-                max="1"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+                <div class="menu-item-group">
+                    <div class="menu-item">
+                        <p>Edge crossing</p>
+                    </div>
+                    <div class="menu-item">
+                        <p>Weight</p>
+                        <input type="number" class="weight-input" id="edge-crossing-weight" value="1" step="0.01"
+                            min="0" max="1" />
+                    </div>
 
-      <main>
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th id="filename">Filename</th>
-                <th id="layout">Layout</th>
-                <th id="nodes">Nodes</th>
-                <th id="edges">Edges</th>
-                <th id="density">Density</th>
-                <th id="node-occ">Node occlusion</th>
-                <th id="edge-node-occ">Edge-Node occlusion</th>
-                <th id="edge-len">Edge length</th>
-                <th id="edge-cross">Edge crossing</th>
-                <th id="angular-res">Angular resolution</th>
-                <th id="objective">Objective</th>
-                <th id="preview">Preview</th>
-              </tr>
-            </thead>
-          </table>
+                    <div class="menu-item">
+                        <p>Threshold</p>
+                        <input type="number" class="threshold-input" id="edge-crossing-threshold" value="1" step="0.01"
+                            min="0" max="1" />
+                    </div>
+                </div>
+                <div class="menu-item-group">
+                    <div class="menu-item">
+                        <p>Angular resolution</p>
+                    </div>
+                    <div class="menu-item">
+                        <p>Weight</p>
+                        <input type="number" class="weight-input" id="angular-resolution-weight" value="1" step="0.01"
+                            min="0" max="1" />
+                    </div>
+                    <div class="menu-item">
+                        <p>Threshold</p>
+                        <input type="number" class="threshold-input" id="angular-resolution-threshold" value="1"
+                            step="0.01" min="0" max="1" />
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <input
-          type="file"
-          id="fileSelector"
-          multiple
-          accept="text/*"
-          style="display:none"
-        />
-        <a href="" id="saveGraphLink" download style="display: none"
-          >save graph</a
-        >
-
-        <div id="gen-modal" class="modal-container">
-          <div class="modal">
-            <div class="input-group-wrapper">
-              <div class="input-group">
-                <label for="gen-mode">Generation mode</label>
-                <select id="gen-mode">
-                  <option value="exact">Exact</option>
-                  <option value="range">Range</option>
-                </select>
-              </div>
-              <div class="input-group">
-                <label for="node-num">Number of nodes</label>
-                <input
-                  type="number"
-                  name="node-num-min"
-                  placeholder="min nodes"
-                  id="node-num-min"
-                  min="0"
-                  max="100000"
-                />
-                <input
-                  type="number"
-                  name="node-num-max"
-                  placeholder="max nodes"
-                  id="node-num-max"
-                  min="0"
-                  max="100000"
-                />
-                <label for="node-num" id="node-error" class="error"
-                  >Error msg</label
-                >
-              </div>
-              <div class="input-group">
-                <label for="edge-num">Number of edges</label>
-                <input
-                  type="number"
-                  name="edge-num-min"
-                  placeholder="min edges"
-                  id="edge-num-min"
-                  min="0"
-                  max="1000000"
-                />
-                <input
-                  type="number"
-                  name="edge-num-max"
-                  placeholder="max edges"
-                  id="edge-num-max"
-                  min="0"
-                  max="1000000"
-                />
-                <label for="edge-num" id="edge-error" class="error"
-                  >Error msg</label
-                >
-              </div>
-
-              <div class="input-group">
-                <label for="test-num">Number of tests</label>
-                <input
-                  type="number"
-                  name="test-num"
-                  placeholder="number of tests"
-                  id="test-num"
-                  min="0"
-                  max="1000000"
-                />
-
-                <label for="edge-num" id="edge-error" class="error"
-                  >Error msg</label
-                >
-              </div>
-
-              <div class="btns">
-                <button id="generate" class="primary">Generate</button>
-                <button id="dismiss" class="danger">Dismiss</button>
-              </div>
+        <main>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th id="filename">Filename</th>
+                            <th id="layout">Layout</th>
+                            <th id="nodes">Nodes</th>
+                            <th id="edges">Edges</th>
+                            <th id="density">Density</th>
+                            <th id="node-occ">Node occlusion</th>
+                            <th id="edge-node-occ">Edge-Node occlusion</th>
+                            <th id="edge-len">Edge length</th>
+                            <th id="edge-cross">Edge crossing</th>
+                            <th id="angular-res">Angular resolution</th>
+                            <th id="objective">Objective</th>
+                            <th id="preview">Preview</th>
+                        </tr>
+                    </thead>
+                </table>
             </div>
-          </div>
-        </div>
 
-        <div id="warn-modal" class="modal-container">
-          <div class="modal">
-            <h2>A graph already exist!</h2>
-            <div class="btns">
-              <button id="save" class="primary">Save</button>
-              <button id="delete" class="danger">Delete</button>
+            <input type="file" id="fileSelector" multiple accept="text/*" style="display:none" />
+            <a href="" id="saveGraphLink" download style="display: none">save graph</a>
+
+            <div id="gen-modal" class="modal-container">
+                <div class="modal">
+                    <div class="input-group-wrapper">
+                        <div class="input-group">
+                            <label for="gen-mode">Generation mode</label>
+                            <select id="gen-mode">
+                                <option value="exact">Exact</option>
+                                <option value="range">Range</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="node-num">Number of nodes</label>
+                            <input type="number" name="node-num-min" placeholder="min nodes" id="node-num-min" min="0"
+                                max="100000" />
+                            <input type="number" name="node-num-max" placeholder="max nodes" id="node-num-max" min="0"
+                                max="100000" />
+                            <label for="node-num" id="node-error" class="error">Error msg</label>
+                        </div>
+                        <div class="input-group">
+                            <label for="edge-num">Number of edges</label>
+                            <input type="number" name="edge-num-min" placeholder="min edges" id="edge-num-min" min="0"
+                                max="1000000" />
+                            <input type="number" name="edge-num-max" placeholder="max edges" id="edge-num-max" min="0"
+                                max="1000000" />
+                            <label for="edge-num" id="edge-error" class="error">Error msg</label>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="test-num">Number of tests</label>
+                            <input type="number" name="test-num" placeholder="number of tests" id="test-num" min="0"
+                                max="1000000" />
+
+                            <label for="edge-num" id="test-edge-error" class="error">Error msg</label>
+                        </div>
+
+                        <div class="btns">
+                            <button id="generate" class="primary">Generate</button>
+                            <button id="dismiss" class="danger">Dismiss</button>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-      </main>
+
+            <div id="warn-modal" class="modal-container">
+                <div class="modal">
+                    <h2>A graph already exist!</h2>
+                    <div class="btns">
+                        <button id="save" class="primary">Save</button>
+                        <button id="delete" class="danger">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
-  </body>
+</body>
+
 </html>

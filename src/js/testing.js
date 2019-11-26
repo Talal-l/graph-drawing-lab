@@ -1,3 +1,7 @@
+import { ConcreteGraph, generateGraph } from "./graph.js";
+import { refreshScreen, distance, getEdgeId } from "./util.js";
+
+// eslint-disable-next-line no-undef
 const sig = new sigma();
 
 let loadedTests = {};
@@ -34,9 +38,11 @@ toolbar.addEventListener("click", event => {
         case "saveTest":
             break;
         case "loadDir":
+            // eslint-disable-next-line no-undef
             openDirDialog(loadTest);
             break;
         case "loadFile":
+            // eslint-disable-next-line no-undef
             openFileDialog(loadTest);
             break;
         case "batchRunTest":
@@ -61,10 +67,10 @@ function getWeights() {
         edgeLength: parseFloat(
             document.querySelector("#edge-length-weight").value
         ),
-        edgeCross: parseFloat(
+        edgeCrossing: parseFloat(
             document.querySelector("#edge-crossing-weight").value
         ),
-        angularRes: parseFloat(
+        angularResolution: parseFloat(
             document.querySelector("#angular-resolution-weight").value
         )
     };
@@ -74,7 +80,7 @@ function createRow(name) {
     let row = document.createElement("TR");
     row.setAttribute("id", `filename-${name}`);
 
-    // 
+    //
     row.add = function(data) {
         let td = document.createElement("TD");
         td.innerHTML = data;
@@ -99,16 +105,15 @@ function runBatch() {
         let table = document.querySelector("table");
         let obj = JSON.parse(loadedTests[filename].data);
 
-        let graph = sig.graph.read(obj.graph);
-        let criteria = {};
-        // TODO: Don't recalculate the criteria if only the weights have changed
-        if (loadedTests[filename].criteria && !loadedTests[filename].modified) {
-            criteria = loadedTests[filename].criteria;
+        let graph = new ConcreteGraph(sig.graph.read(obj.graph));
+        graph.evaluator.weights = getWeights();
+
+        let metrics = {};
+        // TODO: Don't recalculate the metrics if only the weights have changed
+        if (loadedTests[filename].metrics && !loadedTests[filename].modified) {
+            metrics = loadedTests[filename].metrics;
         } else {
-            criteria = calculateCriteria(graph, {
-                weights: getWeights(),
-                layout
-            });
+            metrics = graph.metrics();
             loadedTests[filename].modified = false;
         }
 
@@ -118,13 +123,13 @@ function runBatch() {
             .add(layout)
             .add(graph.nodes().length)
             .add(graph.edges().length)
-            .add(density(graph).toFixed(digits))
-            .add(criteria.nodeOcclusion.value.toFixed(digits))
-            .add(criteria.edgeNodeOcclusion.value.toFixed(digits))
-            .add(criteria.edgeLength.value.toFixed(digits))
-            .add(criteria.edgeCross.value.toFixed(digits))
-            .add(criteria.angularRes.value.toFixed(digits))
-            .add(calculateObjective(criteria).toFixed(digits))
+            .add(graph.density().toFixed(digits))
+            .add(metrics.nodeOcclusion.toFixed(digits))
+            .add(metrics.edgeNodeOcclusion.toFixed(digits))
+            .add(metrics.edgeLength.toFixed(digits))
+            .add(metrics.edgeCrossing.toFixed(digits))
+            .add(metrics.angularResolution.toFixed(digits))
+            .add(graph.objective().toFixed(digits))
             // TODO: draw the graph in the container
             .add(`<div class="graph-container"></div>`);
 
@@ -134,7 +139,7 @@ function runBatch() {
         // clean the sig instance so we can load the next test
         sig.graph.clear();
         // TODO: remove original data?
-        loadedTests[filename].criteria = criteria;
+        loadedTests[filename].metrics = metrics;
     }
 }
 
@@ -227,7 +232,7 @@ genModal.addEventListener("click", event => {
                 edgeError.style.display = "block";
                 break;
             }
-            // TODO: Remove hardcoded values 
+            // TODO: Remove hardcoded values
             let G = genTest(
                 testNum,
                 nodeNumMin,
@@ -245,26 +250,6 @@ genModal.addEventListener("click", event => {
     }
 });
 
-warnModal.addEventListener("click", event => {
-    const target = event.target;
-
-    switch (target.id) {
-        case "save":
-            warnModal.style.display = "none";
-            saveCurrentGraph();
-            sig.graph.clear();
-            refreshScreen(updateCriteria);
-            genModal.style.display = "flex";
-            break;
-        case "delete":
-            warnModal.style.display = "none";
-            sig.graph.clear();
-            refreshScreen(updateCriteria);
-            genModal.style.display = "flex";
-            break;
-    }
-});
-
 genMode.addEventListener("change", event => {
     // toggle any existing error messages
     nodeError.innerHTML = "";
@@ -277,7 +262,7 @@ genMode.addEventListener("change", event => {
         edgeNumMaxEl.style.display = "inline";
     } else {
         nodeNumMaxEl.style.display = "none";
-        edgeNumMaxEl.style.d1isplay = "none";
+        edgeNumMaxEl.style.display = "none";
         nodeNumMaxEl.value = null;
         edgeNumMaxEl.value = null;
     }
@@ -293,7 +278,7 @@ sideMenu
     });
 
 sideMenu
-    .querySelector("#menu-sec-criteria")
+    .querySelector("#menu-sec-metrics")
     .addEventListener("change", event => {
         // reset current tests
         if (event.target.classList.contains("weight-input")) {
@@ -330,16 +315,14 @@ function genTest(testNum, nMin, nMax, eMin, eMax, width, height) {
 
     while (testNum--) {
         let G = generateGraph(nMin, nMax, eMin, eMax, height, width);
-        let c = calculateCriteria(G);
         let obj = {
             graph: {
                 nodes: G.nodes(),
                 edges: G.edges()
-            },
-            criteria: c,
-            layout: "Random"
+            }
         };
         let json = JSON.stringify(obj);
+        // eslint-disable-next-line no-undef
         saveFile(json);
     }
 }
@@ -360,7 +343,7 @@ function modifyCol(headerId, data) {
     for (let r of rows) {
         // ignore header row
         if (r.id !== "") {
-            // TODO: Find a better way to get the filename 
+            // TODO: Find a better way to get the filename
             let filename = r.id.split("-")[1];
             r.querySelector(`:nth-child(${index + 1})`).innerHTML = data;
             loadedTests[filename].modified = true;

@@ -1,4 +1,20 @@
-// sigma related utilities (require sigma instance)
+export {
+    refreshScreen,
+    getEdgeNodes,
+    shuffle,
+    distance,
+    pointSegDistance,
+    random,
+    Vec,
+    intersection,
+    edgeIntersection,
+    minMaxNorm,
+    transform,
+    isEmpty,
+    deepCopy,
+    getEdgeId,
+    defaults
+};
 
 /**
  * A wrapper method to use to enable us to attach a callback function to the refresh method
@@ -6,7 +22,8 @@
  * @param {function} [onRefresh]  - A function to call after a refresh
  *
  */
-function refreshScreen(onRefresh) {
+function refreshScreen(sig, onRefresh) {
+    // eslint-disable-next-line no-undef
     sig.refresh();
     if (typeof onRefresh === "function") onRefresh();
 }
@@ -65,8 +82,10 @@ function pointSegDistance(p, seg) {
     }
 
     // inside the segment
-    let proj = s0s1.scale(pv.dot(s0s1) / s0s1.dot(s0s1));
-    return distance(proj, p);
+    let proj = s0p.dot(s0s1) / s0s1.dot(s0s1);
+    let projOnSeg = s0.add(s0s1.scale(proj));
+
+    return distance(projOnSeg, p);
 }
 
 /**
@@ -198,3 +217,38 @@ function isEmpty(obj) {
     }
     return true;
 }
+function deepCopy(source) {
+    let proto = Object.getPrototypeOf(source);
+    let copy = Object.create(proto);
+    for (let key in source) {
+        // ignore proto
+        if (proto && source.hasOwnProperty(key)) {
+            if (typeof source[key] === "object") {
+                copy[key] = deepCopy(source[key]);
+            } else if (typeof source[key] === "function") {
+                copy[key] = source[key].toString();
+            }
+            copy[key] = source[key];
+        }
+    }
+    return copy;
+}
+
+function getEdgeId(n1, n2) {
+    return `e${n1.id}-${n2.id}`;
+}
+
+const defaults = {
+    metrics: {
+        weights: {
+            nodeOcclusion: 1,
+            edgeNodeOcclusion: 1,
+            edgeLength: 1,
+            edgeCrossing: 1,
+            angularResolution: 1
+        },
+        requiredEdgeLength: 1000,
+        maxEdgeLength: 4400
+    }
+};
+

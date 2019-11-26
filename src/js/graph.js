@@ -1,12 +1,10 @@
-// sigam.js imports
 /*global sigma*/
 
-// util.js imports
-/*global refreshScreen, getEdgeNodes, distance, edgeIntersection, random, shuffle */
+import { random, shuffle, deepCopy, getEdgeId, Vec } from "./util.js";
+import { Evaluator } from "./metrics.js";
 
-// criteria.js imports
-/*global edgeCrossing, nodeNodeOcclusion, edgeLength*/
-
+export { generateGraph, ConcreteGraph };
+// extend the sigma graph class
 sigma.classes.graph.addMethod("allNeighbors", function(node) {
     return this.allNeighborsIndex[node.id];
 });
@@ -41,10 +39,6 @@ sigma.classes.graph.addIndex("nodesCount", {
 sigma.classes.graph.addMethod("getNodesCount", function() {
     return this.nodesCount + "";
 });
-
-function getEdgeId(n1, n2) {
-    return `e${n1.id}-${n2.id}`;
-}
 
 //TODO: add options for size and color instead of hard coding them
 /**
@@ -149,4 +143,116 @@ function generateGraph(nMin, nMax, eMin, eMax, width, height) {
         }
     }
     return G;
+}
+// structure of an option object
+let defaultOptions = {
+    metricsParams: {
+        // TODO:better name for this
+        requiredEdgeLength: 0.15,
+        maxEdgeLength: 1,
+        weights: {
+            nodeOcclusion: 1,
+            edgeNodeOcclusion: 1,
+            edgeLength: 1,
+            edgeCrossing: 1,
+            angularResolution: 1
+        }
+    },
+    useCache: false
+};
+
+function ConcreteGraph(initGraph, options) {
+    // TODO: validate options?
+    this.options = options || defaultOptions;
+    this.useCache = this.options.useCache || defaultOptions.useCache;
+
+    let metricsParams =
+        this.options.metricsParams || defaultOptions.metricsParams;
+    // create the evaluator to use to evaluate the graph
+    this.evaluator = new Evaluator(metricsParams);
+
+    // save the init sigma graph
+    // TODO: Validate graph
+    this.initGraph = deepCopy(initGraph);
+    this.graph = deepCopy(initGraph);
+    this.changes = [];
+    this.metricsCache = null;
+
+    ConcreteGraph.prototype.objective = function(params) {
+        let weights = params ? params.weights : null;
+        this.metricsCache =
+            // invalidate cache if we have params
+            this.useCache && this.metricsCache && !params
+                ? this.metricsCache
+                : this.metrics(params);
+
+        return this.evaluator.objective(this.metricsCache, weights);
+    };
+
+    ConcreteGraph.prototype.metrics = function(params) {
+        this.metricsCache =
+            // invalidate cache if we have params
+            this.useCache && this.metricsCache && !params
+                ? this.metricsCache
+                : this.evaluator.metrics(this.graph, params);
+        return this.metricsCache;
+    };
+
+    ConcreteGraph.prototype.moveNode = function(node, vec) {
+        node = this.graph.nodes(node);
+        let nodeV = new Vec();
+        let { x, y } = nodeV.add(vec);
+
+        // make sure the values are within range
+        if (x > 1) x = 1;
+        if (y > 1) y = 1;
+        if (x < -1) x = -1;
+        if (y < -1) y = -1;
+
+        node.x = x;
+        node.y = y;
+        return node;
+    };
+    ConcreteGraph.prototype.setNodePos = function(node, { x, y }) {
+        node = this.graph.nodes(node);
+        // make sure the values are within range
+        if (x > 1) x = 1;
+        if (y > 1) y = 1;
+        if (x < -1) x = -1;
+        if (y < -1) y = -1;
+        node.x = x;
+        node.y = y;
+
+        return node;
+    };
+
+    ConcreteGraph.prototype.setGraph = function(sigGraph) {
+        this.metricsCache = null;
+        this.initGraph = deepCopy(sigGraph);
+        this.graph = deepCopy(sigGraph);
+    };
+
+    ConcreteGraph.prototype.setWeight = function(metric, weight) {
+        // TODO: validate input
+        this.weights[metric] = weight;
+    };
+
+    // return array of nodes in the graph
+    ConcreteGraph.prototype.nodes = function() {
+        // invalidate the graph and changes array
+        return this.graph.nodes();
+    };
+
+    // return array of edges in the graph
+    ConcreteGraph.prototype.edges = function() {
+        // invalidate the graph and changes array
+        return this.graph.edges();
+    };
+
+    ConcreteGraph.prototype.density = function() {
+        let V = this.graph.nodes().length;
+        let E = this.graph.edges().length;
+        let D = (2 * E) / (V * (V - 1)) || 0;
+        return D;
+    };
 }
