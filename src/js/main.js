@@ -1,13 +1,9 @@
 // sigam.js imports
 /*global sigma*/
 
-// util.js imports
-/*global refreshScreen, getEdgeNodes, distance, edgeIntersection, random, shuffle */
+import { ConcreteGraph, generateGraph } from "./graph.js";
+import { refreshScreen, distance, getEdgeId } from "./util.js";
 
-// criteria.js imports
-/*global edgeCrossing, nodeNodeOcclusion, edgeLength*/
-
-// graph module extensions
 let container = document.querySelector("#container");
 let canvasRenderer = {
     container: "container",
@@ -39,6 +35,9 @@ let sigDefaults = {
 let sig = new sigma(sigDefaults);
 let cam = sig.cameras.cam1;
 
+// create the main graph instance
+let GRAPH = new ConcreteGraph(sig.graph);
+
 let r = Math.min(container.offsetWidth, container.offsetHeight);
 
 // create graph layout
@@ -59,13 +58,13 @@ let graphUiModes = (function() {
         node.color = "#c52";
         selectedNode = node;
 
-        refreshScreen(updateCriteria);
+        refreshScreen(sig, updateMetrics);
     }
     function deSelectNode(node) {
         if (node) {
             selectedNode.color = "#921";
             selectedNode = null;
-            refreshScreen(updateCriteria);
+            refreshScreen(sig, updateMetrics);
         }
     }
 
@@ -91,8 +90,8 @@ let graphUiModes = (function() {
                     drag = true;
             });
             dragListener.bind("dragend", e => {
-                // make sure to update criteria after a node drag
-                updateCriteria(sig);
+                // make sure to update metrics after a node drag
+                updateMetrics(sig);
             });
         } else {
             sigma.plugins.killDragNodes(sig);
@@ -107,8 +106,10 @@ let graphUiModes = (function() {
         let x = event.offsetX - container.offsetWidth / 2;
         let y = event.offsetY - container.offsetHeight / 2;
 
+
         // get x,y after applying the same transformation that were applied to the camera
         let p = cam.cameraPosition(x, y);
+
 
         let id = sig.graph.getNodesCount();
         let n = {
@@ -121,7 +122,7 @@ let graphUiModes = (function() {
         };
 
         sig.graph.addNode(n);
-        refreshScreen(updateCriteria);
+        refreshScreen(sig, updateMetrics);
     }
     function nodeSelectHandler(e) {
         let node = e.data.node;
@@ -149,12 +150,12 @@ let graphUiModes = (function() {
     function nodeEraseHandler(e) {
         let clickedNode = e.data.node;
         sig.graph.dropNode(clickedNode.id);
-        refreshScreen(updateCriteria);
+        refreshScreen(sig, updateMetrics);
     }
     function edgeEraseHandler(e) {
         let clickedEdge = e.data.edge;
         sig.graph.dropEdge(clickedEdge.id);
-        refreshScreen(updateCriteria);
+        refreshScreen(sig, updateMetrics);
     }
     if (selectedEdge) sig.graph.dropEdge(selectedEdge.id);
 
@@ -208,7 +209,7 @@ let graphUiModes = (function() {
                 eraseItem.classList.remove("active");
                 sig.unbind("clickNode");
             }
-            refreshScreen(updateCriteria);
+            refreshScreen(sig, updateMetrics);
         }
     };
 })(); // immediately execute the function to return the object
@@ -241,7 +242,7 @@ toolbar.addEventListener("click", event => {
         if (active) {
             modes[active.id](false);
         }
-        // select it if was a mode item
+        // select it's a mode item
         if (target.id in modes) modes[target.id](true);
     } else {
         modes[target.id](false);
@@ -266,11 +267,16 @@ toolbar.addEventListener("click", event => {
 
             break;
         case "loadGraph":
-            fileSelector.click();
+            // eslint-disable-next-line no-undef
+            openFileDialog((filename, data) => {
+                sig.graph.clear();
+                sig.graph.read(JSON.parse(data).graph);
+                refreshScreen(sig, updateMetrics);
+            });
             break;
         case "deleteGraph":
             sig.graph.clear();
-            refreshScreen(updateCriteria);
+            refreshScreen(sig, updateMetrics);
             break;
         case "randomLayout":
             const x = container.offsetWidth;
@@ -279,22 +285,22 @@ toolbar.addEventListener("click", event => {
                 n.x = (0.5 - Math.random()) * x;
                 n.y = (0.5 - Math.random()) * y;
             });
-            refreshScreen(updateCriteria);
+            refreshScreen(sig, updateMetrics);
 
             break;
         case "runLayout":
             customLayout.run();
-            refreshScreen(updateCriteria);
+            refreshScreen(sig, updateMetrics);
 
             break;
         case "stepLayout":
             customLayout.step();
-            refreshScreen(updateCriteria);
+            refreshScreen(sig, updateMetrics);
             break;
         case "resetLayout":
             break;
-        case "testingPage":
-            window.location.replace("testing.html");
+        case "batchRunPage":
+            window.location.replace("batchRun.html");
 
             break;
 
@@ -375,7 +381,7 @@ genModal.addEventListener("click", event => {
             sig.graph.clear();
             // extract the nodes and edges from the created graph and update the current instance with it
             sig.graph.read({ nodes: G.nodes(), edges: G.edges() });
-            refreshScreen(updateCriteria);
+            refreshScreen(sig, updateMetrics);
             genModal.style.display = "none";
             break;
         case "dismiss":
@@ -391,13 +397,13 @@ warnModal.addEventListener("click", event => {
             warnModal.style.display = "none";
             saveCurrentGraph();
             sig.graph.clear();
-            refreshScreen(updateCriteria);
+            refreshScreen(sig, updateMetrics);
             genModal.style.display = "flex";
             break;
         case "delete":
             warnModal.style.display = "none";
             sig.graph.clear();
-            refreshScreen(updateCriteria);
+            refreshScreen(sig, updateMetrics);
             genModal.style.display = "flex";
             break;
     }
@@ -407,15 +413,7 @@ fileSelector.addEventListener("change", function handleFiles(event) {
     let files = event.target.files;
     let reader = new FileReader();
 
-    reader.onload = e => {
-        let content = e.target.result;
-        sig.graph.clear();
-        sig.graph.read(JSON.parse(content).graph);
-        fileSelector.value = "";
-        refreshScreen(updateCriteria);
-    };
-
-    reader.readAsText(files[0]);
+    // eslint-disable-next-line no-undef
 });
 genMode.addEventListener("change", event => {
     // toggle any existing error messages
@@ -437,10 +435,13 @@ genMode.addEventListener("change", event => {
 
 // side menu events
 sideMenu.addEventListener("change", event => {
+    // only required edge length will update metrics
     updateObjective();
+    // only required edge length will update metrics
+    if (event.target.id === "edge-length-required") updateMetrics();
 });
 
-toggleEl = document.querySelectorAll(".menu-section-label");
+let toggleEl = document.querySelectorAll(".menu-section-label");
 for (const e of toggleEl) {
     e.onclick = function() {
         let secId = this.getAttribute("data-section");
@@ -465,183 +466,84 @@ for (const e of toggleEl) {
 
 // return string to use for edge id
 function saveCurrentGraph() {
-    let saveGraphLink = document.querySelector("#saveGraphLink");
-    let d = new Date();
-    let date = `${d.getFullYear()}${d.getDate()}${d.getDate()}${d.getHours()}${d.getMinutes()}${d.getSeconds()}`;
     let json = JSON.stringify({
         graph: {
             nodes: sig.graph.nodes(),
             edges: sig.graph.edges()
-        },
-        criteria: getCriteria(),
-        layout: "Random"
+        }
     });
-    let blob = new Blob([json], { type: "text/plain" });
 
+    // eslint-disable-next-line no-undef
     saveFileDialog(json);
 }
 
-function trigerDownload() {}
+refreshScreen(sig, updateMetrics);
 
-function saveToPath(path, data) {
-    // sav
-}
-
-refreshScreen(updateCriteria);
-
-// TODO: Don't use the DOM for stroage!
-function getCriteria() {
+function getWeights() {
     return {
-        nodeOcclusion: {
-            value: parseFloat(
-                document.querySelector("#node-occlusion").innerHTML
-            ),
-            weight: parseFloat(
-                document.querySelector("#node-occlusion-weight").value
-            )
-        },
-        edgeNodeOcclusion: {
-            value: parseFloat(
-                document.querySelector("#edge-node-occlusion").innerHTML
-            ),
-
-            weight: parseFloat(
-                document.querySelector("#edge-node-occlusion-weight").value
-            )
-        },
-        edgeLength: {
-            value: parseFloat(document.querySelector("#edge-length").innerHTML),
-
-            weight: parseFloat(
-                document.querySelector("#edge-length-weight").value
-            )
-        },
-
-        edgeCross: {
-            value: parseFloat(document.querySelector("#edge-cross").innerHTML),
-
-            weight: parseFloat(
-                document.querySelector("#edge-crossing-weight").value
-            )
-        },
-        angularRes: {
-            value: parseFloat(
-                document.querySelector("#angular-resolution").innerHTML
-            ),
-
-            weight: parseFloat(
-                document.querySelector("#angular-resolution-weight").value
-            )
-        }
+        nodeOcclusion: parseFloat(
+            document.querySelector("#node-occlusion-weight").value
+        ),
+        edgeNodeOcclusion: parseFloat(
+            document.querySelector("#edge-node-occlusion-weight").value
+        ),
+        edgeLength: parseFloat(
+            document.querySelector("#edge-length-weight").value
+        ),
+        edgeCrossing: parseFloat(
+            document.querySelector("#edge-crossing-weight").value
+        ),
+        angularResolution: parseFloat(
+            document.querySelector("#angular-resolution-weight").value
+        )
     };
 }
 function updateObjective() {
-    let criteria = getCriteria();
+    GRAPH.evaluator.setWeights(getWeights());
     document.querySelector(
         "#objective-function"
-    ).innerHTML = calculateObjective(criteria).toFixed(3);
+    ).innerHTML = GRAPH.objective().toFixed(3);
 }
 
-function updateCriteria() {
-    let showAnnotation = false;
-    // get the needed parameters
-    let length = 500;
-    let c = document.querySelector(".sigma-scene");
-    let maxLen = Math.sqrt(c.width * c.width + c.height * c.height);
+function updateMetrics() {
+    GRAPH.setGraph(sig.graph);
+    GRAPH.evaluator.setWeights(getWeights());
 
-    // calculate the needed criteria
-    let edgeLen = edgeLength(sig.graph, length, maxLen);
-    let nOcclusion = nodeNodeOcclusion(sig.graph);
-    let eOcclusion = edgeNodeOcclusion(sig.graph);
-    let [crossing, list] = edgeCrossing(sig.graph);
-    let angularRes = angularResolution(sig.graph);
+    // get the needed parameters for edge length
+    let c = document.querySelector(".sigma-scene");
+    let maxEdgeLength = Math.sqrt(c.width * c.width + c.height * c.height);
+
+    let requiredEdgeLength = parseFloat(
+        document.querySelector("#edge-length-required").value
+    );
+
+    GRAPH.evaluator.setParams({
+        maxEdgeLength,
+        requiredEdgeLength
+    });
+
+    let metrics = GRAPH.metrics();
 
     // update ui
-    document.querySelector("#node-num").innerHTML = sig.graph.nodes().length;
-    document.querySelector("#edge-num").innerHTML = sig.graph.edges().length;
-    document.querySelector("#density").innerHTML = density(sig.graph).toFixed(3);
-    document.querySelector("#node-occlusion").innerHTML = nOcclusion.toFixed(3);
+    document.querySelector("#node-num").innerHTML = GRAPH.nodes().length;
+    document.querySelector("#edge-num").innerHTML = GRAPH.edges().length;
+    document.querySelector("#density").innerHTML = GRAPH.density().toFixed(3);
+    document.querySelector(
+        "#node-occlusion"
+    ).innerHTML = metrics.nodeOcclusion.toFixed(3);
     document.querySelector(
         "#edge-node-occlusion"
-    ).innerHTML = eOcclusion.toFixed(3);
+    ).innerHTML = metrics.edgeNodeOcclusion.toFixed(3);
 
-    document.querySelector("#edge-length").innerHTML = edgeLen.toFixed(3);
-    document.querySelector("#edge-cross").innerHTML = crossing.toFixed(3);
+    document.querySelector(
+        "#edge-length"
+    ).innerHTML = metrics.edgeLength.toFixed(3);
+    document.querySelector(
+        "#edge-cross"
+    ).innerHTML = metrics.edgeCrossing.toFixed(3);
     document.querySelector(
         "#angular-resolution"
-    ).innerHTML = angularRes.toFixed(3);
+    ).innerHTML = metrics.angularResolution.toFixed(3);
 
-    if (showAnnotation) {
-        clearAnnotation();
-        for (let v of list) {
-            addAnnotation(v);
-        }
-    }
     updateObjective();
-}
-
-// annotations
-
-// update annotations on camera move
-cam.bind("coordinatesUpdated", updateAnnotation);
-
-/*
- *  add circle on intersection point
- */
-function addAnnotation(vec) {
-    let annotation = document.querySelector("#annotation");
-    const ns = "http://www.w3.org/2000/svg";
-
-    // convert from cam space to graph space.
-    let { x, y } = cam.graphPosition(vec.x, vec.y);
-    x += container.offsetWidth / 2;
-    y += container.offsetHeight / 2;
-
-    let svgW = 40;
-    let svgH = 40;
-    svg = document.createElementNS(ns, "svg");
-    // record intersection point in camera so we can update annotation on camera move
-    svg.setAttributeNS(null, "data-x-cam", vec.x);
-    svg.setAttributeNS(null, "data-y-cam", vec.y);
-
-    svg.setAttributeNS(null, "class", "annotation");
-    svg.setAttributeNS(null, "width", svgW);
-    svg.setAttributeNS(null, "height", svgH);
-    svg.style.position = "absolute";
-    svg.style.left = `${x - svgW / 2}px`;
-    svg.style.top = `${y - svgH / 2}px`;
-
-    let cir = document.createElementNS(ns, "circle");
-    cir.setAttributeNS(null, "cx", svgW / 2);
-    cir.setAttributeNS(null, "cy", svgH / 2);
-    cir.setAttributeNS(null, "r", 10);
-    cir.setAttributeNS(null, "fill", "red");
-
-    svg.appendChild(cir);
-    annotation.appendChild(svg);
-}
-
-function clearAnnotation() {
-    document.querySelector("#annotation").innerHTML = "";
-}
-
-function updateAnnotation() {
-    let annotations =
-        Array.from(document.querySelectorAll(".annotation")) || [];
-    for (let a of annotations) {
-        let svgW = a.getAttribute("width");
-        let svgH = a.getAttribute("height");
-
-        // coordinate in camera space
-        let xc = parseFloat(a.getAttribute("data-x-cam"));
-        let yc = parseFloat(a.getAttribute("data-y-cam"));
-
-        // convert from camera space to graph space.
-        let { x, y } = cam.graphPosition(xc, yc);
-        x += container.offsetWidth / 2;
-        y += container.offsetHeight / 2;
-
-        a.style.left = `${x - svgW / 2}px`;
-        a.style.top = `${y - svgH / 2}px`;
-    }
 }

@@ -8,8 +8,7 @@
     <link type="text/css" rel="stylesheet" href="./src/css/style.css" />
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css"
         integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous" />
-    <title>graph</title>
-    <!-- START SIGMA IMPORTS -->
+    <title>Batch Run</title>
     <script src="sigma.js/src/sigma.core.js"></script>
     <script src="sigma.js/src/conrad.js"></script>
     <script src="sigma.js/src/utils/sigma.utils.js"></script>
@@ -56,112 +55,114 @@
     <script src="sigma.js/src/misc/sigma.misc.bindEvents.js"></script>
     <script src="sigma.js/src/misc/sigma.misc.bindDOMEvents.js"></script>
     <script src="sigma.js/src/misc/sigma.misc.drawHovers.js"></script>
-    <!--plugins-->
-    <script src="sigma.js/plugins/sigma.plugins.dragNodes/sigma.plugins.dragNodes.js"></script>
-    <script src="sigma.js/plugins/sigma.plugins.animate/sigma.plugins.animate.js"></script>
-    <!--layouts-->
 
-    <!-- END SIGMA IMPORTS -->
-
-
-    <script src="./src/js/customSigLayout.js"></script>
-
-    <!--imports-->
     <script type="module" src="src/js/util.js"></script>
     <script type="module" src="src/js/graph.js"></script>
     <script type="module" src="src/js/metrics.js"></script>
-    <script type="module" src="src/js/main.js"></script>
+    <script type="module" src="src/js/batchRun.js"></script>
 
+    <!-- END SIGMA IMPORTS -->
 </head>
 
 <body>
     <div class="toolbar-container">
+        <!-- graph options-->
         <div class="toolbar-start">
             <div class="icon fas fa-bars" id="menu"></div>
 
-            <!-- graph options-->
-            <div class="icon fas fa-project-diagram" id="genGraph">
-                <span class="tooltip">Generate graph</span>
-            </div>
-
-            <div class="icon fas fa-save " id="saveGraph">
-                <span class="tooltip">Save graph</span>
-            </div>
-
-            <div class="icon fas fa-upload" id="loadGraph">
-                <span class="tooltip">Upload graph</span>
-            </div>
-
-            <div class="icon fas fa-trash" id="deleteGraph">
-                <span class="tooltip">Delete graph</span>
+            <div class="icon fas fa-arrow-left" id="backToMain">
+                <span class="tooltip">Back to main</span>
             </div>
         </div>
 
-        <!-- modes-->
         <div class="toolbar-center">
-            <div class="icon fas fa-mitten group-start" id="moveNode">
-                <span class="tooltip">Move node</span>
+            <div class="icon fas fa-project-diagram" id="genTest">
+                <span class="tooltip">Generate tests</span>
             </div>
 
-            <div class="icon fas fa-plus-circle " id="addNode">
-                <span class="tooltip">Add node</span>
+            <div class="icon fas fa-folder" id="loadDir">
+                <span class="tooltip">Load directory</span>
             </div>
 
-            <div class="icon fas fa-bezier-curve" id="addEdge">
-                <span class="tooltip">Add edge</span>
+            <div class="icon fas fa-file" id="loadFile">
+                <span class="tooltip">Load file</span>
             </div>
 
-            <div class="icon fas fa-eraser" id="erase">
-                <span class="tooltip">Delete node/edge</span>
+            <div class="icon fas fa-play" id="batchRunTest">
+                <span class="tooltip">Run Tests</span>
             </div>
+
         </div>
 
-        <!-- layout options -->
-        <div class="toolbar-end">
-            <div class="icon fas fa-random group-start" id="randomLayout">
-                <span class="tooltip">Randomize layout</span>
-            </div>
-            <div class="icon fas fa-play" id="runLayout">
-                <span class="tooltip">Run layout</span>
-            </div>
+        <div class="toolbar-end"></div>
 
-            <div class="icon fas fa-step-forward" id="stepLayout">
-                <span class="tooltip">Run step</span>
-            </div>
-
-            <div class="icon fas fa-power-off" id="resetLayout">
-                <span class="tooltip">Reset layout</span>
-            </div>
-
-            <div class="icon fas fa-flask" id="batchRunPage">
-                <span class="tooltip">Batch run</span>
-            </div>
-        </div>
     </div>
 
-    <!--side menu -->
     <div class="wrapper">
+        <!--side menu -->
         <div class="side-menu" id="side-menu">
-            <div class="menu-section-label" data-section="menu-sec-graph-info">
-                <h3>Graph info</h3>
+            <div class="menu-section-label" data-section="menu-sec-columns">
+                <h3>Columns</h3>
                 <div class="menu-section-toggle arrow-down"></div>
             </div>
-            <div class="menu-section" id="menu-sec-graph-info">
-                <div class="menu-item">
-                    <p class="node-num">Number of nodes</p>
-                    <p id="node-num">0</p>
+            <div class="menu-section" id="menu-sec-columns">
+                <div class="menu-item-checkbox">
+                    <input type="checkbox" data-col="filename" checked="true" />
+                    <p>Filename</p>
                 </div>
-                <div class="menu-item">
-                    <p>Number of edges</p>
-                    <p id="edge-num">0</p>
+
+                <div class="menu-item-checkbox">
+                    <input type="checkbox" data-col="layout" checked="true" />
+                    <p>Layout</p>
                 </div>
-                <div class="menu-item">
-                    <p>Graph density</p>
-                    <p id="density">0</p>
+
+                <div class="menu-item-checkbox">
+                    <input type="checkbox" data-col="nodes" checked="true" />
+                    <p>Nodes</p>
                 </div>
-                <div class="menu-item">
-                    <p>Objective function</p>
-                    <p id="objective-function">0</p>
+
+                <div class="menu-item-checkbox">
+                    <input type="checkbox" data-col="edges" checked="true" />
+                    <p>Edges</p>
+                </div>
+
+                <div class="menu-item-checkbox">
+                    <input type="checkbox" data-col="density" checked="true" />
+                    <p>Density</p>
+                </div>
+
+                <div class="menu-item-checkbox">
+                    <input type="checkbox" data-col="node-occlusion" checked="true" />
+                    <p>Node occlusion</p>
+                </div>
+
+                <div class="menu-item-checkbox">
+                    <input type="checkbox" data-col="edge-node-occlusion" checked="true" />
+                    <p>Edge-Node occlusion</p>
+                </div>
+
+                <div class="menu-item-checkbox">
+                    <input type="checkbox" data-col="edge-length" checked="true" />
+                    <p>Edge length</p>
+                </div>
+
+                <div class="menu-item-checkbox">
+                    <input type="checkbox" data-col="edge-crossing" checked="true" />
+                    <p>Edge crossing</p>
+                </div>
+                <div class="menu-item-checkbox">
+                    <input type="checkbox" data-col="angular-resolution" checked="true" />
+                    <p>Angular resolution</p>
+                </div>
+
+                <div class="menu-item-checkbox">
+                    <input type="checkbox" data-col="objective" checked="true" />
+                    <p>Objective</p>
+                </div>
+
+                <div class="menu-item-checkbox">
+                    <input type="checkbox" data-col="preview" checked="true" />
+                    <p>Preview</p>
                 </div>
             </div>
 
@@ -173,33 +174,35 @@
                 <div class="menu-item-group">
                     <div class="menu-item">
                         <p>Node occlusion</p>
-                        <p id="node-occlusion">0</p>
                     </div>
 
                     <div class="menu-item">
                         <p>Weight</p>
-                        <input type="number" id="node-occlusion-weight" value="1" step="0.01" min="0" max="1" />
+                        <input type="number" class="weight-input" id="node-occlusion-weight" value="1" step="0.01"
+                            min="0" max="1" />
                     </div>
+
                 </div>
                 <div class="menu-item-group">
                     <div class="menu-item">
                         <p>Edge node occlusion:</p>
-                        <p id="edge-node-occlusion">0</p>
                     </div>
                     <div class="menu-item">
                         <p>Weight</p>
-                        <input type="number" id="edge-node-occlusion-weight" value="1" step="0.01" min="0" max="1" />
+                        <input type="number" class="weight-input" id="edge-node-occlusion-weight" value="1" step="0.01"
+                            min="0" max="1" />
                     </div>
+
                 </div>
                 <div class="menu-item-group">
                     <div class="menu-item">
                         <p>Edge length</p>
-                        <p id="edge-length">0</p>
                     </div>
 
                     <div class="menu-item">
                         <p>Weight</p>
-                        <input type="number" id="edge-length-weight" value="1" step="0.01" min="0" max="1" />
+                        <input type="number" class="weight-input" id="edge-length-weight" value="1" step="0.01" min="0"
+                            max="1" />
                     </div>
 
                     <div class="menu-item">
@@ -212,35 +215,51 @@
                 <div class="menu-item-group">
                     <div class="menu-item">
                         <p>Edge crossing</p>
-                        <p id="edge-cross">0</p>
                     </div>
                     <div class="menu-item">
                         <p>Weight</p>
-                        <input type="number" id="edge-crossing-weight" value="1" step="0.01" min="0" max="1" />
+                        <input type="number" class="weight-input" id="edge-crossing-weight" value="1" step="0.01"
+                            min="0" max="1" />
                     </div>
+
                 </div>
                 <div class="menu-item-group">
                     <div class="menu-item">
                         <p>Angular resolution</p>
-                        <p id="angular-resolution">0</p>
                     </div>
                     <div class="menu-item">
                         <p>Weight</p>
-                        <input type="number" id="angular-resolution-weight" value="1" step="0.01" min="0" max="1" />
+                        <input type="number" class="weight-input" id="angular-resolution-weight" value="1" step="0.01"
+                            min="0" max="1" />
                     </div>
                 </div>
             </div>
         </div>
 
-        <!--side menu -->
-
         <main>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th id="filename">Filename</th>
+                            <th id="layout">Layout</th>
+                            <th id="nodes">Nodes</th>
+                            <th id="edges">Edges</th>
+                            <th id="density">Density</th>
+                            <th id="node-occlusion">Node occlusion</th>
+                            <th id="edge-node-occlusion">Edge-Node occlusion</th>
+                            <th id="edge-length">Edge length</th>
+                            <th id="edge-crossing">Edge crossing</th>
+                            <th id="angular-resolution">Angular resolution</th>
+                            <th id="objective">Objective</th>
+                            <th id="preview">Preview</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+
             <input type="file" id="fileSelector" multiple accept="text/*" style="display:none" />
             <a href="" id="saveGraphLink" download style="display: none">save graph</a>
-
-            <div id="container">
-                <div id="annotation" style="position: relative;" width="0" height="0"></div>
-            </div>
 
             <div id="gen-modal" class="modal-container">
                 <div class="modal">
@@ -268,6 +287,15 @@
                                 max="1000000" />
                             <label for="edge-num" id="edge-error" class="error">Error msg</label>
                         </div>
+
+                        <div class="input-group">
+                            <label for="test-num">Number of tests</label>
+                            <input type="number" name="test-num" placeholder="number of tests" id="test-num" min="0"
+                                max="1000000" />
+
+                            <label for="edge-num" id="test-edge-error" class="error">Error msg</label>
+                        </div>
+
                         <div class="btns">
                             <button id="generate" class="primary">Generate</button>
                             <button id="dismiss" class="danger">Dismiss</button>
@@ -275,6 +303,7 @@
                     </div>
                 </div>
             </div>
+
             <div id="warn-modal" class="modal-container">
                 <div class="modal">
                     <h2>A graph already exist!</h2>
