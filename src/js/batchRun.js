@@ -26,10 +26,6 @@ toolbar.addEventListener("click", event => {
             break;
         case "saveTest":
             break;
-        case "loadDir":
-            // eslint-disable-next-line no-undef
-            openDirDialog(loadTest);
-            break;
         case "loadFile":
             // eslint-disable-next-line no-undef
             openFileDialog(loadTest);
