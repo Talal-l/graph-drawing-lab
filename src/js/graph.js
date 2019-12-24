@@ -1,7 +1,6 @@
 /*global sigma*/
 
 import { random, shuffle, deepCopy, getEdgeId, Vec, defaults } from "./util.js";
-
 import { Evaluator } from "./metrics.js";
 
 export { generateGraph, ConcreteGraph };
@@ -24,6 +23,7 @@ sigma.classes.graph.addMethod("edgeExist", function(n1, n2) {
     );
 });
 
+// the counter is not decremented to avoid using an existing id
 sigma.classes.graph.addIndex("nodesCount", {
     constructor: function() {
         this.nodesCount = 0;
@@ -146,79 +146,136 @@ function generateGraph(nMin, nMax, eMin, eMax, width, height) {
     return G;
 }
 
-function ConcreteGraph(initGraph, options) {
-    this.options = options || defaults;
-    this.useCache = this.options.useCache || defaults.useCache;
+class ConcreteGraph {
+    constructor(initGraph, options) {
+        this.options = options || defaults;
+        this.useCache = this.options.useCache || defaults.useCache;
 
-    let metricsParams = this.options.metricsParams || defaults.metricsParams;
-    this.evaluator = new Evaluator(metricsParams);
+        let metricsParams =
+            this.options.metricsParams || defaults.metricsParams;
+        this.evaluator = new Evaluator(metricsParams);
 
-    this.graph = initGraph;
-    this.changes = [];
-    this.metricsCache = null;
+        this.graph = initGraph;
+        this.changes = [];
+        this.metricsCache = {
+            nodeOcclusion: 0,
+            edgeNodeOcclusion: 0,
+            edgeLength: 0,
+            edgeCrossing: 0,
+            angularResolution: 0
+        };
+    }
 
-    ConcreteGraph.prototype.objective = function(weights) {
-        return this.evaluator.objective(this.metrics(), weights);
-    };
+    objective(weights) {
+        return this.evaluator.objective(this.metricsCache, weights);
+    }
 
-    ConcreteGraph.prototype.metrics = function(params) {
-        this.metricsCache =
-            // invalidate cache if we have params
-            this.useCache && this.metricsCache && !params
-                ? this.metricsCache
-                : this.evaluator.metrics(this.graph, params);
+    metrics(params) {
+        this.metricsCache = this.evaluator.metrics(this.graph, params);
         return this.metricsCache;
-    };
+    }
 
-    ConcreteGraph.prototype.moveNode = function(node, vec) {
-        node = this.graph.nodes(node);
-        let nodeV = new Vec();
-        let { x, y } = nodeV.add(vec);
+    // calculate new objective
+    updateObjective(node, params) {
+        // TODO: only recalculate the diff instead of the whole graph
+        this.metrics();
+        return this.objective();
+    }
 
-        // make sure the values are within range
-        if (x > 1) x = 1;
-        if (y > 1) y = 1;
-        if (x < -1) x = -1;
-        if (y < -1) y = -1;
+    testMove(node, vec) {
+        let nodeId;
+        if (typeof node === "string") nodeId = node;
+        else nodeId = node.id;
 
+        node = this.graph(nodeId);
+        let objective = this.moveNode(node, vec);
+        // reset the node movement
+        this.moveNode(node, vec.scale(-1));
+        return objective;
+    }
+    moveNode(node, vec) {
+        let nodeId;
+        if (typeof node === "string") nodeId = node;
+        else nodeId = node.id;
+
+        node = this.graph.nodes(nodeId);
+        node.x += vec.x;
+        node.y += vec.y;
+
+        return this.updateObjective();
+    }
+    setNodePos(node, { x, y }) {
+        let nodeId;
+        if (typeof node === "string") nodeId = node;
+        else nodeId = node.id;
+
+        node = this.graph.nodes(nodeId);
         node.x = x;
         node.y = y;
-        return node;
-    };
-    ConcreteGraph.prototype.setNodePos = function(node, { x, y }) {
-        node = this.graph.nodes(node);
-        // make sure the values are within range
-        if (x > 1) x = 1;
-        if (y > 1) y = 1;
-        if (x < -1) x = -1;
-        if (y < -1) y = -1;
-        node.x = x;
-        node.y = y;
 
-        return node;
-    };
+        return this.updateObjective();
+    }
 
-    ConcreteGraph.prototype.setGraph = function(sigGraph) {
+    setGraph(sigGraph) {
         this.metricsCache = null;
         this.graph = sigGraph;
-    };
+    }
 
-    // return array of nodes in the graph
-    ConcreteGraph.prototype.nodes = function() {
-        // invalidate the graph and changes array
-        return this.graph.nodes();
-    };
-
-    // return array of edges in the graph
-    ConcreteGraph.prototype.edges = function() {
-        // invalidate the graph and changes array
-        return this.graph.edges();
-    };
-
-    ConcreteGraph.prototype.density = function() {
+    density() {
         let V = this.graph.nodes().length;
         let E = this.graph.edges().length;
         let D = (2 * E) / (V * (V - 1)) || 0;
         return D;
-    };
+    }
+
+    nodes() {
+        return this.graph.nodes();
+    }
+
+    addNode(node) {
+        this.graph.addNode(node);
+        this.updateObjective(node.id);
+        return this.objective();
+    }
+    removeNode(nodeId) {
+        this.graph.dropNode(nodeId);
+        this.updateObjective(nodeId);
+        return this.objective();
+    }
+
+    addEdge(edge) {
+        console.log(edge);
+        this.graph.addEdge(edge);
+        this.updateObjective(edge.source);
+        return this.objective();
+    }
+    removeEdge(edgeId) {
+        let edge = this.graph.edges(edgeId);
+        this.graph.dropEdge(edgeId);
+        this.updateObjective(edge.source.id);
+        return this.objective();
+    }
+
+    edges() {
+        return this.graph.edges();
+    }
+
+    clear() {
+        this.graph.clear();
+        return this;
+    }
+
+    read(obj) {
+        this.graph.read(obj);
+        this.metrics();
+        return this.objective();
+    }
+
+    neighbors(node) {
+        return this.graph.allNeighbors(node);
+    }
+
+    nextNodeId() {
+        return this.graph.getNodesCount();
+    }
 }

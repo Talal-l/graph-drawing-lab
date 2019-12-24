@@ -3,6 +3,7 @@
 
 import { ConcreteGraph, generateGraph } from "./graph.js";
 import { refreshScreen, distance, getEdgeId } from "./util.js";
+import { CircularLayout } from "./circularLayout.js";
 
 let container = document.querySelector("#container");
 let canvasRenderer = {
@@ -37,11 +38,10 @@ let cam = sig.cameras.cam1;
 
 // create the main graph instance
 let GRAPH = new ConcreteGraph(sig.graph);
+let selectedLayoutAlg = new CircularLayout(GRAPH, {
+    radius: container.offsetHeight / 2
+});
 
-let r = Math.min(container.offsetWidth, container.offsetHeight);
-
-// create graph layout
-let customLayout = new sigma.CustomLayout(sig);
 // UI events
 
 // create an object to use to track select and drag operations
@@ -90,7 +90,8 @@ let graphUiModes = (function() {
                     drag = true;
             });
             dragListener.bind("dragend", e => {
-                // make sure to update metrics after a node drag
+                // pass the updated node so we can update it's metrics calculation
+                GRAPH.setNodePos(e.data.node.id, dragEndPos);
                 updateMetrics(sig);
             });
         } else {
@@ -106,12 +107,10 @@ let graphUiModes = (function() {
         let x = event.offsetX - container.offsetWidth / 2;
         let y = event.offsetY - container.offsetHeight / 2;
 
-
         // get x,y after applying the same transformation that were applied to the camera
         let p = cam.cameraPosition(x, y);
 
-
-        let id = sig.graph.getNodesCount();
+        let id = GRAPH.nextNodeId();
         let n = {
             label: id,
             id: id,
@@ -121,7 +120,7 @@ let graphUiModes = (function() {
             color: "#921"
         };
 
-        sig.graph.addNode(n);
+        GRAPH.addNode(n);
         refreshScreen(sig, updateMetrics);
     }
     function nodeSelectHandler(e) {
@@ -130,8 +129,8 @@ let graphUiModes = (function() {
             selectNode(node);
         } else if (selectedNode.id !== node.id) {
             // create an edge if non existed between them
-            if (!sig.graph.allNeighbors(node)[selectedNode.id]) {
-                sig.graph.addEdge({
+            if (!GRAPH.neighbors(node)[selectedNode.id]) {
+                GRAPH.addEdge({
                     id: getEdgeId(selectedNode, node),
                     source: selectedNode.id,
                     target: node.id,
@@ -149,15 +148,16 @@ let graphUiModes = (function() {
     }
     function nodeEraseHandler(e) {
         let clickedNode = e.data.node;
-        sig.graph.dropNode(clickedNode.id);
+        GRAPH.removeNode(clickedNode.id);
         refreshScreen(sig, updateMetrics);
     }
     function edgeEraseHandler(e) {
         let clickedEdge = e.data.edge;
-        sig.graph.dropEdge(clickedEdge.id);
+        GRAPH.removeEdge(clickedEdge.id);
         refreshScreen(sig, updateMetrics);
     }
-    if (selectedEdge) sig.graph.dropEdge(selectedEdge.id);
+
+    if (selectedEdge) GRAPH.removeEdge(selectedEdge.id);
 
     // expose public methods
     // map each mode item id to their activation method (toggle edit mode on and off)
@@ -257,7 +257,7 @@ toolbar.addEventListener("click", event => {
             }
             break;
         case "genGraph":
-            if (!sig.graph.nodes().length) genModal.style.display = "flex";
+            if (!GRAPH.nodes().length) genModal.style.display = "flex";
             else {
                 warnModal.style.display = "flex";
             }
@@ -269,32 +269,34 @@ toolbar.addEventListener("click", event => {
         case "loadGraph":
             // eslint-disable-next-line no-undef
             openFileDialog((filename, data) => {
-                sig.graph.clear();
-                sig.graph.read(JSON.parse(data).graph);
+                GRAPH.clear();
+                GRAPH.read(JSON.parse(data).graph);
                 refreshScreen(sig, updateMetrics);
             });
             break;
         case "deleteGraph":
-            sig.graph.clear();
+            GRAPH.clear();
             refreshScreen(sig, updateMetrics);
             break;
         case "randomLayout":
             const x = container.offsetWidth;
             const y = container.offsetHeight;
-            sig.graph.nodes().forEach(n => {
-                n.x = (0.5 - Math.random()) * x;
-                n.y = (0.5 - Math.random()) * y;
+            GRAPH.nodes().forEach(n => {
+                GRAPH.setNodePos(n.id, {
+                    x: (0.5 - Math.random()) * x,
+                    y: (0.5 - Math.random()) * y
+                });
             });
             refreshScreen(sig, updateMetrics);
 
             break;
         case "runLayout":
-            customLayout.run();
+            selectedLayoutAlg.run();
             refreshScreen(sig, updateMetrics);
 
             break;
         case "stepLayout":
-            customLayout.step();
+            selectedLayoutAlg.step();
             refreshScreen(sig, updateMetrics);
             break;
         case "resetLayout":
@@ -378,9 +380,9 @@ genModal.addEventListener("click", event => {
                 container.offsetHeight
             );
 
-            sig.graph.clear();
+            GRAPH.clear();
             // extract the nodes and edges from the created graph and update the current instance with it
-            sig.graph.read({ nodes: G.nodes(), edges: G.edges() });
+            GRAPH.read({ nodes: G.nodes(), edges: G.edges() });
             refreshScreen(sig, updateMetrics);
             genModal.style.display = "none";
             break;
@@ -396,13 +398,13 @@ warnModal.addEventListener("click", event => {
         case "save":
             warnModal.style.display = "none";
             saveCurrentGraph();
-            sig.graph.clear();
+            GRAPH.clear();
             refreshScreen(sig, updateMetrics);
             genModal.style.display = "flex";
             break;
         case "delete":
             warnModal.style.display = "none";
-            sig.graph.clear();
+            GRAPH.clear();
             refreshScreen(sig, updateMetrics);
             genModal.style.display = "flex";
             break;
@@ -468,8 +470,8 @@ for (const e of toggleEl) {
 function saveCurrentGraph() {
     let json = JSON.stringify({
         graph: {
-            nodes: sig.graph.nodes(),
-            edges: sig.graph.edges()
+            nodes: GRAPH.nodes(),
+            edges: GRAPH.edges()
         }
     });
 
@@ -506,7 +508,6 @@ function updateObjective() {
 }
 
 function updateMetrics() {
-    GRAPH.setGraph(sig.graph);
     GRAPH.evaluator.setWeights(getWeights());
 
     // get the needed parameters for edge length
@@ -522,7 +523,7 @@ function updateMetrics() {
         requiredEdgeLength
     });
 
-    let metrics = GRAPH.metrics();
+    let metrics = GRAPH.metricsCache;
 
     // update ui
     document.querySelector("#node-num").innerHTML = GRAPH.nodes().length;

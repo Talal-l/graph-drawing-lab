@@ -71,12 +71,10 @@ function Evaluator(params) {
     function nodeNodeOcclusion(graph) {
         let nodes = graph.nodes();
         let sum = 0;
-        for (let i of nodes) {
-            for (let j of nodes) {
-                if (i.id !== j.id) {
-                    let d = distance(i, j);
-                    sum += 1 / (d * d);
-                }
+        for (let i = 0; i < nodes.length - 1; i++) {
+            for (let j = i + 1; j < nodes.length; j++) {
+                let d = distance(nodes[i], nodes[j]);
+                sum += 1 / (d * d);
             }
         }
         return transform(sum);
