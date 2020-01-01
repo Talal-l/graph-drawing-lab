@@ -90,8 +90,8 @@ let graphUiModes = (function() {
                     drag = true;
             });
             dragListener.bind("dragend", e => {
-                // pass the updated node so we can update it's metrics calculation
-                GRAPH.setNodePos(e.data.node.id, dragEndPos);
+                // pass the updated node so we can update its metrics calculation
+                if (dragEndPos) GRAPH.setNodePos(e.data.node.id, dragEndPos);
                 updateMetrics(sig);
             });
         } else {
