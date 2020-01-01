@@ -31,7 +31,7 @@ window.saveFile = function(data) {
         Math.random() * 100
     )}`;
 
-    let filePath = `${__dirname}/data/${date}`;
+    let filePath = `${__dirname}/data/${date}.json`;
     fs.writeFileSync(filePath, data);
 };
 
