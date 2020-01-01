@@ -36,6 +36,9 @@ toolbar.addEventListener("click", event => {
         case "backToMain":
             window.location.replace("index.html");
             break;
+        case "clearTest":
+            clearBatch();
+            break;
         default:
             break;
     }
@@ -347,4 +350,9 @@ function getCellHeader(cell) {
         .querySelector("tr")
         .querySelector(`:nth-child(${index + 1})`);
     return colHeader;
+}
+
+function clearBatch() {
+    document.querySelectorAll("thead ~ tr").forEach(e => e.remove());
+    loadedTests = {};
 }
