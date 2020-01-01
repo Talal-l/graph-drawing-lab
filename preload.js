@@ -41,7 +41,7 @@ window.openFileDialog = function(fn) {
         defaultPath: "./data",
         properties: ["multiSelections", "openFile"]
     };
-    let selectedFiles = dialog.showOpenDialogSync(win, dialogOptions);
+    let selectedFiles = dialog.showOpenDialogSync(win, dialogOptions) || [];
     for (let f of selectedFiles) {
         fs.readFile(f, "utf8", (err, data) => {
             if (err) throw err;
@@ -61,7 +61,7 @@ window.openDirDialog = function(fn) {
     };
     let allFiles = [];
 
-    let selectedFiles = dialog.showOpenDialogSync(win, dialogOptions);
+    let selectedFiles = dialog.showOpenDialogSync(win, dialogOptions) || [];
     if (selectedFiles) {
         for (let f of selectedFiles) allFiles = allFiles.concat(walkDir(f));
     }
