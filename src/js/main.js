@@ -230,6 +230,26 @@ const genGraph = document.querySelector("#genGraph"),
     toolbar = document.querySelector(".toolbar-container"),
     sideMenu = document.querySelector("#side-menu");
 
+// used to insure we save the graph before running the layout algorithm
+let beforeLayoutRun = true;
+
+function setGraphCache() {
+    if (beforeLayoutRun) {
+        localStorage.setItem(
+            "graph",
+            JSON.stringify({
+                nodes: GRAPH.nodes(),
+                edges: GRAPH.edges()
+            })
+        );
+        beforeLayoutRun = false;
+    }
+}
+function clearGraphCache() {
+    localStorage.clear();
+    beforeLayoutRun = true;
+}
+
 toolbar.addEventListener("click", event => {
     let target = event.target;
 
@@ -272,13 +292,16 @@ toolbar.addEventListener("click", event => {
                 GRAPH.clear();
                 GRAPH.read(JSON.parse(data).graph);
                 refreshScreen(sig, updateMetrics);
+                clearGraphCache();
             });
             break;
         case "deleteGraph":
             GRAPH.clear();
             refreshScreen(sig, updateMetrics);
+            clearGraphCache();
             break;
         case "randomLayout":
+            setGraphCache();
             const x = container.offsetWidth;
             const y = container.offsetHeight;
             GRAPH.nodes().forEach(n => {
@@ -291,15 +314,26 @@ toolbar.addEventListener("click", event => {
 
             break;
         case "runLayout":
+            setGraphCache();
             selectedLayoutAlg.run();
             refreshScreen(sig, updateMetrics);
 
             break;
         case "stepLayout":
+            setGraphCache();
             selectedLayoutAlg.step();
             refreshScreen(sig, updateMetrics);
             break;
         case "resetLayout":
+            // restore old layout from local storage
+            let originalGraph = localStorage.getItem("graph");
+            originalGraph = JSON.parse(originalGraph);
+            if (originalGraph) {
+                GRAPH.clear();
+                GRAPH.read(originalGraph);
+                refreshScreen(sig, updateMetrics);
+                clearGraphCache();
+            }
             break;
         case "batchRunPage":
             window.location.replace("batchRun.html");
