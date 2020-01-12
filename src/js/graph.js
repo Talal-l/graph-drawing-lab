@@ -1,7 +1,7 @@
 /*global sigma*/
 
 import { random, shuffle, deepCopy, getEdgeId, Vec, defaults } from "./util.js";
-import { Evaluator } from "./metrics.js";
+import * as evaluator from "./metrics.js";
 
 export { generateGraph, ConcreteGraph };
 // extend the sigma graph class
@@ -148,15 +148,11 @@ function generateGraph(nMin, nMax, eMin, eMax, width, height) {
 
 class ConcreteGraph {
     constructor(initGraph, options) {
-        this.options = options || defaults;
-        this.useCache = this.options.useCache || defaults.useCache;
-
-        let metricsParams =
-            this.options.metricsParams || defaults.metricsParams;
-        this.evaluator = new Evaluator(metricsParams);
+        options = options || {};
 
         this.graph = initGraph;
-        this.changes = [];
+        this.metricsParam = options.metricsParam || evaluator.defaultParams;
+        this.weights = options.weights || evaluator.defaultWeights;
         this.metricsCache = {
             nodeOcclusion: 0,
             edgeNodeOcclusion: 0,
@@ -164,20 +160,45 @@ class ConcreteGraph {
             edgeCrossing: 0,
             angularResolution: 0
         };
+        this.useCache = false;
     }
-
     objective(weights) {
-        return this.evaluator.objective(this.metricsCache, weights);
+        weights = weights || this.weights;
+        let wSum = 0;
+        for (let key in this.metricsCache)
+            wSum += this.metricsCache[key] * weights[key];
+        if (!Number.isFinite(wSum)) {
+            throw `invalid weights or metrics\nmetrics:\n ${JSON.stringify(
+                this.metricsCache
+            )}\nweights:\n ${JSON.stringify(weights)}`;
+        }
+        return wSum;
     }
 
-    metrics(params) {
-        this.metricsCache = this.evaluator.metrics(this.graph, params);
+    metrics() {
+        if (!this.metricsCache || !this.useCache) {
+            this.metricsCache = {
+                nodeOcclusion: evaluator.nodeNodeOcclusion(this.graph),
+                edgeNodeOcclusion: evaluator.edgeNodeOcclusion(this.graph),
+                edgeLength: evaluator.edgeLength(
+                    this.graph,
+                    this.metricsParam.requiredEdgeLength
+                ),
+                edgeCrossing: evaluator.edgeCrossing(this.graph),
+                angularResolution: evaluator.angularResolution(this.graph)
+            };
+            this.useCache = true;
+        }
         return this.metricsCache;
     }
+    setMetricParam(metricsParam) {
+        this.useCache = false;
+        this.metricsParam = metricsParam;
+    }
 
-    // calculate new objective
-    updateObjective(node, params) {
+    updateObjective(node) {
         // TODO: only recalculate the diff instead of the whole graph
+        this.useCache = false;
         this.metrics();
         return this.objective();
     }
@@ -234,26 +255,21 @@ class ConcreteGraph {
 
     addNode(node) {
         this.graph.addNode(node);
-        this.updateObjective(node.id);
-        return this.objective();
+        return this.updateObjective(node.id);
     }
     removeNode(nodeId) {
         this.graph.dropNode(nodeId);
-        this.updateObjective(nodeId);
-        return this.objective();
+        return this.updateObjective(nodeId);
     }
 
     addEdge(edge) {
-        console.log(edge);
         this.graph.addEdge(edge);
-        this.updateObjective(edge.source);
-        return this.objective();
+        return this.updateObjective(edge.source);
     }
     removeEdge(edgeId) {
         let edge = this.graph.edges(edgeId);
         this.graph.dropEdge(edgeId);
-        this.updateObjective(edge.source.id);
-        return this.objective();
+        return this.updateObjective(edge.source.id);
     }
 
     edges() {
@@ -267,8 +283,7 @@ class ConcreteGraph {
 
     read(obj) {
         this.graph.read(obj);
-        this.metrics();
-        return this.objective();
+        return this.updateObjective();
     }
 
     neighbors(node) {

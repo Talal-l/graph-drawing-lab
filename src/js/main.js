@@ -71,9 +71,9 @@ let graphUiModes = (function() {
     function dragSupport(state) {
         if (state) {
             let dragListener = sigma.plugins.dragNodes(sig, sig.renderers[0]);
-
             dragListener.bind("startdrag", e => {
                 drag = false;
+                dragEndPos = null;
                 dragStartPos = {
                     x: e.data.node.x,
                     y: e.data.node.y
@@ -535,15 +535,12 @@ function getWeights() {
     };
 }
 function updateObjective() {
-    GRAPH.evaluator.setWeights(getWeights());
-    document.querySelector(
-        "#objective-function"
-    ).innerHTML = GRAPH.objective().toFixed(3);
+    document.querySelector("#objective-function").innerHTML = GRAPH.objective(
+        getWeights()
+    ).toFixed(3);
 }
 
 function updateMetrics() {
-    GRAPH.evaluator.setWeights(getWeights());
-
     // get the needed parameters for edge length
     let c = document.querySelector(".sigma-scene");
     let maxEdgeLength = Math.sqrt(c.width * c.width + c.height * c.height);
@@ -552,12 +549,12 @@ function updateMetrics() {
         document.querySelector("#edge-length-required").value
     );
 
-    GRAPH.evaluator.setParams({
+    GRAPH.setMetricParam({
         maxEdgeLength,
         requiredEdgeLength
     });
 
-    let metrics = GRAPH.metricsCache;
+    let metrics = GRAPH.metrics();
 
     // update ui
     document.querySelector("#node-num").innerHTML = GRAPH.nodes().length;

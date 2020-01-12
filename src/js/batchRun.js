@@ -1,6 +1,6 @@
 import { ConcreteGraph, generateGraph } from "./graph.js";
 import { refreshScreen, distance, getEdgeId } from "./util.js";
-import { Evaluator } from "./metrics.js";
+import * as evaluator from "./metrics.js";
 
 // eslint-disable-next-line no-undef
 const sig = new sigma();
@@ -90,17 +90,15 @@ function runBatch() {
         document.querySelector("#edge-length-required").value
     );
 
-    let evaluator = new Evaluator({
-        requiredEdgeLength,
-        weights: getWeights()
-    });
-
     for (let filename in loadedTests) {
         let digits = 3;
         let table = document.querySelector("table");
         let obj = JSON.parse(loadedTests[filename].data);
 
-        let graph = new ConcreteGraph(sig.graph.read(obj.graph));
+        let graph = new ConcreteGraph(sig.graph.read(obj.graph), {
+            requiredEdgeLength,
+            weights: getWeights()
+        });
         graph.evaluator = evaluator;
 
         let metrics = {};
