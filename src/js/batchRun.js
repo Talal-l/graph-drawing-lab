@@ -95,11 +95,14 @@ function runBatch() {
         let table = document.querySelector("table");
         let obj = JSON.parse(loadedTests[filename].data);
 
-        let graph = new ConcreteGraph(sig.graph.read(obj.graph), {
-            requiredEdgeLength,
-            weights: getWeights()
-        });
-        graph.evaluator = evaluator;
+        let graph = new ConcreteGraph(
+            null,
+            {
+                requiredEdgeLength,
+                weights: getWeights()
+            }
+        );
+        graph.read(obj.graph);
 
         let metrics = {};
         // TODO: Don't recalculate the metrics if only the weights have changed

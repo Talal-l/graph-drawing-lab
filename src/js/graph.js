@@ -150,7 +150,7 @@ class ConcreteGraph {
     constructor(initGraph, options) {
         options = options || {};
 
-        this.graph = initGraph;
+        this.graph = initGraph || new sigma.classes.graph();
         this.metricsParam = options.metricsParam || evaluator.defaultParams;
         this.weights = options.weights || evaluator.defaultWeights;
         this.metricsCache = {

@@ -71,8 +71,12 @@ function edgeNodeOcclusion(graph) {
             end: new Vec(graph.nodes(e.target))
         };
         for (let n of nodes) {
+            let d = pointSegDistance(n, seg);
+            if (!d) {
+                d = 0.00009;
+            }
             if (n.id !== e.source && n.id !== e.target) {
-                sum += 1 / Math.pow(pointSegDistance(n, seg), 2);
+                sum += 1 / d ** 2;
             }
         }
     }
@@ -93,7 +97,7 @@ function edgeLength(graph, len) {
     for (let e of edges) {
         let [n1, n2] = getEdgeNodes(e, graph);
         let d = distance(n1, n2);
-        let t = (d - len)**2;
+        let t = (d - len) ** 2;
         max = Math.max(max, t);
         sum += t;
     }
