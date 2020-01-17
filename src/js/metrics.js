@@ -1,7 +1,3 @@
-// scope the file so it doesn't conflict with stuff in the global scope
-// constructor
-// holds the evaluation logic and persists any parameters
-
 import {
     distance,
     transform,
@@ -23,7 +19,6 @@ export {
     angularResolution
 };
 
-// TODO: validate params
 const defaultParams = { requiredEdgeLength: 1000, maxEdgeLength: 4400 };
 
 const defaultWeights = {
@@ -35,147 +30,124 @@ const defaultWeights = {
 };
 
 /**
- * Calculate the normalized score describing how close nodes are to each other.
+ * Calculate the score describing how close node is to all other nodes.
  * @param {object} graph - A sigma graph instance
+ * @param {object} node - Target node
  * @returns {number} - Normalized score
  */
-function nodeNodeOcclusion(graph) {
+function nodeNodeOcclusion(graph, node) {
     let nodes = graph.nodes();
     let sum = 0;
-    for (let i = 0; i < nodes.length - 1; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-            let d = distance(nodes[i], nodes[j]);
+    for (let n of nodes) {
+        if (node.id !== n.id) {
+            let d = distance(node, n);
             if (!d) {
-                // HACK: avoid division by zero when two nodes overlap
+                // HACK: avoid division by zero when we have overlap
                 d = 0.00009;
             }
             sum += 1 / (d * d);
         }
     }
-    return transform(sum);
+    return sum;
 }
 
 /**
- * Calculate the normalized score describing edges and nodes closeness.
+ * Calculate the score describing closeness of an edge to all nodes in the graph.
  * @param {object} graph - A sigma graph instance
- * @returns {number} - Normalized score
+ * @param {object} edge - Edge to measure
+ * @returns {number} - Score
  */
-function edgeNodeOcclusion(graph) {
+function edgeNodeOcclusion(graph, edge) {
     let nodes = graph.nodes();
-    let edges = graph.edges();
     let sum = 0;
 
-    for (let e of edges) {
-        let seg = {
-            start: new Vec(graph.nodes(e.source)),
-            end: new Vec(graph.nodes(e.target))
-        };
-        for (let n of nodes) {
-            let d = pointSegDistance(n, seg);
-            if (!d) {
-                d = 0.00009;
-            }
-            if (n.id !== e.source && n.id !== e.target) {
-                sum += 1 / d ** 2;
-            }
+    let seg = {
+        start: new Vec(graph.nodes(edge.source)),
+        end: new Vec(graph.nodes(edge.target))
+    };
+    for (let n of nodes) {
+        let d = pointSegDistance(n, seg);
+        if (!d) {
+            // HACK: avoid division by zero when we have overlap
+            d = 0.00009;
+        }
+        if (n.id !== edge.source && n.id !== edge.target) {
+            sum += 1 / d ** 2;
         }
     }
 
-    return transform(sum);
+    return sum;
 }
 /**
- * Calculate a normalized score describing how far the edges are from the desired length.
+ * Calculate a score describing how far an edge is from the desired length.
  * @param {object} graph - A sigma graph instance
+ * @param {object} edge - Edge to measure
  * @param {number} len - The desired edge length
- * @param {number} maxLen - Max possible length for an edge
- * @returns {number} - Normalized score
+ * @returns {number} - Score
  */
-function edgeLength(graph, len) {
-    let edges = graph.edges();
-    let max = 0;
-    let sum = 0;
-    for (let e of edges) {
-        let [n1, n2] = getEdgeNodes(e, graph);
-        let d = distance(n1, n2);
-        let t = (d - len) ** 2;
-        max = Math.max(max, t);
-        sum += t;
-    }
-
-    let maxLen = graph.edges().length * max || 1;
-    return minMaxNorm(sum, 0, maxLen);
+function edgeLength(graph, edge, len) {
+    let [n1, n2] = getEdgeNodes(edge, graph);
+    let d = distance(n1, n2);
+    return (d - len) ** 2;
 }
 
-/** Calculate a normalized score describing the intensity of edge crossing.
+/** Calculate a score describing the intensity of edge crossing.
  * @param {object} graph - A sigma graph instance
- * @returns {Number} - Normalized score
+ * @returns {Number} - Number of edges crossing the given edge
  */
-function edgeCrossing(graph) {
+function edgeCrossing(graph, edge) {
     let edges = graph.edges();
     let sum = 0;
-    let isecList = [];
 
-    for (let i = 0; i < edges.length - 1; i++) {
-        let e1 = edges[i];
-        for (let j = i + 1; j < edges.length; j++) {
-            let e2 = edges[j];
-            let isec = edgeIntersection(e1, e2, graph);
-            if (
-                isec &&
-                e1.source !== e2.source &&
-                e1.target !== e2.target &&
-                e1.target !== e2.source &&
-                e1.source !== e2.target
-            ) {
-                sum++;
-                isecList.push(isec);
-            }
+    for (let e of edges) {
+        let isec = edgeIntersection(edge, e, graph);
+        if (
+            isec &&
+            edge.source !== e.source &&
+            edge.target !== e.target &&
+            edge.target !== e.source &&
+            edge.source !== e.target
+        ) {
+            sum++;
         }
     }
-
-    // avoid a NaN on empty graph
-    let maxCrossing = graph.edges().length * (graph.edges().length - 1) || 1;
-    return minMaxNorm(sum, 0, maxCrossing);
+    return sum;
 }
 
 /**
- * Calculate a normalized score describing the angular resolution between incident edges
+ * Calculate a score describing the angular resolution between incident edges
  * @param {object} graph - A sigma graph instance
- * @returns {number} - Normalized score
+ * @param {object} node - The node to calculate the metric for
+ * @returns {number} - Score
  */
-function angularResolution(graph) {
+function angularResolution(graph, node) {
     let nodes = graph.nodes();
     let sum = 0;
     let maxSum = 0;
-    for (const n of nodes) {
-        let E = graph.allNeighborNodes(n);
-        if (E.length > 1) {
-            maxSum += 360;
-            let adj = adjEdges(n, E);
-            var maxAngle = 360 / E.length || 360;
+    let E = graph.allNeighborNodes(node);
+    if (E.length > 1) {
+        maxSum += 360;
+        let adj = adjEdges(node, E);
+        var maxAngle = 360 / E.length || 360;
 
-            let i = 0;
-            for (let j = 1; j < adj.length; j++) {
-                // make sure to count overlapping edges
-                if (adj[j] > 1) {
-                    sum += maxAngle * adj[j];
-                }
-                if (adj[j] && adj[i]) {
-                    let a = j - i;
-                    // only get the inner angle
-                    if (a > 180) a = 360 - a;
-                    sum += Math.abs(maxAngle - a);
-                    i = j;
-                } else if (adj[j]) {
-                    i = j;
-                }
+        let i = 0;
+        for (let j = 1; j < adj.length; j++) {
+            // make sure to count overlapping edges
+            if (adj[j] > 1) {
+                sum += maxAngle * adj[j];
+            }
+            if (adj[j] && adj[i]) {
+                let a = j - i;
+                // only get the inner angle
+                if (a > 180) a = 360 - a;
+                sum += Math.abs(maxAngle - a);
+                i = j;
+            } else if (adj[j]) {
+                i = j;
             }
         }
     }
-
-    // avoid NaN for graph that doesn't meet the conditions
-    maxSum = maxSum || 1;
-    return minMaxNorm(sum, 0, maxSum);
+    return sum;
 }
 
 /**
