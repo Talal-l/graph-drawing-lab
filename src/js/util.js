@@ -13,7 +13,6 @@ export {
     isEmpty,
     deepCopy,
     getEdgeId,
-    defaults
 };
 
 /**
@@ -237,18 +236,3 @@ function deepCopy(source) {
 function getEdgeId(n1, n2) {
     return `e${n1.id}-${n2.id}`;
 }
-
-const defaults = {
-    metricsParams: {
-        weights: {
-            nodeOcclusion: 1,
-            edgeNodeOcclusion: 1,
-            edgeLength: 1,
-            edgeCrossing: 1,
-            angularResolution: 1
-        },
-        requiredEdgeLength: 1000,
-        maxEdgeLength: 4400
-    },
-    useCache: true
-};

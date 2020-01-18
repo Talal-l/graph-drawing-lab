@@ -6,27 +6,14 @@ import {
     getEdgeNodes,
     minMaxNorm,
     edgeIntersection,
-    defaults
 } from "./util.js";
 
 export {
-    defaultParams,
-    defaultWeights,
     nodeNodeOcclusion,
     edgeNodeOcclusion,
     edgeLength,
     edgeCrossing,
     angularResolution
-};
-
-const defaultParams = { requiredEdgeLength: 1000, maxEdgeLength: 4400 };
-
-const defaultWeights = {
-    nodeOcclusion: 1,
-    edgeNodeOcclusion: 1,
-    edgeLength: 1,
-    edgeCrossing: 1,
-    angularResolution: 1
 };
 
 /**
@@ -93,10 +80,12 @@ function edgeLength(graph, edge, len) {
 
 /** Calculate a score describing the intensity of edge crossing.
  * @param {object} graph - A sigma graph instance
- * @returns {Number} - Number of edges crossing the given edge
+ * @returns {Object} - Object with edge crossing with the given edge
  */
 function edgeCrossing(graph, edge) {
     let edges = graph.edges();
+
+    let isecList = Object.create(null);
     let sum = 0;
 
     for (let e of edges) {
@@ -108,10 +97,11 @@ function edgeCrossing(graph, edge) {
             edge.target !== e.source &&
             edge.source !== e.target
         ) {
+            isecList[e.id] = 1;
             sum++;
         }
     }
-    return sum;
+    return isecList;
 }
 
 /**

@@ -535,9 +535,10 @@ function getWeights() {
     };
 }
 function updateObjective() {
-    document.querySelector("#objective-function").innerHTML = GRAPH.objective(
-        getWeights()
-    ).toFixed(3);
+    GRAPH.setWeights(getWeights());
+    document.querySelector(
+        "#objective-function"
+    ).innerHTML = GRAPH.objective().toFixed(3);
 }
 
 function updateMetrics() {
