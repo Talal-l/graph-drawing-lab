@@ -4,6 +4,7 @@
 import { ConcreteGraph, generateGraph } from "./graph.js";
 import { refreshScreen, distance, getEdgeId } from "./util.js";
 import { CircularLayout } from "./circularLayout.js";
+import { HillClimbing } from "./hillClimbing.js";
 
 let container = document.querySelector("#container");
 let canvasRenderer = {
@@ -38,8 +39,8 @@ let cam = sig.cameras.cam1;
 
 // create the main graph instance
 let GRAPH = new ConcreteGraph(sig.graph);
-let selectedLayoutAlg = new CircularLayout(GRAPH, {
-    radius: container.offsetHeight / 2
+let selectedLayoutAlg = new HillClimbing(GRAPH, {
+    squareSize: 100
 });
 
 // UI events
@@ -317,7 +318,6 @@ toolbar.addEventListener("click", event => {
             setGraphCache();
             selectedLayoutAlg.run();
             refreshScreen(sig, updateMetrics);
-
             break;
         case "stepLayout":
             setGraphCache();

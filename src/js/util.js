@@ -12,7 +12,7 @@ export {
     transform,
     isEmpty,
     deepCopy,
-    getEdgeId,
+    getEdgeId
 };
 
 /**
@@ -143,6 +143,16 @@ class Vec {
     angle(v) {
         return Math.acos(this.dot(v) / (this.len() * v.len()));
     }
+    rotate(a) {
+        // a is assumed to be in degere
+        a = (a * Math.PI) / 180;
+        let cos = Math.cos(a);
+        let sin = Math.sin(a);
+        return new Vec(
+            this.x * cos - this.y * sin,
+            this.x * sin + this.y * cos
+        );
+    }
 }
 
 /**
@@ -203,7 +213,7 @@ function edgeIntersection(e1, e2, graph) {
 }
 
 function minMaxNorm(value, min, max) {
-    return (value - min) / (max - min);
+    return max - min !== 0 ? (value - min) / (max - min) : 0;
 }
 
 function transform(value) {

@@ -7,7 +7,7 @@ import {
     deepCopy,
     getEdgeId,
     Vec,
-    edgeIntersection
+    minMaxNorm
 } from "./util.js";
 import * as evaluator from "./metrics.js";
 
@@ -204,10 +204,9 @@ class ConcreteGraph {
             angularResolution: 0
         };
         this.metricsPerNode = {};
-        this.edgeCrossingCahce = {};
+        this.edgeCrossingCache = {};
     }
     objective() {
-        this.weights;
         let wSum = 0;
         for (let key in this.metricsCache)
             wSum += this.metricsCache[key] * this.weights[key];
@@ -220,6 +219,8 @@ class ConcreteGraph {
     }
 
     metrics() {
+        // to make sure the normalized metrics are up to date
+        this.objective();
         return this.metricsCache;
     }
     setMetricParam(metricsParam) {
@@ -249,7 +250,6 @@ class ConcreteGraph {
         let oldPos = { x: node.x, y: node.y };
         node.x += vec.x;
         node.y += vec.y;
-
         updateMetrics.call(this, node, oldPos);
 
         // recalculate metrics that are hard to update
@@ -283,8 +283,6 @@ class ConcreteGraph {
                 e
             );
         }
-
-        return this.objective();
     }
 
     setGraph(sigGraph) {
@@ -299,31 +297,28 @@ class ConcreteGraph {
         return D;
     }
 
-    nodes() {
-        return this.graph.nodes();
+    nodes(node) {
+        if (node) return this.graph.nodes(node);
+        else return this.graph.nodes();
     }
 
     addNode(node) {
         this.graph.addNode(node);
         recalculateMetrics.call(this);
-        return this.objective();
     }
     removeNode(nodeId) {
         this.graph.dropNode(nodeId);
         recalculateMetrics.call(this);
-        return this.objective();
     }
 
     addEdge(edge) {
         this.graph.addEdge(edge);
         recalculateMetrics.call(this);
-        return this.objective();
     }
     removeEdge(edgeId) {
         let edge = this.graph.edges(edgeId);
         this.graph.dropEdge(edgeId);
         recalculateMetrics.call(this);
-        return this.objective();
     }
 
     edges() {
@@ -338,7 +333,6 @@ class ConcreteGraph {
     read(obj) {
         this.graph.read(obj);
         recalculateMetrics.call(this);
-        return this.objective();
     }
 
     neighbors(node) {
@@ -404,18 +398,18 @@ function recalculateMetrics() {
 
                 for (let ec in cross) {
                     // first time we are tracking this edge?
-                    if (!this.edgeCrossingCahce[e.id])
-                        this.edgeCrossingCahce[e.id] = {};
+                    if (!this.edgeCrossingCache[e.id])
+                        this.edgeCrossingCache[e.id] = {};
 
                     // did we account for this intersection before?
-                    if (!this.edgeCrossingCahce[e.id][ec]) {
+                    if (!this.edgeCrossingCache[e.id][ec]) {
                         // add to own entry
-                        this.edgeCrossingCahce[e.id][ec] = 1;
+                        this.edgeCrossingCache[e.id][ec] = 1;
                         // let the other edge know that it has a new intersection
-                        if (!this.edgeCrossingCahce[ec])
-                            this.edgeCrossingCahce[ec] = {};
+                        if (!this.edgeCrossingCache[ec])
+                            this.edgeCrossingCache[ec] = {};
 
-                        this.edgeCrossingCahce[ec][e.id] = 1;
+                        this.edgeCrossingCache[ec][e.id] = 1;
                         // update the total count
                         this.metricsCache.edgeCrossing++;
                     }
@@ -472,24 +466,24 @@ function updateMetrics(node, oldPos) {
             target.id
         ].angularResolution = evaluator.angularResolution(this.graph, target);
 
-        if (this.edgeCrossingCahce[e.id]) {
+        if (this.edgeCrossingCache[e.id]) {
             // remove the current edge from the total
             this.metricsCache.edgeCrossing -= Object.keys(
-                this.edgeCrossingCahce[e.id]
+                this.edgeCrossingCache[e.id]
             ).length;
 
             // remove current edge from the other crossed edges
             // needed when those edges get modified
-            for (let ec in this.edgeCrossingCahce[e.id]) {
-                delete this.edgeCrossingCahce[ec][e.id];
+            for (let ec in this.edgeCrossingCache[e.id]) {
+                delete this.edgeCrossingCache[ec][e.id];
             }
         }
         // get new intersections and update other edges
-        this.edgeCrossingCahce[e.id] = evaluator.edgeCrossing(this.graph, e);
+        this.edgeCrossingCache[e.id] = evaluator.edgeCrossing(this.graph, e);
 
-        for (let ec in this.edgeCrossingCahce[e.id]) {
-            if (!this.edgeCrossingCahce[ec]) this.edgeCrossingCahce[ec] = {};
-            this.edgeCrossingCahce[ec][e.id] = 1;
+        for (let ec in this.edgeCrossingCache[e.id]) {
+            if (!this.edgeCrossingCache[ec]) this.edgeCrossingCache[ec] = {};
+            this.edgeCrossingCache[ec][e.id] = 1;
             this.metricsCache.edgeCrossing++;
         }
     }
