@@ -29,7 +29,7 @@ export class CircularLayout {
             let y = this.radius * Math.sin((2 * Math.PI * i) / N);
 
             let v = new Vec((x - n.x) / step, (y - n.y) / step);
-            this.graph.moveNode(n, v);
+            this.graph.moveNode(n, v,true);
         }
 
         this.iterationCount++;

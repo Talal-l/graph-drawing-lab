@@ -38,14 +38,11 @@ let sigDefaults = {
 let sig = new sigma(sigDefaults);
 let cam = sig.cameras.cam1;
 // create the main graph instance
-let GRAPH = new ConcreteGraph(sig.graph, {
+let GRAPH = new ConcreteGraph(sig.graph, {});
 
-});
-let selectedLayoutAlg = new HillClimbing(GRAPH, {
-    squareSize: 100
-});
+let selectedLayoutAlg;
+updateLayoutAlg();
 
-// UI events
 
 // create an object to use to track select and drag operations
 // using constructor function so we can selectively expose methods
@@ -314,11 +311,13 @@ toolbar.addEventListener("click", event => {
 
             break;
         case "runLayout":
+            updateLayoutAlg();
             setGraphCache();
             selectedLayoutAlg.run();
             refreshScreen(sig, updateMetrics);
             break;
         case "stepLayout":
+            updateLayoutAlg();
             setGraphCache();
             selectedLayoutAlg.step();
             refreshScreen(sig, updateMetrics);
@@ -578,4 +577,21 @@ function updateMetrics() {
     ).innerHTML = metrics.angularResolution.toFixed(3);
 
     updateObjective();
+}
+
+function updateLayoutAlg() {
+    let list = document.querySelector("#layoutAlgList");
+    switch (list.value) {
+        case "hillClimbing":
+            selectedLayoutAlg = new HillClimbing(GRAPH, {
+                squareSize: 100
+            });
+            break;
+
+        case "circular":
+            selectedLayoutAlg = new CircularLayout(GRAPH, {
+                radius: 500
+            });
+            break;
+    }
 }

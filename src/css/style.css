@@ -264,7 +264,13 @@ main {
   color: #fff;
 }
 
-/*testing*/
+#layoutAlgList{
+    margin-top: 5px;
+    margin-right: 20px;
+}
+
+
+/*batch run page*/
 
 table {
   /*width based on header*/

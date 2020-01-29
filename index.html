@@ -118,19 +118,26 @@
 
         <!-- layout options -->
         <div class="toolbar-end">
-            <div class="icon fas fa-random group-start" id="randomLayout">
-                <span class="tooltip">Randomize layout</span>
+
+            <div class="" id="layoutAlg">
+                <select name="layoutAlg" id="layoutAlgList">
+                    <option value="hillClimbing">Hill Climbing</option>
+                    <option value="circular"> Circular</option>
+                </select>
+
             </div>
+
             <div class="icon fas fa-play" id="runLayout">
                 <span class="tooltip">Run layout</span>
             </div>
-
             <div class="icon fas fa-step-forward" id="stepLayout">
                 <span class="tooltip">Run step</span>
             </div>
-
             <div class="icon fas fa-power-off" id="resetLayout">
                 <span class="tooltip">Reset layout</span>
+            </div>
+            <div class="icon fas fa-random group-start" id="randomLayout">
+                <span class="tooltip">Randomize layout</span>
             </div>
 
             <div class="icon fas fa-flask" id="batchRunPage">
