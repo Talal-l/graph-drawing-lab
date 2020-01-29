@@ -30,15 +30,17 @@ let sigDefaults = {
     renderer: webglRenderer,
     settings: {
         doubleClickEnabled: false,
-        autoRescale: false
+        autoRescale: false,
+        enableCamera: true
     }
 };
 // create the main sigma instance
 let sig = new sigma(sigDefaults);
 let cam = sig.cameras.cam1;
-
 // create the main graph instance
-let GRAPH = new ConcreteGraph(sig.graph);
+let GRAPH = new ConcreteGraph(sig.graph, {
+
+});
 let selectedLayoutAlg = new HillClimbing(GRAPH, {
     squareSize: 100
 });
@@ -53,7 +55,6 @@ let graphUiModes = (function() {
     let dragStartPos = null;
     let dragEndPos = null;
     let dragThreshold = 5;
-    let drag = null;
 
     function selectNode(node) {
         node.color = "#c52";
@@ -73,26 +74,24 @@ let graphUiModes = (function() {
         if (state) {
             let dragListener = sigma.plugins.dragNodes(sig, sig.renderers[0]);
             dragListener.bind("startdrag", e => {
-                drag = false;
                 dragEndPos = null;
                 dragStartPos = {
                     x: e.data.node.x,
                     y: e.data.node.y
                 };
             });
-
-            dragListener.bind("drag", e => {
+            dragListener.bind("dragend", e => {
                 dragEndPos = {
                     x: e.data.node.x,
                     y: e.data.node.y
                 };
-                // register the movement as a drag operation
-                if (distance(dragStartPos, dragEndPos) >= dragThreshold)
-                    drag = true;
-            });
-            dragListener.bind("dragend", e => {
                 // pass the updated node so we can update its metrics calculation
-                if (dragEndPos) GRAPH.setNodePos(e.data.node.id, dragEndPos);
+                if (dragEndPos) {
+                    let N = GRAPH.nodes(e.data.node.id);
+                    N.x = dragStartPos.x;
+                    N.y = dragStartPos.y;
+                    GRAPH.setNodePos(e.data.node.id, dragEndPos);
+                }
                 updateMetrics(sig);
             });
         } else {

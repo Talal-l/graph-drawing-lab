@@ -5,7 +5,7 @@ import {
     pointSegDistance,
     getEdgeNodes,
     minMaxNorm,
-    edgeIntersection,
+    edgeIntersection
 } from "./util.js";
 
 export {
@@ -20,19 +20,19 @@ export {
  * Calculate the score describing how close node is to all other nodes.
  * @param {object} graph - A sigma graph instance
  * @param {object} node - Target node
- * @returns {number} - Normalized score
+ * @param {number} min - Min distance
+ * @returns {number} - Score
  */
-function nodeNodeOcclusion(graph, node) {
+function nodeNodeOcclusion(graph, node, min) {
     let nodes = graph.nodes();
     let sum = 0;
     for (let n of nodes) {
         if (node.id !== n.id) {
             let d = distance(node, n);
-            if (!d) {
-                // HACK: avoid division by zero when we have overlap
-                d = 0.00009;
+            if (d < min) {
+                d = min;
             }
-            sum += 1 / (d * d);
+            sum += 1 / d ** 2;
         }
     }
     return sum;
@@ -42,9 +42,10 @@ function nodeNodeOcclusion(graph, node) {
  * Calculate the score describing closeness of an edge to all nodes in the graph.
  * @param {object} graph - A sigma graph instance
  * @param {object} edge - Edge to measure
+ * @param {number} min - Min distance
  * @returns {number} - Score
  */
-function edgeNodeOcclusion(graph, edge) {
+function edgeNodeOcclusion(graph, edge, min) {
     let nodes = graph.nodes();
     let sum = 0;
 
@@ -54,9 +55,8 @@ function edgeNodeOcclusion(graph, edge) {
     };
     for (let n of nodes) {
         let d = pointSegDistance(n, seg);
-        if (!d) {
-            // HACK: avoid division by zero when we have overlap
-            d = 0.00009;
+        if (d < min) {
+            d = min;
         }
         if (n.id !== edge.source && n.id !== edge.target) {
             sum += 1 / d ** 2;

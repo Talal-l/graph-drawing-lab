@@ -35,18 +35,15 @@ export class HillClimbing {
             // start with no move as the best move
             let bestMoveIndex = null;
             let bestObj = this.graph.objective();
-            for (let i = 0; i < this.vectors.length; i++) {
-                this.graph.moveNode(n.id, this.vectors[i]);
-                let newObj = this.graph.objective();
-                // rest the move
-                this.graph.moveNode(n.id, this.vectors[i].scale(-1));
 
-                if (newObj < bestObj) {
+            for (let i = 0; i < this.vectors.length; i++) {
+                let newObj = this.graph.testMove(n.id, this.vectors[i]);
+                if (newObj !== null && newObj < bestObj) {
                     bestObj = newObj;
                     bestMoveIndex = i;
                 }
             }
-            if (bestMoveIndex) {
+            if (bestMoveIndex !== null) {
                 this.graph.moveNode(n, this.vectors[bestMoveIndex]);
             }
         }
