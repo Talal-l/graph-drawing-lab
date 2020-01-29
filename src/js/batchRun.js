@@ -2,10 +2,15 @@ import { ConcreteGraph, generateGraph } from "./graph.js";
 import { refreshScreen, distance, getEdgeId } from "./util.js";
 import * as evaluator from "./metrics.js";
 
+import { CircularLayout } from "./circularLayout.js";
+import { HillClimbing } from "./hillClimbing.js";
+
 // eslint-disable-next-line no-undef
 const sig = new sigma();
 
 let loadedTests = {};
+let selectedLayoutAlg = null;
+let running = false;
 
 // tool bar
 const toolbar = document.querySelector(".toolbar-container"),
@@ -31,6 +36,7 @@ toolbar.addEventListener("click", event => {
             openFileDialog(loadTest);
             break;
         case "batchRunTest":
+            selectedLayoutAlg = document.querySelector("#layoutAlgList").value;
             runBatch(loadedTests);
             break;
         case "backToMain":
@@ -83,84 +89,18 @@ function createRow(name) {
 
 // modifies the global variable loadedTests
 function runBatch() {
-    // TODO: apply the selected layout algorithm
-    //let layout = document.querySelector("#layout-alg").value;
-    let layout = "Random";
-    let requiredEdgeLength = parseFloat(
-        document.querySelector("#edge-length-required").value
-    );
-
+    toggleLayoutRun();
     for (let filename in loadedTests) {
-        let digits = 3;
-        let table = document.querySelector("table");
-        let obj = JSON.parse(loadedTests[filename].data);
-
-        let graph = new ConcreteGraph(
-            null,
-            {
-                requiredEdgeLength,
-                weights: getWeights()
-            }
-        );
-        graph.read(obj.graph);
-
-        let metrics = {};
-        // TODO: Don't recalculate the metrics if only the weights have changed
-        if (loadedTests[filename].metrics && !loadedTests[filename].modified) {
-            metrics = loadedTests[filename].metrics;
-        } else {
-            metrics = graph.metrics();
-            loadedTests[filename].modified = false;
-        }
-
-        //  must be added following the order in the table
-        let row = createRow(filename)
-            .add(filename)
-            .add(layout)
-            .add(graph.nodes().length)
-            .add(graph.edges().length)
-            .add(graph.density().toFixed(digits))
-            .add(metrics.nodeOcclusion.toFixed(digits))
-            .add(metrics.edgeNodeOcclusion.toFixed(digits))
-            .add(metrics.edgeLength.toFixed(digits))
-            .add(metrics.edgeCrossing.toFixed(digits))
-            .add(metrics.angularResolution.toFixed(digits))
-            .add(graph.objective().toFixed(digits))
-            // TODO: draw the graph in the container
-            .add(`<div class="graph-container"></div>`);
-
-        let oldRow = document.querySelector(`#filename-${filename}`);
-        table.replaceChild(row, oldRow);
-
-        // clean the sig instance so we can load the next test
-        sig.graph.clear();
-        // TODO: remove original data?
-        loadedTests[filename].metrics = metrics;
+        processFile(filename);
     }
+    toggleLayoutRun();
 }
 
-// callback method called after a file has been read it process the data and adds the graph with the test filename to an array
-function loadTest(name, data) {
-    let table = document.querySelector("table");
-    if (!loadedTests[name]) {
-        //  must be added following the order in the table
-        let row = createRow(name)
-            .add(name)
-            .add("-")
-            .add("-")
-            .add("-")
-            .add("-")
-            .add("-")
-            .add("-")
-            .add("-")
-            .add("-")
-            .add("-")
-            .add("-")
-            .add("-");
-        table.appendChild(row);
-        loadedTests[name] = {};
-        loadedTests[name].data = data;
-        loadedTests[name].modified = true;
+// callback method called after a file has been read
+function loadTest(filename, data) {
+    if (!loadedTests[filename]) {
+        loadedTests[filename] = { data, modified: true };
+        processFile(filename, true);
     }
 }
 
@@ -354,6 +294,86 @@ function getCellHeader(cell) {
 }
 
 function clearBatch() {
-    document.querySelectorAll("thead ~ tr").forEach(e => e.remove());
-    loadedTests = {};
+    if (!running) {
+        document.querySelectorAll("thead ~ tr").forEach(e => e.remove());
+        loadedTests = {};
+    }
+}
+
+function getLayoutAlg(graph) {
+    switch (selectedLayoutAlg) {
+        case "hillClimbing":
+            selectedLayoutAlg = new HillClimbing(graph, {
+                squareSize: 100
+            });
+            break;
+
+        case "circular":
+            selectedLayoutAlg = new CircularLayout(graph, {
+                radius: 500
+            });
+            break;
+    }
+}
+
+function processFile(filename, init = false) {
+    let digits = 3;
+    let table = document.querySelector("table");
+    let requiredEdgeLength = parseFloat(
+        document.querySelector("#edge-length-required").value
+    );
+    let obj = JSON.parse(loadedTests[filename].data);
+
+    let graph = new ConcreteGraph(sig.graph, {
+        requiredEdgeLength,
+        weights: getWeights()
+    });
+
+    // make sure the sig graph is empty
+    graph.clear();
+    graph.read(obj.graph);
+
+    if (!init) {
+        getLayoutAlg(graph);
+        selectedLayoutAlg.run();
+    }
+    let metrics = graph.metrics();
+    loadedTests[filename].metrics = metrics;
+
+    //  must be added following the order in the table
+    let row = createRow(filename)
+        .add(filename)
+        .add(graph.nodes().length)
+        .add(graph.edges().length)
+        .add(graph.density().toFixed(digits))
+        .add(metrics.nodeOcclusion.toFixed(digits))
+        .add(metrics.edgeNodeOcclusion.toFixed(digits))
+        .add(metrics.edgeLength.toFixed(digits))
+        .add(metrics.edgeCrossing.toFixed(digits))
+        .add(metrics.angularResolution.toFixed(digits))
+        .add(graph.objective().toFixed(digits))
+        .add(`<div class="graph-container"></div>`);
+
+    let oldRow = document.querySelector(`#filename-${filename}`);
+    if (oldRow) table.replaceChild(row, oldRow);
+    else table.appendChild(row);
+}
+
+function toggleLayoutRun() {
+    let list = document.querySelector("#layoutAlgList");
+    let icon = document.querySelector("#batchRunTest");
+    let tooltip = icon.querySelector(".tooltip");
+    if (list.disabled) {
+        list.disabled = false;
+        icon.classList.remove("fa-pause");
+        icon.classList.add("fa-play");
+        tooltip.innerHTML = "Run Tests";
+        running = false;
+    } else {
+        list.disabled = true;
+        icon.classList.remove("fa-play");
+        icon.classList.add("fa-pause");
+        tooltip.innerHTML = "Pause Tests";
+        running = true;
+    }
 }
