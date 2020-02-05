@@ -244,5 +244,5 @@ function deepCopy(source) {
 }
 
 function getEdgeId(n1, n2) {
-    return `e${n1.id}-${n2.id}`;
+    return `e${n1}-${n2}`;
 }

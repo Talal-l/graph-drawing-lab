@@ -1,298 +1,321 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <link type="text/css" rel="stylesheet" href="./src/css/style.css" />
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css"
-        integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous" />
+    <link type="text/css" rel="stylesheet" href="style.css" />
+    <link
+      rel="stylesheet"
+      href="https://use.fontawesome.com/releases/v5.6.3/css/all.css"
+      integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/"
+      crossorigin="anonymous"
+    />
     <title>graph</title>
-    <!-- START SIGMA IMPORTS -->
-    <script src="sigma.js/src/sigma.core.js"></script>
-    <script src="sigma.js/src/conrad.js"></script>
-    <script src="sigma.js/src/utils/sigma.utils.js"></script>
-    <script src="sigma.js/src/utils/sigma.polyfills.js"></script>
-    <script src="sigma.js/src/sigma.settings.js"></script>
-    <script src="sigma.js/src/classes/sigma.classes.dispatcher.js"></script>
-    <script src="sigma.js/src/classes/sigma.classes.configurable.js"></script>
-    <script src="sigma.js/src/classes/sigma.classes.graph.js"></script>
-    <script src="sigma.js/src/classes/sigma.classes.camera.js"></script>
-    <script src="sigma.js/src/classes/sigma.classes.quad.js"></script>
-    <script src="sigma.js/src/classes/sigma.classes.edgequad.js"></script>
-    <script src="sigma.js/src/captors/sigma.captors.mouse.js"></script>
-    <script src="sigma.js/src/captors/sigma.captors.touch.js"></script>
-    <script src="sigma.js/src/renderers/sigma.renderers.canvas.js"></script>
-    <script src="sigma.js/src/renderers/sigma.renderers.webgl.js"></script>
-    <script src="sigma.js/src/renderers/sigma.renderers.svg.js"></script>
-    <script src="sigma.js/src/renderers/sigma.renderers.def.js"></script>
-    <script src="sigma.js/src/renderers/webgl/sigma.webgl.nodes.def.js"></script>
-    <script src="sigma.js/src/renderers/webgl/sigma.webgl.nodes.fast.js"></script>
-    <script src="sigma.js/src/renderers/webgl/sigma.webgl.edges.def.js"></script>
-    <script src="sigma.js/src/renderers/webgl/sigma.webgl.edges.fast.js"></script>
-    <script src="sigma.js/src/renderers/webgl/sigma.webgl.edges.arrow.js"></script>
-    <script src="sigma.js/src/renderers/canvas/sigma.canvas.labels.def.js"></script>
-    <script src="sigma.js/src/renderers/canvas/sigma.canvas.hovers.def.js"></script>
-    <script src="sigma.js/src/renderers/canvas/sigma.canvas.nodes.def.js"></script>
-    <script src="sigma.js/src/renderers/canvas/sigma.canvas.edges.def.js"></script>
-    <script src="sigma.js/src/renderers/canvas/sigma.canvas.edges.curve.js"></script>
-    <script src="sigma.js/src/renderers/canvas/sigma.canvas.edges.arrow.js"></script>
-    <script src="sigma.js/src/renderers/canvas/sigma.canvas.edges.curvedArrow.js"></script>
-    <script src="sigma.js/src/renderers/canvas/sigma.canvas.edgehovers.def.js"></script>
-    <script src="sigma.js/src/renderers/canvas/sigma.canvas.edgehovers.curve.js"></script>
-    <script src="sigma.js/src/renderers/canvas/sigma.canvas.edgehovers.arrow.js"></script>
-    <script src="sigma.js/src/renderers/canvas/sigma.canvas.edgehovers.curvedArrow.js"></script>
-    <script src="sigma.js/src/renderers/canvas/sigma.canvas.extremities.def.js"></script>
-    <script src="sigma.js/src/renderers/svg/sigma.svg.utils.js"></script>
-    <script src="sigma.js/src/renderers/svg/sigma.svg.nodes.def.js"></script>
-    <script src="sigma.js/src/renderers/svg/sigma.svg.edges.def.js"></script>
-    <script src="sigma.js/src/renderers/svg/sigma.svg.edges.curve.js"></script>
-    <script src="sigma.js/src/renderers/svg/sigma.svg.labels.def.js"></script>
-    <script src="sigma.js/src/renderers/svg/sigma.svg.hovers.def.js"></script>
-    <script src="sigma.js/src/middlewares/sigma.middlewares.rescale.js"></script>
-    <script src="sigma.js/src/middlewares/sigma.middlewares.copy.js"></script>
-    <script src="sigma.js/src/misc/sigma.misc.animation.js"></script>
-    <script src="sigma.js/src/misc/sigma.misc.bindEvents.js"></script>
-    <script src="sigma.js/src/misc/sigma.misc.bindDOMEvents.js"></script>
-    <script src="sigma.js/src/misc/sigma.misc.drawHovers.js"></script>
-    <!--plugins-->
-    <script src="sigma.js/plugins/sigma.plugins.dragNodes/sigma.plugins.dragNodes.js"></script>
-    <script src="sigma.js/plugins/sigma.plugins.animate/sigma.plugins.animate.js"></script>
-    <!--layouts-->
 
-    <!-- END SIGMA IMPORTS -->
+    <script defer src="deps/sigma.require.js" charset="utf-8"></script>
+    <script defer src="deps/sigma.plugins.dragNodes.min.js" charset="utf-8"></script>
+    <script defer src="build/main.js"></script>
+  </head>
 
-
-    <script type="module" src="./src/js/circularLayout.js"></script>
-
-    <!--imports-->
-    <script type="module" src="src/js/util.js"></script>
-    <script type="module" src="src/js/graph.js"></script>
-    <script type="module" src="src/js/metrics.js"></script>
-    <script type="module" src="src/js/main.js"></script>
-
-</head>
-
-<body>
+  <body>
     <div class="toolbar-container">
-        <div class="toolbar-start">
-            <div class="icon fas fa-bars" id="menu"></div>
+      <div class="toolbar-start">
+        <div class="icon fas fa-bars" id="menu"></div>
 
-            <!-- graph options-->
-            <div class="icon fas fa-project-diagram" id="genGraph">
-                <span class="tooltip">Generate graph</span>
-            </div>
-
-            <div class="icon fas fa-save " id="saveGraph">
-                <span class="tooltip">Save graph</span>
-            </div>
-
-            <div class="icon fas fa-upload" id="loadGraph">
-                <span class="tooltip">Upload graph</span>
-            </div>
-
-            <div class="icon fas fa-trash" id="deleteGraph">
-                <span class="tooltip">Delete graph</span>
-            </div>
+        <!-- graph options-->
+        <div class="icon fas fa-project-diagram" id="genGraph">
+          <span class="tooltip">Generate graph</span>
         </div>
 
-        <!-- modes-->
-        <div class="toolbar-center">
-            <div class="icon fas fa-mitten group-start" id="moveNode">
-                <span class="tooltip">Move node</span>
-            </div>
-
-            <div class="icon fas fa-plus-circle " id="addNode">
-                <span class="tooltip">Add node</span>
-            </div>
-
-            <div class="icon fas fa-bezier-curve" id="addEdge">
-                <span class="tooltip">Add edge</span>
-            </div>
-
-            <div class="icon fas fa-eraser" id="erase">
-                <span class="tooltip">Delete node/edge</span>
-            </div>
+        <div class="icon fas fa-save " id="saveGraph">
+          <span class="tooltip">Save graph</span>
         </div>
 
-        <!-- layout options -->
-        <div class="toolbar-end">
-
-            <div class="" id="layoutAlg">
-                <select name="layoutAlg" id="layoutAlgList">
-                    <option value="hillClimbing">Hill Climbing</option>
-                    <option value="circular"> Circular</option>
-                </select>
-
-            </div>
-
-            <div class="icon fas fa-play" id="runLayout">
-                <span class="tooltip">Run layout</span>
-            </div>
-            <div class="icon fas fa-step-forward" id="stepLayout">
-                <span class="tooltip">Run step</span>
-            </div>
-            <div class="icon fas fa-power-off" id="resetLayout">
-                <span class="tooltip">Reset layout</span>
-            </div>
-            <div class="icon fas fa-random group-start" id="randomLayout">
-                <span class="tooltip">Randomize layout</span>
-            </div>
-
-            <div class="icon fas fa-flask" id="batchRunPage">
-                <span class="tooltip">Batch run</span>
-            </div>
+        <div class="icon fas fa-upload" id="loadGraph">
+          <span class="tooltip">Upload graph</span>
         </div>
+
+        <div class="icon fas fa-trash" id="deleteGraph">
+          <span class="tooltip">Delete graph</span>
+        </div>
+      </div>
+
+      <!-- modes-->
+      <div class="toolbar-center">
+        <div class="icon fas fa-mitten group-start" id="moveNode">
+          <span class="tooltip">Move node</span>
+        </div>
+
+        <div class="icon fas fa-plus-circle " id="addNode">
+          <span class="tooltip">Add node</span>
+        </div>
+
+        <div class="icon fas fa-bezier-curve" id="addEdge">
+          <span class="tooltip">Add edge</span>
+        </div>
+
+        <div class="icon fas fa-eraser" id="erase">
+          <span class="tooltip">Delete node/edge</span>
+        </div>
+      </div>
+
+      <!-- layout options -->
+      <div class="toolbar-end">
+        <div class="" id="layoutAlg">
+          <select name="layoutAlg" id="layoutAlgList">
+            <option value="hillClimbing">Hill Climbing</option>
+            <option value="circular"> Circular</option>
+          </select>
+        </div>
+
+        <div class="icon fas fa-play" id="runLayout">
+          <span class="tooltip">Run layout</span>
+        </div>
+        <div class="icon fas fa-step-forward" id="stepLayout">
+          <span class="tooltip">Run step</span>
+        </div>
+        <div class="icon fas fa-power-off" id="resetLayout">
+          <span class="tooltip">Reset layout</span>
+        </div>
+        <div class="icon fas fa-random group-start" id="randomLayout">
+          <span class="tooltip">Randomize layout</span>
+        </div>
+
+        <div class="icon fas fa-flask" id="batchRunPage">
+          <span class="tooltip">Batch run</span>
+        </div>
+      </div>
     </div>
 
     <!--side menu -->
     <div class="wrapper">
-        <div class="side-menu" id="side-menu">
-            <div class="menu-section-label" data-section="menu-sec-graph-info">
-                <h3>Graph info</h3>
-                <div class="menu-section-toggle arrow-down"></div>
-            </div>
-            <div class="menu-section" id="menu-sec-graph-info">
-                <div class="menu-item">
-                    <p class="node-num">Number of nodes</p>
-                    <p id="node-num">0</p>
-                </div>
-                <div class="menu-item">
-                    <p>Number of edges</p>
-                    <p id="edge-num">0</p>
-                </div>
-                <div class="menu-item">
-                    <p>Graph density</p>
-                    <p id="density">0</p>
-                </div>
-                <div class="menu-item">
-                    <p>Objective function</p>
-                    <p id="objective-function">0</p>
-                </div>
-            </div>
-
-            <div class="menu-section-label" data-section="menu-sec-metrics">
-                <h3>Metrics</h3>
-                <div class="menu-section-toggle arrow-down"></div>
-            </div>
-            <div class="menu-section" id="menu-sec-metrics">
-                <div class="menu-item-group">
-                    <div class="menu-item">
-                        <p>Node occlusion</p>
-                        <p id="node-occlusion">0</p>
-                    </div>
-
-                    <div class="menu-item">
-                        <p>Weight</p>
-                        <input type="number" id="node-occlusion-weight" value="1" step="0.01" min="0" max="1" />
-                    </div>
-                </div>
-                <div class="menu-item-group">
-                    <div class="menu-item">
-                        <p>Edge node occlusion:</p>
-                        <p id="edge-node-occlusion">0</p>
-                    </div>
-                    <div class="menu-item">
-                        <p>Weight</p>
-                        <input type="number" id="edge-node-occlusion-weight" value="1" step="0.01" min="0" max="1" />
-                    </div>
-                </div>
-                <div class="menu-item-group">
-                    <div class="menu-item">
-                        <p>Edge length</p>
-                        <p id="edge-length">0</p>
-                    </div>
-
-                    <div class="menu-item">
-                        <p>Weight</p>
-                        <input type="number" id="edge-length-weight" value="1" step="0.01" min="0" max="1" />
-                    </div>
-
-                    <div class="menu-item">
-                        <p>Required length</p>
-                        <input type="number" id="edge-length-required" value="500" step="1" min="0" max="1000000" />
-                    </div>
-
-                </div>
-
-                <div class="menu-item-group">
-                    <div class="menu-item">
-                        <p>Edge crossing</p>
-                        <p id="edge-cross">0</p>
-                    </div>
-                    <div class="menu-item">
-                        <p>Weight</p>
-                        <input type="number" id="edge-crossing-weight" value="1" step="0.01" min="0" max="1" />
-                    </div>
-                </div>
-                <div class="menu-item-group">
-                    <div class="menu-item">
-                        <p>Angular resolution</p>
-                        <p id="angular-resolution">0</p>
-                    </div>
-                    <div class="menu-item">
-                        <p>Weight</p>
-                        <input type="number" id="angular-resolution-weight" value="1" step="0.01" min="0" max="1" />
-                    </div>
-                </div>
-            </div>
+      <div class="side-menu" id="side-menu">
+        <div class="menu-section-label" data-section="menu-sec-graph-info">
+          <h3>Graph info</h3>
+          <div class="menu-section-toggle arrow-down"></div>
+        </div>
+        <div class="menu-section" id="menu-sec-graph-info">
+          <div class="menu-item">
+            <p class="node-num">Number of nodes</p>
+            <p id="node-num">0</p>
+          </div>
+          <div class="menu-item">
+            <p>Number of edges</p>
+            <p id="edge-num">0</p>
+          </div>
+          <div class="menu-item">
+            <p>Graph density</p>
+            <p id="density">0</p>
+          </div>
+          <div class="menu-item">
+            <p>Objective function</p>
+            <p id="objective-function">0</p>
+          </div>
         </div>
 
-        <!--side menu -->
-
-        <main>
-            <input type="file" id="fileSelector" multiple accept="text/*" style="display:none" />
-            <a href="" id="saveGraphLink" download style="display: none">save graph</a>
-
-            <div id="container">
-                <div id="annotation" style="position: relative;" width="0" height="0"></div>
+        <div class="menu-section-label" data-section="menu-sec-metrics">
+          <h3>Metrics</h3>
+          <div class="menu-section-toggle arrow-down"></div>
+        </div>
+        <div class="menu-section" id="menu-sec-metrics">
+          <div class="menu-item-group">
+            <div class="menu-item">
+              <p>Node occlusion</p>
+              <p id="node-occlusion">0</p>
             </div>
 
-            <div id="gen-modal" class="modal-container">
-                <div class="modal">
-                    <div class="input-group-wrapper">
-                        <div class="input-group">
-                            <label for="gen-mode">Generation mode</label>
-                            <select id="gen-mode">
-                                <option value="exact">Exact</option>
-                                <option value="range">Range</option>
-                            </select>
-                        </div>
-                        <div class="input-group">
-                            <label for="node-num">Number of nodes</label>
-                            <input type="number" name="node-num-min" placeholder="min nodes" id="node-num-min" min="0"
-                                max="100000" />
-                            <input type="number" name="node-num-max" placeholder="max nodes" id="node-num-max" min="0"
-                                max="100000" />
-                            <label for="node-num" id="node-error" class="error">Error msg</label>
-                        </div>
-                        <div class="input-group">
-                            <label for="edge-num">Number of edges</label>
-                            <input type="number" name="edge-num-min" placeholder="min edges" id="edge-num-min" min="0"
-                                max="1000000" />
-                            <input type="number" name="edge-num-max" placeholder="max edges" id="edge-num-max" min="0"
-                                max="1000000" />
-                            <label for="edge-num" id="edge-error" class="error">Error msg</label>
-                        </div>
-                        <div class="btns">
-                            <button id="generate" class="primary">Generate</button>
-                            <button id="dismiss" class="danger">Dismiss</button>
-                        </div>
-                    </div>
-                </div>
+            <div class="menu-item">
+              <p>Weight</p>
+              <input
+                type="number"
+                id="node-occlusion-weight"
+                value="1"
+                step="0.01"
+                min="0"
+                max="1"
+              />
             </div>
-            <div id="warn-modal" class="modal-container">
-                <div class="modal">
-                    <h2>A graph already exist!</h2>
-                    <div class="btns">
-                        <button id="save" class="primary">Save</button>
-                        <button id="delete" class="danger">Delete</button>
-                    </div>
-                </div>
+          </div>
+          <div class="menu-item-group">
+            <div class="menu-item">
+              <p>Edge node occlusion:</p>
+              <p id="edge-node-occlusion">0</p>
             </div>
-        </main>
+            <div class="menu-item">
+              <p>Weight</p>
+              <input
+                type="number"
+                id="edge-node-occlusion-weight"
+                value="1"
+                step="0.01"
+                min="0"
+                max="1"
+              />
+            </div>
+          </div>
+          <div class="menu-item-group">
+            <div class="menu-item">
+              <p>Edge length</p>
+              <p id="edge-length">0</p>
+            </div>
+
+            <div class="menu-item">
+              <p>Weight</p>
+              <input
+                type="number"
+                id="edge-length-weight"
+                value="1"
+                step="0.01"
+                min="0"
+                max="1"
+              />
+            </div>
+
+            <div class="menu-item">
+              <p>Required length</p>
+              <input
+                type="number"
+                id="edge-length-required"
+                value="500"
+                step="1"
+                min="0"
+                max="1000000"
+              />
+            </div>
+          </div>
+
+          <div class="menu-item-group">
+            <div class="menu-item">
+              <p>Edge crossing</p>
+              <p id="edge-cross">0</p>
+            </div>
+            <div class="menu-item">
+              <p>Weight</p>
+              <input
+                type="number"
+                id="edge-crossing-weight"
+                value="1"
+                step="0.01"
+                min="0"
+                max="1"
+              />
+            </div>
+          </div>
+          <div class="menu-item-group">
+            <div class="menu-item">
+              <p>Angular resolution</p>
+              <p id="angular-resolution">0</p>
+            </div>
+            <div class="menu-item">
+              <p>Weight</p>
+              <input
+                type="number"
+                id="angular-resolution-weight"
+                value="1"
+                step="0.01"
+                min="0"
+                max="1"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!--side menu -->
+
+      <main>
+        <input
+          type="file"
+          id="fileSelector"
+          multiple
+          accept="text/*"
+          style="display:none"
+        />
+        <a href="" id="saveGraphLink" download style="display: none"
+          >save graph</a
+        >
+
+        <div id="container">
+          <div
+            id="annotation"
+            style="position: relative;"
+            width="0"
+            height="0"
+          ></div>
+        </div>
+
+        <div id="gen-modal" class="modal-container">
+          <div class="modal">
+            <div class="input-group-wrapper">
+              <div class="input-group">
+                <label for="gen-mode">Generation mode</label>
+                <select id="gen-mode">
+                  <option value="exact">Exact</option>
+                  <option value="range">Range</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label for="node-num">Number of nodes</label>
+                <input
+                  type="number"
+                  name="node-num-min"
+                  placeholder="min nodes"
+                  id="node-num-min"
+                  min="0"
+                  max="100000"
+                />
+                <input
+                  type="number"
+                  name="node-num-max"
+                  placeholder="max nodes"
+                  id="node-num-max"
+                  min="0"
+                  max="100000"
+                />
+                <label for="node-num" id="node-error" class="error"
+                  >Error msg</label
+                >
+              </div>
+              <div class="input-group">
+                <label for="edge-num">Number of edges</label>
+                <input
+                  type="number"
+                  name="edge-num-min"
+                  placeholder="min edges"
+                  id="edge-num-min"
+                  min="0"
+                  max="1000000"
+                />
+                <input
+                  type="number"
+                  name="edge-num-max"
+                  placeholder="max edges"
+                  id="edge-num-max"
+                  min="0"
+                  max="1000000"
+                />
+                <label for="edge-num" id="edge-error" class="error"
+                  >Error msg</label
+                >
+              </div>
+              <div class="btns">
+                <button id="generate" class="primary">Generate</button>
+                <button id="dismiss" class="danger">Dismiss</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="warn-modal" class="modal-container">
+          <div class="modal">
+            <h2>A graph already exist!</h2>
+            <div class="btns">
+              <button id="save" class="primary">Save</button>
+              <button id="delete" class="danger">Delete</button>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
-</body>
-
+  </body>
 </html>

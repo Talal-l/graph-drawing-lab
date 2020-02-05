@@ -24,12 +24,12 @@ export class CircularLayout {
         let N = nodes.length;
 
         for (let i = 0; i < N; i++) {
-            let n = nodes[i];
+            let n = this.graph.getNodeAttributes(nodes[i]);
             let x = this.radius * Math.cos((2 * Math.PI * i) / N);
             let y = this.radius * Math.sin((2 * Math.PI * i) / N);
 
             let v = new Vec((x - n.x) / step, (y - n.y) / step);
-            this.graph.moveNode(n, v,true);
+            this.graph.moveNode(nodes[i], v, true);
         }
 
         this.iterationCount++;

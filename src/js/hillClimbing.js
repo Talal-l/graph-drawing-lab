@@ -29,22 +29,21 @@ export class HillClimbing {
 
     // single iteration of the layout algorithm
     step() {
-        let nodes = this.graph.nodes();
         let lastObj = this.graph.objective();
-        for (let n of nodes) {
+        for (let nId of this.graph.nodes()) {
             // start with no move as the best move
             let bestMoveIndex = null;
             let bestObj = this.graph.objective();
 
             for (let i = 0; i < this.vectors.length; i++) {
-                let newObj = this.graph.testMove(n.id, this.vectors[i]);
+                let newObj = this.graph.testMove(nId, this.vectors[i]);
                 if (newObj !== null && newObj < bestObj) {
                     bestObj = newObj;
                     bestMoveIndex = i;
                 }
             }
             if (bestMoveIndex !== null) {
-                this.graph.moveNode(n, this.vectors[bestMoveIndex]);
+                this.graph.moveNode(nId, this.vectors[bestMoveIndex]);
             }
         }
         if (lastObj === this.graph.objective()) {

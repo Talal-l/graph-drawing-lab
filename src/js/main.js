@@ -1,12 +1,10 @@
 // sigam.js imports
 /*global sigma*/
-
 import { ConcreteGraph, generateGraph } from "./graph.js";
 import { refreshScreen, distance, getEdgeId } from "./util.js";
-import { CircularLayout } from "./circularLayout.js";
-import { HillClimbing } from "./hillClimbing.js";
 
 let container = document.querySelector("#container");
+
 let canvasRenderer = {
     container: "container",
     type: "canvas",
@@ -17,6 +15,7 @@ let canvasRenderer = {
         edgeHoverSizeRatio: 1.6
     }
 };
+let worker = new Worker("build/layoutWorker.js");
 let webglRenderer = {
     type: "webgl",
     camera: "cam1",
@@ -38,11 +37,11 @@ let sigDefaults = {
 let sig = new sigma(sigDefaults);
 let cam = sig.cameras.cam1;
 // create the main graph instance
-let GRAPH = new ConcreteGraph(sig.graph, {});
+let GRAPH = new ConcreteGraph(null, { sigGraph: sig.graph });
 
 let selectedLayoutAlg;
+let layoutAlgOptions;
 updateLayoutAlg();
-
 
 // create an object to use to track select and drag operations
 // using constructor function so we can selectively expose methods
@@ -107,7 +106,7 @@ let graphUiModes = (function() {
         // get x,y after applying the same transformation that were applied to the camera
         let p = cam.cameraPosition(x, y);
 
-        let id = GRAPH.nextNodeId();
+        let id = GRAPH.nextId;
         let n = {
             label: id,
             id: id,
@@ -126,9 +125,9 @@ let graphUiModes = (function() {
             selectNode(node);
         } else if (selectedNode.id !== node.id) {
             // create an edge if non existed between them
-            if (!GRAPH.neighbors(node)[selectedNode.id]) {
+            if (!GRAPH.neighbors(node.id)[selectedNode.id]) {
                 GRAPH.addEdge({
-                    id: getEdgeId(selectedNode, node),
+                    id: getEdgeId(selectedNode.id, node.id),
                     source: selectedNode.id,
                     target: node.id,
                     size: edgeSize,
@@ -232,13 +231,7 @@ let beforeLayoutRun = true;
 
 function setGraphCache() {
     if (beforeLayoutRun) {
-        localStorage.setItem(
-            "graph",
-            JSON.stringify({
-                nodes: GRAPH.nodes(),
-                edges: GRAPH.edges()
-            })
-        );
+        localStorage.setItem("graph", JSON.stringify(GRAPH.graph.toJSON()));
         beforeLayoutRun = false;
     }
 }
@@ -301,26 +294,43 @@ toolbar.addEventListener("click", event => {
             setGraphCache();
             const x = container.offsetWidth;
             const y = container.offsetHeight;
-            GRAPH.nodes().forEach(n => {
-                GRAPH.setNodePos(n.id, {
+            for (let nId of GRAPH.nodes()) {
+                GRAPH.setNodePos(nId, {
                     x: (0.5 - Math.random()) * x,
                     y: (0.5 - Math.random()) * y
                 });
-            });
+            }
+
             refreshScreen(sig, updateMetrics);
 
             break;
         case "runLayout":
             updateLayoutAlg();
             setGraphCache();
-            selectedLayoutAlg.run();
-            refreshScreen(sig, updateMetrics);
+            worker.postMessage([
+                GRAPH.graph.toJSON(),
+                selectedLayoutAlg,
+                layoutAlgOptions,
+                "run"
+            ]);
+            worker.onmessage = e => {
+                GRAPH.read(e.data[0]);
+                refreshScreen(sig, updateMetrics);
+            };
             break;
         case "stepLayout":
             updateLayoutAlg();
             setGraphCache();
-            selectedLayoutAlg.step();
-            refreshScreen(sig, updateMetrics);
+            worker.postMessage([
+                GRAPH.graph.toJSON(),
+                selectedLayoutAlg,
+                layoutAlgOptions,
+                "step"
+            ]);
+            worker.onmessage = e => {
+                GRAPH.read(e.data[0]);
+                refreshScreen(sig, updateMetrics);
+            };
             break;
         case "resetLayout":
             // restore old layout from local storage
@@ -414,7 +424,7 @@ genModal.addEventListener("click", event => {
 
             GRAPH.clear();
             // extract the nodes and edges from the created graph and update the current instance with it
-            GRAPH.read({ nodes: G.nodes(), edges: G.edges() });
+            GRAPH.read(G);
             refreshScreen(sig, updateMetrics);
             genModal.style.display = "none";
             break;
@@ -498,17 +508,9 @@ for (const e of toggleEl) {
     };
 }
 
-// return string to use for edge id
 function saveCurrentGraph() {
-    let json = JSON.stringify({
-        graph: {
-            nodes: GRAPH.nodes(),
-            edges: GRAPH.edges()
-        }
-    });
-
-    // eslint-disable-next-line no-undef
-    saveFileDialog(json);
+    let obj = { graph: GRAPH.graph.toJSON() }; // eslint-disable-next-line no-undef
+    saveFileDialog(JSON.stringify(obj));
 }
 
 refreshScreen(sig, updateMetrics);
@@ -583,15 +585,17 @@ function updateLayoutAlg() {
     let list = document.querySelector("#layoutAlgList");
     switch (list.value) {
         case "hillClimbing":
-            selectedLayoutAlg = new HillClimbing(GRAPH, {
+            selectedLayoutAlg = "hillClimbing";
+            layoutAlgOptions = {
                 squareSize: 100
-            });
+            };
             break;
 
         case "circular":
-            selectedLayoutAlg = new CircularLayout(GRAPH, {
+            selectedLayoutAlg = "circular";
+            layoutAlgOptions = {
                 radius: 500
-            });
+            };
             break;
     }
 }

@@ -4,7 +4,8 @@
   "description": "A Javascript tool to help explore and compare different graph layout algorithms.",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
+    "start": "webpack && electron .",
+    "watch": "webpack --watch --silent & electron .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -19,9 +20,13 @@
   "homepage": "https://gitlab.com/talal__l/graph-drawing#readme",
   "devDependencies": {
     "electron": "^7.1.2",
-    "eslint": "^5.16.0"
+    "eslint": "^5.16.0",
+    "webpack": "^4.41.5",
+    "webpack-cli": "^3.3.10"
   },
-  "dependencies": {},
+  "dependencies": {
+    "graphology": "^0.14.1"
+  },
   "keywords": [
     "graph",
     "layout",

@@ -5,7 +5,7 @@ import {
     pointSegDistance,
     getEdgeNodes,
     minMaxNorm,
-    edgeIntersection
+    intersection
 } from "./util.js";
 
 export {
@@ -18,16 +18,17 @@ export {
 
 /**
  * Calculate the score describing how close node is to all other nodes.
- * @param {object} graph - A sigma graph instance
- * @param {object} node - Target node
+ * @param {object} graph - Graphology graph instance
+ * @param {string} nodeId - Target node
  * @param {number} min - Min distance
  * @returns {number} - Score
  */
-function nodeNodeOcclusion(graph, node, min) {
-    let nodes = graph.nodes();
+function nodeNodeOcclusion(graph, nodeId, min) {
+    let node = graph.getNodeAttributes(nodeId);
     let sum = 0;
-    for (let n of nodes) {
-        if (node.id !== n.id) {
+    for (let id of graph.nodes()) {
+        if (id !== nodeId) {
+            let n = graph.getNodeAttributes(id);
             let d = distance(node, n);
             if (d < min) {
                 d = min;
@@ -40,25 +41,29 @@ function nodeNodeOcclusion(graph, node, min) {
 
 /**
  * Calculate the score describing closeness of an edge to all nodes in the graph.
- * @param {object} graph - A sigma graph instance
- * @param {object} edge - Edge to measure
+ * @param {object} graph - Graphology graph instance
+ * @param {object} edgeId - Id of the edge to measure
  * @param {number} min - Min distance
  * @returns {number} - Score
  */
-function edgeNodeOcclusion(graph, edge, min) {
-    let nodes = graph.nodes();
-    let sum = 0;
-
+function edgeNodeOcclusion(graph, edgeId, min) {
+    let [sourceId, targetId] = graph.extremities(edgeId);
+    let sourceNode = graph.getNodeAttributes(sourceId);
+    let targetNode = graph.getNodeAttributes(targetId);
     let seg = {
-        start: new Vec(graph.nodes(edge.source)),
-        end: new Vec(graph.nodes(edge.target))
+        start: new Vec(sourceNode),
+        end: new Vec(targetNode)
     };
-    for (let n of nodes) {
+
+    let sum = 0;
+    for (let nId of graph.nodes()) {
+        let n = graph.getNodeAttributes(nId);
         let d = pointSegDistance(n, seg);
         if (d < min) {
             d = min;
         }
-        if (n.id !== edge.source && n.id !== edge.target) {
+        // not an endpoint
+        if (!graph.extremities(edgeId).includes(nId)) {
             sum += 1 / d ** 2;
         }
     }
@@ -67,38 +72,51 @@ function edgeNodeOcclusion(graph, edge, min) {
 }
 /**
  * Calculate a score describing how far an edge is from the desired length.
- * @param {object} graph - A sigma graph instance
- * @param {object} edge - Edge to measure
+ * @param {object} graph - Graphology graph instance
+ * @param {object} edgeId - Id of the edge to measure
  * @param {number} len - The desired edge length
  * @returns {number} - Score
  */
-function edgeLength(graph, edge, len) {
-    let [n1, n2] = getEdgeNodes(edge, graph);
-    let d = distance(n1, n2);
+function edgeLength(graph, edgeId, len) {
+    let [sourceId, targetId] = graph.extremities(edgeId);
+    let sourceNode = graph.getNodeAttributes(sourceId);
+    let targetNode = graph.getNodeAttributes(targetId);
+    let d = distance(sourceNode, targetNode);
     return (d - len) ** 2;
 }
 
-/** Calculate a score describing the intensity of edge crossing.
- * @param {object} graph - A sigma graph instance
- * @returns {Object} - Object with edge crossing with the given edge
+/** Find all edges intersecting with the given edge
+ * @param {object} graph - Graphology graph instance
+ * @returns {Object} - Map of edge ids intersecting the given edge
  */
-function edgeCrossing(graph, edge) {
-    let edges = graph.edges();
-
+function edgeCrossing(graph, edgeId) {
     let isecList = Object.create(null);
-    let sum = 0;
 
-    for (let e of edges) {
-        let isec = edgeIntersection(edge, e, graph);
+    let [sourceId, targetId] = graph.extremities(edgeId);
+    let sourceNode = graph.getNodeAttributes(sourceId);
+    let targetNode = graph.getNodeAttributes(targetId);
+    let seg1 = {
+        start: new Vec(sourceNode),
+        end: new Vec(targetNode)
+    };
+
+    for (let eId of graph.edges()) {
+        if (edgeId === eId) continue;
+        let endpointsIds = graph.extremities(eId);
+        let sourceNode2 = graph.getNodeAttributes(endpointsIds[0]);
+        let targetNode2 = graph.getNodeAttributes(endpointsIds[1]);
+        let seg2 = {
+            start: new Vec(sourceNode2),
+            end: new Vec(targetNode2)
+        };
+
+        let isec = intersection(seg1, seg2);
         if (
             isec &&
-            edge.source !== e.source &&
-            edge.target !== e.target &&
-            edge.target !== e.source &&
-            edge.source !== e.target
+            !endpointsIds.includes(sourceId) &&
+            !endpointsIds.includes(targetId)
         ) {
-            isecList[e.id] = 1;
-            sum++;
+            isecList[eId] = 1;
         }
     }
     return isecList;
@@ -106,19 +124,16 @@ function edgeCrossing(graph, edge) {
 
 /**
  * Calculate a score describing the angular resolution between incident edges
- * @param {object} graph - A sigma graph instance
- * @param {object} node - The node to calculate the metric for
+ * @param {object} graph - Graphology graph instance
+ * @param {object} nodeId - Id of the node to calculate the metric for
  * @returns {number} - Score
  */
-function angularResolution(graph, node) {
-    let nodes = graph.nodes();
+function angularResolution(graph, nodeId) {
     let sum = 0;
-    let maxSum = 0;
-    let E = graph.allNeighborNodes(node);
-    if (E.length > 1) {
-        maxSum += 360;
-        let adj = adjEdges(node, E);
-        var maxAngle = 360 / E.length || 360;
+    let neighborsIds = graph.neighbors(nodeId);
+    if (neighborsIds.length > 1) {
+        let adj = adjEdges(graph, nodeId, neighborsIds);
+        var maxAngle = 360 / neighborsIds.length || 360;
 
         let i = 0;
         for (let j = 1; j < adj.length; j++) {
@@ -142,20 +157,23 @@ function angularResolution(graph, node) {
 
 /**
  * Get the adj edges sorted by their angle from the x-axis (anticlockwise)
- * @param {object} n - An object with x,y coordinate
- * @param {Array} E - An array with nodes connected to n
+ * @param {object} graph - An object with x,y coordinate
+ * @param {string} nId - Node id
+ * @param {Array} nodesIds - An array with ids of nodes connected to n
  * @returns {Array} - An array with number of edges at an angle
  * Algorithm author: ebraheem.almuaili@gmail.com
  */
-function adjEdges(n, E) {
+function adjEdges(graph, nId, nodesIds) {
+    let n = graph.getNodeAttributes(nId);
     let adj = new Array(360);
     let nVec = new Vec(n);
     let base = new Vec(1000, 0).sub(nVec);
-    for (const e of E) {
-        let e1 = new Vec(e).sub(nVec);
-        let a = Math.floor((base.angle(e1) * 180) / Math.PI);
+    for (const id of nodesIds) {
+        let n = graph.getNodeAttributes(id);
+        let otherN = new Vec(n).sub(nVec);
+        let a = Math.floor((base.angle(otherN) * 180) / Math.PI);
         // account for angles more than 180 deg
-        if (e1.y > 0) a = 360 - a;
+        if (otherN.y > 0) a = 360 - a;
         // store number of edges with the same angle or less than 1 deg diff
         adj[a] = adj[a] ? ++adj[a] : 1;
     }

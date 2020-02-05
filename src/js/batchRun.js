@@ -250,10 +250,7 @@ function genTest(testNum, nMin, nMax, eMin, eMax, width, height) {
     while (testNum--) {
         let G = generateGraph(nMin, nMax, eMin, eMax, height, width);
         let obj = {
-            graph: {
-                nodes: G.nodes(),
-                edges: G.edges()
-            }
+            graph: G.toJSON()
         };
         let json = JSON.stringify(obj);
         // eslint-disable-next-line no-undef
@@ -324,7 +321,8 @@ function processFile(filename, init = false) {
     );
     let obj = JSON.parse(loadedTests[filename].data);
 
-    let graph = new ConcreteGraph(sig.graph, {
+    let graph = new ConcreteGraph(null, {
+        sigGraph: sig.graph,
         requiredEdgeLength,
         weights: getWeights()
     });

@@ -17,3 +17,5 @@ jsconfig.json
 # data 
 data/*
 !data/.gitkeep
+
+build/
