@@ -240,118 +240,7 @@ function clearGraphCache() {
     beforeLayoutRun = true;
 }
 
-toolbar.addEventListener("click", event => {
-    let target = event.target;
-
-    // handle mode change
-    let modes = graphUiModes;
-    let isActive = target.classList.contains("active");
-    if (!isActive) {
-        // deactivate any active mode
-        let active = document.querySelector(".active");
-        if (active) {
-            modes[active.id](false);
-        }
-        // select it's a mode item
-        if (target.id in modes) modes[target.id](true);
-    } else {
-        modes[target.id](false);
-    }
-
-    switch (target.id) {
-        case "menu":
-            if (sideMenu.style.display === "flex") {
-                sideMenu.style.display = "none";
-            } else {
-                sideMenu.style.display = "flex";
-            }
-            break;
-        case "genGraph":
-            if (!GRAPH.nodes().length) genModal.style.display = "flex";
-            else {
-                warnModal.style.display = "flex";
-            }
-            break;
-        case "saveGraph":
-            saveCurrentGraph();
-
-            break;
-        case "loadGraph":
-            // eslint-disable-next-line no-undef
-            openFileDialog((filename, data) => {
-                GRAPH.clear();
-                GRAPH.read(JSON.parse(data).graph);
-                refreshScreen(sig, updateMetrics);
-                clearGraphCache();
-            });
-            break;
-        case "deleteGraph":
-            GRAPH.clear();
-            refreshScreen(sig, updateMetrics);
-            clearGraphCache();
-            break;
-        case "randomLayout":
-            setGraphCache();
-            const x = container.offsetWidth;
-            const y = container.offsetHeight;
-            for (let nId of GRAPH.nodes()) {
-                GRAPH.setNodePos(nId, {
-                    x: (0.5 - Math.random()) * x,
-                    y: (0.5 - Math.random()) * y
-                });
-            }
-
-            refreshScreen(sig, updateMetrics);
-
-            break;
-        case "runLayout":
-            updateLayoutAlg();
-            setGraphCache();
-            worker.postMessage([
-                GRAPH.graph.toJSON(),
-                selectedLayoutAlg,
-                layoutAlgOptions,
-                "run"
-            ]);
-            worker.onmessage = e => {
-                GRAPH.read(e.data[0]);
-                refreshScreen(sig, updateMetrics);
-            };
-            break;
-        case "stepLayout":
-            updateLayoutAlg();
-            setGraphCache();
-            worker.postMessage([
-                GRAPH.graph.toJSON(),
-                selectedLayoutAlg,
-                layoutAlgOptions,
-                "step"
-            ]);
-            worker.onmessage = e => {
-                GRAPH.read(e.data[0]);
-                refreshScreen(sig, updateMetrics);
-            };
-            break;
-        case "resetLayout":
-            // restore old layout from local storage
-            let originalGraph = localStorage.getItem("graph");
-            originalGraph = JSON.parse(originalGraph);
-            if (originalGraph) {
-                GRAPH.clear();
-                GRAPH.read(originalGraph);
-                refreshScreen(sig, updateMetrics);
-                clearGraphCache();
-            }
-            break;
-        case "batchRunPage":
-            window.location.replace("batchRun.html");
-
-            break;
-
-        default:
-            break;
-    }
-});
+toolbar.addEventListener("click", toolbarClickHandler);
 
 const genModal = document.querySelector("#gen-modal"),
     warnModal = document.querySelector("#warn-modal"),
@@ -596,6 +485,171 @@ function updateLayoutAlg() {
             layoutAlgOptions = {
                 radius: 500
             };
+            break;
+    }
+}
+
+function disableToolbar(init) {
+    console.log("disableToolbar");
+    let elements = document.querySelectorAll(
+        ".toolbar-container .icon:not(#menu)"
+    );
+    let dropdown = document.querySelector("#layoutAlgList");
+    dropdown.disabled = true;
+    for (let e of elements) {
+        e.style = "color:gray;pointer-events:none";
+    }
+
+    // change play to pause icon
+    let initEl = document.querySelector(`#${init}`);
+    let icon = init === "runLayout" ? "fa-play" : "fa-step-forward";
+    initEl.classList.remove(icon);
+    initEl.classList.add("fa-pause");
+    initEl.style = "color:black";
+    toolbar.removeEventListener("click", toolbarClickHandler);
+    initEl.addEventListener("click", enableToolbar, { once: true });
+}
+
+function enableToolbar(init) {
+    console.log("easdfasdlf;laskdfjlk;asdjclick handler");
+    if (!(typeof init === "string")) {
+        init = init.target.id;
+    }
+
+    let elements = document.querySelectorAll(
+        ".toolbar-container .icon:not(#menu)"
+    );
+    for (let e of elements) {
+        e.style = "color:black";
+    }
+
+    let dropdown = document.querySelector("#layoutAlgList");
+    dropdown.disabled = false;
+    let initEl = document.querySelector(`#${init}`);
+    initEl.classList.remove("fa-pause");
+    let icon = init === "runLayout" ? "fa-play" : "fa-step-forward";
+    initEl.classList.add(icon);
+    setTimeout(() => {
+        toolbar.addEventListener("click", toolbarClickHandler);
+    }, 0);
+
+    worker.terminate();
+    worker = new Worker("build/layoutWorker.js");
+}
+
+function toolbarClickHandler(event) {
+    console.log("toolbar click handler");
+    let target = event.target;
+    // handle mode change
+    let modes = graphUiModes;
+    let isActive = target.classList.contains("active");
+    if (!isActive) {
+        // deactivate any active mode
+        let active = document.querySelector(".active");
+        if (active) {
+            modes[active.id](false);
+        }
+        // select its a mode item
+        if (target.id in modes) modes[target.id](true);
+    } else {
+        modes[target.id](false);
+    }
+
+    switch (target.id) {
+        case "menu":
+            if (sideMenu.style.display === "flex") {
+                sideMenu.style.display = "none";
+            } else {
+                sideMenu.style.display = "flex";
+            }
+            break;
+        case "genGraph":
+            if (!GRAPH.nodes().length) genModal.style.display = "flex";
+            else {
+                warnModal.style.display = "flex";
+            }
+            break;
+        case "saveGraph":
+            saveCurrentGraph();
+
+            break;
+        case "loadGraph":
+            // eslint-disable-next-line no-undef
+            openFileDialog((filename, data) => {
+                GRAPH.clear();
+                GRAPH.read(JSON.parse(data).graph);
+                refreshScreen(sig, updateMetrics);
+                clearGraphCache();
+            });
+            break;
+        case "deleteGraph":
+            GRAPH.clear();
+            refreshScreen(sig, updateMetrics);
+            clearGraphCache();
+            break;
+        case "randomLayout":
+            setGraphCache();
+            const x = container.offsetWidth;
+            const y = container.offsetHeight;
+            for (let nId of GRAPH.nodes()) {
+                GRAPH.setNodePos(nId, {
+                    x: (0.5 - Math.random()) * x,
+                    y: (0.5 - Math.random()) * y
+                });
+            }
+
+            refreshScreen(sig, updateMetrics);
+
+            break;
+        case "runLayout":
+            updateLayoutAlg();
+            setGraphCache();
+            disableToolbar("runLayout");
+            worker.postMessage([
+                GRAPH.graph.toJSON(),
+                selectedLayoutAlg,
+                layoutAlgOptions,
+                "run"
+            ]);
+            worker.onmessage = e => {
+                GRAPH.read(e.data[0]);
+                refreshScreen(sig, updateMetrics);
+                enableToolbar("runLayout");
+            };
+            break;
+        case "stepLayout":
+            updateLayoutAlg();
+            setGraphCache();
+            disableToolbar("stepLayout");
+            worker.postMessage([
+                GRAPH.graph.toJSON(),
+                selectedLayoutAlg,
+                layoutAlgOptions,
+                "step"
+            ]);
+            worker.onmessage = e => {
+                GRAPH.read(e.data[0]);
+                refreshScreen(sig, updateMetrics);
+                enableToolbar("stepLayout");
+            };
+            break;
+        case "resetLayout":
+            // restore old layout from local storage
+            let originalGraph = localStorage.getItem("graph");
+            originalGraph = JSON.parse(originalGraph);
+            if (originalGraph) {
+                GRAPH.clear();
+                GRAPH.read(originalGraph);
+                refreshScreen(sig, updateMetrics);
+                clearGraphCache();
+            }
+            break;
+        case "batchRunPage":
+            window.location.replace("batchRun.html");
+
+            break;
+
+        default:
             break;
     }
 }
