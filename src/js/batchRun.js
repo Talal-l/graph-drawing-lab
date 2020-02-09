@@ -168,14 +168,14 @@ sideMenu
         // reset current tests
         if (event.target.classList.contains("weight-input")) {
             //reset objective for all rows
-            modifyCol("objective", "-");
+            modifyCol("objective", null, "-");
         }
 
         // TODO: handle required length change
         if (event.target.id === "edge-length-required") {
             console.log(event.target.id);
-            modifyCol("edge-length", "-");
-            modifyCol("objective", "-");
+            modifyCol("edge-length", null, "-");
+            modifyCol("objective", null, "-");
         }
     });
 
@@ -224,11 +224,13 @@ function showCol(colId, show = true) {
         r.querySelector(`:nth-child(${index + 1})`).hidden = !show;
     }
 }
-function modifyCol(headerId, data) {
+// rowsIds null will modify all rows
+function modifyCol(headerId, rowsIds, data) {
     let index = document.querySelector(`#${headerId}`).cellIndex;
-    let rows = document.querySelectorAll("tr");
+    let rows = document.querySelectorAll(rowsIds ? rowsIds : "tr");
+    console.log(rows);
 
-    if (!index) throw `${headerId} doesn't exist`;
+    if (index === undefined) throw `${headerId} doesn't exist`;
     for (let r of rows) {
         // ignore header row
         if (r.id !== "") {
@@ -239,7 +241,6 @@ function modifyCol(headerId, data) {
         }
     }
 }
-
 function getCellHeader(cell) {
     let index = cell.cellIndex;
     let colHeader = document
@@ -252,24 +253,6 @@ function clearBatch() {
     if (!runCount) {
         document.querySelectorAll("thead ~ tr").forEach(e => e.remove());
         loadedTests = {};
-    }
-}
-function toggleLayoutRun() {
-    let list = document.querySelector("#layoutAlgList");
-    let icon = document.querySelector("#batchRunTest");
-    let tooltip = icon.querySelector(".tooltip");
-    if (list.disabled) {
-        list.disabled = false;
-        icon.classList.remove("fa-pause");
-        icon.classList.add("fa-play");
-        tooltip.innerHTML = "Run Tests";
-        running = false;
-    } else {
-        list.disabled = true;
-        icon.classList.remove("fa-play");
-        icon.classList.add("fa-pause");
-        tooltip.innerHTML = "Pause Tests";
-        running = true;
     }
 }
 
@@ -327,8 +310,7 @@ function runTest(filename) {
     let graphData = loadedTests[filename];
     let worker = new Worker("build/layoutWorker.js");
     worker.postMessage([graphData.graph, layoutAlgName, options, "run"]);
-    // TODO: show an indicator
-    showIndicator();
+    showIndicator(filename);
     worker.onmessage = function(e) {
         let results = e.data;
         // TODO: store original data before replacing it?
@@ -337,8 +319,7 @@ function runTest(filename) {
         displayGraphInfo(filename);
 
         worker.terminate();
-        // TODO: stop the indicator
-        hideIndicator();
+        hideIndicator(filename);
         runCount--;
 
         if (!runCount) {
@@ -346,8 +327,14 @@ function runTest(filename) {
         }
     };
 }
-function showIndicator() {}
-function hideIndicator() {}
+
+function showIndicator(filename) {
+    // updateRow([filename]|all,column,value)
+    modifyCol("status", [`#filename-${filename}`], "Running");
+}
+function hideIndicator(filename) {
+    modifyCol("status", [`#filename-${filename}`], "Done");
+}
 
 // get test from file to memory
 function loadTest(filename, data) {
@@ -380,13 +367,16 @@ function displayGraphInfo(filename) {
     let graph = new ConcreteGraph(null, { metricsParam });
     graph.read(loadedTests[filename].graph);
     if (!graph) throw `${filename} not loaded`;
+    let layout = loadedTests[filename].layout || "-";
     let metrics = graph.metrics();
 
     let table = document.querySelector("table");
 
     //  must be added following the order in the table
     let row = createRow(filename)
+        .add("-")
         .add(filename)
+        .add(layout)
         .add(graph.nodes().length)
         .add(graph.edges().length)
         .add(graph.density().toFixed(digits))
