@@ -4,7 +4,7 @@ export class HillClimbing {
     constructor(graph, params) {
         this.graph = graph;
         // distance to move the node
-        this.squareSize = params.squareSize;
+        this.squareSize = params.squareSize || 100;
         this.it = 0;
         this.maxIt = params.iterations || 500;
         this.done = false;

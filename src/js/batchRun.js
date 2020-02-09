@@ -9,46 +9,14 @@ import { HillClimbing } from "./hillClimbing.js";
 const sig = new sigma();
 
 let loadedTests = {};
-let selectedLayoutAlg = null;
-let running = false;
+let runCount = 0;
 
 // tool bar
 const toolbar = document.querySelector(".toolbar-container"),
     sideMenu = document.querySelector("#side-menu");
 
-toolbar.addEventListener("click", event => {
-    let target = event.target;
-    switch (target.id) {
-        case "menu":
-            if (sideMenu.style.display === "flex") {
-                sideMenu.style.display = "none";
-            } else {
-                sideMenu.style.display = "flex";
-            }
-            break;
-        case "genTest":
-            genModal.style.display = "flex";
-            break;
-        case "saveTest":
-            break;
-        case "loadFile":
-            // eslint-disable-next-line no-undef
-            openFileDialog(loadTest);
-            break;
-        case "batchRunTest":
-            selectedLayoutAlg = document.querySelector("#layoutAlgList").value;
-            runBatch(loadedTests);
-            break;
-        case "backToMain":
-            window.location.replace("index.html");
-            break;
-        case "clearTest":
-            clearBatch();
-            break;
-        default:
-            break;
-    }
-});
+toolbar.addEventListener("click", toolbarClickHandler);
+
 function getWeights() {
     return {
         nodeOcclusion: parseFloat(
@@ -85,23 +53,6 @@ function createRow(name) {
     };
 
     return row;
-}
-
-// modifies the global variable loadedTests
-function runBatch() {
-    toggleLayoutRun();
-    for (let filename in loadedTests) {
-        processFile(filename);
-    }
-    toggleLayoutRun();
-}
-
-// callback method called after a file has been read
-function loadTest(filename, data) {
-    if (!loadedTests[filename]) {
-        loadedTests[filename] = { data, modified: true };
-        processFile(filename, true);
-    }
 }
 
 const genModal = document.querySelector("#gen-modal"),
@@ -219,6 +170,13 @@ sideMenu
             //reset objective for all rows
             modifyCol("objective", "-");
         }
+
+        // TODO: handle required length change
+        if (event.target.id === "edge-length-required") {
+            console.log(event.target.id);
+            modifyCol("edge-length", "-");
+            modifyCol("objective", "-");
+        }
     });
 
 let toggleEl = document.querySelectorAll(".menu-section-label");
@@ -291,52 +249,140 @@ function getCellHeader(cell) {
 }
 
 function clearBatch() {
-    if (!running) {
+    if (!runCount) {
         document.querySelectorAll("thead ~ tr").forEach(e => e.remove());
         loadedTests = {};
     }
 }
+function toggleLayoutRun() {
+    let list = document.querySelector("#layoutAlgList");
+    let icon = document.querySelector("#batchRunTest");
+    let tooltip = icon.querySelector(".tooltip");
+    if (list.disabled) {
+        list.disabled = false;
+        icon.classList.remove("fa-pause");
+        icon.classList.add("fa-play");
+        tooltip.innerHTML = "Run Tests";
+        running = false;
+    } else {
+        list.disabled = true;
+        icon.classList.remove("fa-play");
+        icon.classList.add("fa-pause");
+        tooltip.innerHTML = "Pause Tests";
+        running = true;
+    }
+}
 
-function getLayoutAlg(graph) {
-    switch (selectedLayoutAlg) {
-        case "hillClimbing":
-            selectedLayoutAlg = new HillClimbing(graph, {
-                squareSize: 100
-            });
+function toolbarClickHandler(event) {
+    let target = event.target;
+    switch (target.id) {
+        case "menu":
+            if (sideMenu.style.display === "flex") {
+                sideMenu.style.display = "none";
+            } else {
+                sideMenu.style.display = "flex";
+            }
             break;
-
-        case "circular":
-            selectedLayoutAlg = new CircularLayout(graph, {
-                radius: 500
-            });
+        case "genTest":
+            genModal.style.display = "flex";
+            break;
+        case "saveTest":
+            break;
+        case "loadFile":
+            // eslint-disable-next-line no-undef
+            openFileDialog(loadTest);
+            break;
+        case "batchRunTest":
+            runBatch(loadedTests);
+            break;
+        case "backToMain":
+            window.location.replace("index.html");
+            break;
+        case "clearTest":
+            clearBatch();
+            break;
+        default:
             break;
     }
 }
 
-function processFile(filename, init = false) {
-    let digits = 3;
-    let table = document.querySelector("table");
-    let requiredEdgeLength = parseFloat(
-        document.querySelector("#edge-length-required").value
-    );
-    let obj = JSON.parse(loadedTests[filename].data);
-
-    let graph = new ConcreteGraph(null, {
-        sigGraph: sig.graph,
-        requiredEdgeLength,
-        weights: getWeights()
-    });
-
-    // make sure the sig graph is empty
-    graph.clear();
-    graph.read(obj.graph);
-
-    if (!init) {
-        getLayoutAlg(graph);
-        selectedLayoutAlg.run();
+function runBatch() {
+    for (let filename in loadedTests) {
+        runCount++;
+        runTest(filename);
     }
+}
+
+// run layout for a single graph
+function runTest(filename) {
+    let metricsParam = {
+        requiredEdgeLength: parseFloat(
+            document.querySelector("#edge-length-required").value
+        )
+    };
+
+    let options = { weights: getWeights(), metricsParam };
+
+    let layoutAlgName = document.querySelector("#layoutAlgList").value;
+    let graphData = loadedTests[filename];
+    let worker = new Worker("build/layoutWorker.js");
+    worker.postMessage([graphData.graph, layoutAlgName, options, "run"]);
+    // TODO: show an indicator
+    showIndicator();
+    worker.onmessage = function(e) {
+        let results = e.data;
+        // TODO: store original data before replacing it?
+        loadedTests[filename].graph = e.data[0];
+        loadedTests[filename].layout = e.data[1];
+        displayGraphInfo(filename);
+
+        worker.terminate();
+        // TODO: stop the indicator
+        hideIndicator();
+        runCount--;
+
+        if (!runCount) {
+            // TODO: make this into a general event
+        }
+    };
+}
+function showIndicator() {}
+function hideIndicator() {}
+
+// get test from file to memory
+function loadTest(filename, data) {
+    /*
+        loadedTests = {
+            filename: {
+                graph: origianlGraph,
+                layout: layoutAlgUsed, // default is null
+            }
+        }
+    */
+    let parsedData = JSON.parse(data);
+    if (!loadedTests[filename]) {
+        loadedTests[filename] = parsedData;
+        loadedTests[filename].layout = null;
+        displayGraphInfo(filename);
+    }
+}
+
+function displayGraphInfo(filename) {
+    let digits = 3;
+    let sigGraph = sig.graph;
+
+    let metricsParam = {
+        requiredEdgeLength: parseFloat(
+            document.querySelector("#edge-length-required").value
+        )
+    };
+
+    let graph = new ConcreteGraph(null, { metricsParam });
+    graph.read(loadedTests[filename].graph);
+    if (!graph) throw `${filename} not loaded`;
     let metrics = graph.metrics();
-    loadedTests[filename].metrics = metrics;
+
+    let table = document.querySelector("table");
 
     //  must be added following the order in the table
     let row = createRow(filename)
@@ -355,23 +401,4 @@ function processFile(filename, init = false) {
     let oldRow = document.querySelector(`#filename-${filename}`);
     if (oldRow) table.replaceChild(row, oldRow);
     else table.appendChild(row);
-}
-
-function toggleLayoutRun() {
-    let list = document.querySelector("#layoutAlgList");
-    let icon = document.querySelector("#batchRunTest");
-    let tooltip = icon.querySelector(".tooltip");
-    if (list.disabled) {
-        list.disabled = false;
-        icon.classList.remove("fa-pause");
-        icon.classList.add("fa-play");
-        tooltip.innerHTML = "Run Tests";
-        running = false;
-    } else {
-        list.disabled = true;
-        icon.classList.remove("fa-play");
-        icon.classList.add("fa-pause");
-        tooltip.innerHTML = "Pause Tests";
-        running = true;
-    }
 }

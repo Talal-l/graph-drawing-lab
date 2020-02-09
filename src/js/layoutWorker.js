@@ -10,7 +10,10 @@ onmessage = function(e) {
     console.log(e.data);
     let [graph, layoutAlgName, options, command] = e.data;
 
+    let graphParam = options.metricsParam;
     GRAPH.read(graph);
+    GRAPH.setMetricParam(graphParam);
+    
     let layoutAlg = null;
     switch (layoutAlgName) {
         case "hillClimbing":
