@@ -477,7 +477,8 @@ function updateLayoutAlg() {
         document.querySelector("#edge-length-required").value
     );
     layoutAlgOptions = {
-        metricsParam: { requiredEdgeLength }
+        metricsParam: { requiredEdgeLength },
+        weights: getWeights()
     };
 
     switch (list.value) {

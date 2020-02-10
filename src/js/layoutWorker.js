@@ -13,6 +13,7 @@ onmessage = function(e) {
     let graphParam = options.metricsParam;
     GRAPH.read(graph);
     GRAPH.setMetricParam(graphParam);
+    GRAPH.setWeights(options.weights);
     
     let layoutAlg = null;
     switch (layoutAlgName) {
