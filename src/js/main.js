@@ -472,19 +472,23 @@ function updateMetrics() {
 
 function updateLayoutAlg() {
     let list = document.querySelector("#layoutAlgList");
+
+    let requiredEdgeLength = parseFloat(
+        document.querySelector("#edge-length-required").value
+    );
+    layoutAlgOptions = {
+        metricsParam: { requiredEdgeLength }
+    };
+
     switch (list.value) {
         case "hillClimbing":
             selectedLayoutAlg = "hillClimbing";
-            layoutAlgOptions = {
-                squareSize: 100
-            };
+            layoutAlgOptions.squareSize = 100;
             break;
 
         case "circular":
             selectedLayoutAlg = "circular";
-            layoutAlgOptions = {
-                radius: 500
-            };
+            layoutAlgOptions.radius = 500;
             break;
     }
 }
