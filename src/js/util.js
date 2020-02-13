@@ -12,7 +12,8 @@ export {
     transform,
     isEmpty,
     deepCopy,
-    getEdgeId
+    getEdgeId,
+    dfs
 };
 
 /**
@@ -118,8 +119,10 @@ class Vec {
             this.x = x;
             this.y = y;
         }
-        if (typeof this.x !== "number" || typeof this.y !== "number")
-            throw "coordinates must be numbers";
+        if (typeof this.x !== "number" || typeof this.y !== "number") {
+            console.trace();
+            throw `coordinates (${this.x},${this.y}) must be numbers`;
+        }
     }
 
     add(v) {
@@ -141,10 +144,11 @@ class Vec {
         return Math.sqrt(this.x ** 2 + this.y ** 2);
     }
     angle(v) {
-        return Math.acos(this.dot(v) / (this.len() * v.len()));
+        let a = Math.acos(this.dot(v) / (this.len() * v.len()));
+        return isFinite(a) ? a : 0;
     }
     rotate(a) {
-        // a is assumed to be in degere
+        // a is assumed to be in degree
         a = (a * Math.PI) / 180;
         let cos = Math.cos(a);
         let sin = Math.sin(a);
@@ -246,3 +250,18 @@ function deepCopy(source) {
 function getEdgeId(n1, n2) {
     return `e${n1}-${n2}`;
 }
+
+function dfs(graph, nodeId, fn) {
+    let visited = {};
+    function visit(nodeId) {
+        if (!visited[nodeId]) {
+            visited[nodeId] = 1;
+            fn(nodeId);
+            for (let nId of graph.neighbors(nodeId)) {
+                visit(nId);
+            }
+        }
+    }
+    visit(nodeId);
+}
+

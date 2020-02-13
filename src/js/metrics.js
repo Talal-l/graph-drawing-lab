@@ -133,21 +133,16 @@ function angularResolution(graph, nodeId) {
     let neighborsIds = graph.neighbors(nodeId);
     if (neighborsIds.length > 1) {
         let adj = adjEdges(graph, nodeId, neighborsIds);
-        var maxAngle = 360 / neighborsIds.length || 360;
+        var maxAngle = 360 / neighborsIds.length;
 
         let i = 0;
-        for (let j = 1; j < adj.length; j++) {
-            // make sure to count overlapping edges
-            if (adj[j] > 1) {
-                sum += maxAngle * adj[j];
-            }
-            if (adj[j] && adj[i]) {
-                let a = j - i;
+        for (let j = 0; j < adj.length; j++) {
+            if (adj[j]) {
+                let a = adj[i] ? j - i : 0;
                 // only get the inner angle
                 if (a > 180) a = 360 - a;
-                sum += Math.abs(maxAngle - a);
-                i = j;
-            } else if (adj[j]) {
+                sum += maxAngle * (adj[j] - 1);
+                if (a) sum += Math.abs(maxAngle - a);
                 i = j;
             }
         }
@@ -164,17 +159,17 @@ function angularResolution(graph, nodeId) {
  * Algorithm author: ebraheem.almuaili@gmail.com
  */
 function adjEdges(graph, nId, nodesIds) {
-    let n = graph.getNodeAttributes(nId);
+    let source = graph.getNodeAttributes(nId);
     let adj = new Array(360);
-    let nVec = new Vec(n);
-    let base = new Vec(1000, 0).sub(nVec);
+    let nVec = new Vec(source);
+    let base = new Vec(1000, 0);
     for (const id of nodesIds) {
         let n = graph.getNodeAttributes(id);
         let otherN = new Vec(n).sub(nVec);
         let a = Math.floor((base.angle(otherN) * 180) / Math.PI);
         // account for angles more than 180 deg
         if (otherN.y > 0) a = 360 - a;
-        // store number of edges with the same angle or less than 1 deg diff
+        // store number of edges with the same angle (from the base) or less than 1 deg diff
         adj[a] = adj[a] ? ++adj[a] : 1;
     }
     return adj;

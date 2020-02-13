@@ -6,7 +6,12 @@
   "scripts": {
     "start": "webpack && electron .",
     "watch": "webpack --watch --silent & electron .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.js?$": "babel-ject"
+    }
   },
   "repository": {
     "type": "git",
@@ -19,8 +24,11 @@
   },
   "homepage": "https://gitlab.com/talal__l/graph-drawing#readme",
   "devDependencies": {
+    "@babel/preset-env": "^7.8.4",
+    "babel-jest": "^25.1.0",
     "electron": "^7.1.2",
     "eslint": "^5.16.0",
+    "jest": "^25.1.0",
     "webpack": "^4.41.5",
     "webpack-cli": "^3.3.10"
   },
