@@ -312,6 +312,7 @@ genModal.addEventListener("click", event => {
             );
 
             GRAPH.clear();
+            clearGraphCache();
             // extract the nodes and edges from the created graph and update the current instance with it
             GRAPH.read(G);
             refreshScreen(sig, updateMetrics);
@@ -495,7 +496,6 @@ function updateLayoutAlg() {
 }
 
 function disableToolbar(init) {
-    console.log("disableToolbar");
     let elements = document.querySelectorAll(
         ".toolbar-container .icon:not(#menu)"
     );
@@ -516,7 +516,6 @@ function disableToolbar(init) {
 }
 
 function enableToolbar(init) {
-    console.log("easdfasdlf;laskdfjlk;asdjclick handler");
     if (!(typeof init === "string")) {
         init = init.target.id;
     }
@@ -543,7 +542,6 @@ function enableToolbar(init) {
 }
 
 function toolbarClickHandler(event) {
-    console.log("toolbar click handler");
     let target = event.target;
     // handle mode change
     let modes = graphUiModes;
