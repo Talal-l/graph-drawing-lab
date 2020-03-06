@@ -71,7 +71,7 @@ describe("ConcreteGraph", () => {
         expect(g.weights).toEqual(weights);
 
         let graphObject = loadGraph(`${__dirname}/data/simpleGraph.json`);
-        let g1 = new ConcreteGraph((graphObject), {
+        let g1 = new ConcreteGraph(graphObject, {
             weights: {
                 nodeOcclusion: 0.5,
                 edgeNodeOcclusion: 0.1,
@@ -182,7 +182,7 @@ describe("ConcreteGraph", () => {
             }
         });
 
-        let g1 = new ConcreteGraph((graphObject));
+        let g1 = new ConcreteGraph(graphObject);
         g.setWeights({
             nodeOcclusion: 1,
             edgeNodeOcclusion: 1,
@@ -197,13 +197,13 @@ describe("ConcreteGraph", () => {
         let graphObject = loadGraph(`${__dirname}/data/simpleGraph.json`);
         g.read(graphObject);
         let g1 = new Graph();
-        g1.import((graphObject));
+        g1.import(graphObject);
         expect(g.graph).toEqual(g1);
     });
     it(`Should get 2 neighbors for node 0`, () => {
         let graphObject = loadGraph(`${__dirname}/data/simpleGraph.json`);
         let g = new ConcreteGraph();
-        g.read((graphObject));
+        g.read(graphObject);
         expect(g.neighbors("0").length).toEqual(2);
     });
     test(`Empty graph should have all metrics set to zero`, () => {
@@ -230,27 +230,27 @@ describe("ConcreteGraph", () => {
     test(`angular resolution should be 90`, () => {
         let graphObject = loadGraph(`${__dirname}/data/simpleGraph.json`);
         let g = new ConcreteGraph();
-        g.read((graphObject));
+        g.read(graphObject);
         expect(g.metricsCache.angularResolution).toBe(90);
     });
     test(`angular resolution should be 135 after moving a source (angle 45)`, () => {
         let graphObject = loadGraph(`${__dirname}/data/simpleGraph.json`);
         let g1 = new ConcreteGraph();
-        g1.read((graphObject));
+        g1.read(graphObject);
         g1.setNodePos("0", { x: -100, y: 0 });
         expect(g1.metricsCache.angularResolution).toBe(135);
     });
     test(`angular resolution should be 135 after moving a target (angle 45)`, () => {
         let g = new ConcreteGraph();
         let graphObject = loadGraph(`${__dirname}/data/simpleGraph.json`);
-        g.read((graphObject));
+        g.read(graphObject);
         g.setNodePos("1", { x: 100, y: -100 });
         expect(g.metricsCache.angularResolution).toBe(135);
     });
     it(`Should give the same graph when graph is created at once or by adding elements to it (same bounds)`, () => {
         let graphObject = loadGraph(`${__dirname}/data/simpleGraph.json`);
         let g1 = new ConcreteGraph();
-        g1.read((graphObject));
+        g1.read(graphObject);
         let g2 = new ConcreteGraph();
         g2.addNode({
             label: "0",
@@ -352,7 +352,7 @@ describe("ConcreteGraph", () => {
     it(`Should be possible to get the same graph using moveNode()`, () => {
         let g1 = new ConcreteGraph();
         let graphObject = loadGraph(`${__dirname}/data/simpleGraph.json`);
-        g1.read((graphObject));
+        g1.read(graphObject);
 
         let g2 = new ConcreteGraph();
         for (let i = 0; i <= 4; i++) {
@@ -400,9 +400,11 @@ describe("ConcreteGraph", () => {
         expect(m2.edgeCrossing).toEqual(m1.edgeCrossing);
         expect(m2.angularResolution).toEqual(m1.angularResolution);
     });
-    describe(`Graph with edge length spanning the max distance`, () => {
-        test(`Should be 1 if required length is 1`, () => {
-            let g = new ConcreteGraph();
+    describe("Graph with edge length spanning the max distance", () => {
+        test("Normalized result should be 0.25 if required length is 0.5", () => {
+            let g = new ConcreteGraph(null, {
+                metricsParam: { requiredEdgeLength: 0.5 }
+            });
             g.addNode({
                 id: "0",
                 x: -1000,
@@ -417,14 +419,66 @@ describe("ConcreteGraph", () => {
                 color: "#921",
                 size: 10
             });
-
             g.addEdge({
                 id: "e0-1",
                 source: "0",
                 target: "1"
             });
+            g.objective();
+            expect(g.normalMetrics.edgeLength).toBeCloseTo(0.25);
         });
 
-        test(`Should be 0.5 if required length is 0.5`, () => {});
+        test(`Should be 0 if required length is 1`, () => {
+            let g = new ConcreteGraph(null, {
+                metricsParam: { requiredEdgeLength: 1 }
+            });
+            g.addNode({
+                id: "0",
+                x: -1000,
+                y: 1000,
+                color: "#921",
+                size: 10
+            });
+            g.addNode({
+                id: "1",
+                x: 1000,
+                y: -1000,
+                color: "#921",
+                size: 10
+            });
+            g.addEdge({
+                id: "e0-1",
+                source: "0",
+                target: "1"
+            });
+            g.objective();
+            expect(g.normalMetrics.edgeLength).toBeCloseTo(0);
+        });
+        test(`Should be 1 if required length is 1`, () => {
+            let g = new ConcreteGraph(null, {
+                metricsParam: { requiredEdgeLength: 0.0035355339059327377 }
+            });
+            g.addNode({
+                id: "0",
+                x: -1000,
+                y: 1000,
+                color: "#921",
+                size: 10
+            });
+            g.addNode({
+                id: "1",
+                x: 1000,
+                y: -1000,
+                color: "#921",
+                size: 10
+            });
+            g.addEdge({
+                id: "e0-1",
+                source: "0",
+                target: "1"
+            });
+            g.objective();
+            expect(g.normalMetrics.edgeLength).toBeCloseTo(1);
+        });
     });
 });

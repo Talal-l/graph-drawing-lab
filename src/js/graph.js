@@ -131,10 +131,9 @@ class ConcreteGraph {
         };
 
         this.nextId = 0;
+        this.requireEdgeLengthPerc = 0.5;
         this.metricsParam = options.metricsParam || {
-            requiredEdgeLength: 1000,
-            // TODO: do we still need this?
-            maxEdgeLength: 4400
+            requiredEdgeLength: 0.5
         };
         this.weights = options.weights || {
             nodeOcclusion: 1,
@@ -213,8 +212,8 @@ class ConcreteGraph {
             );
 
             // edge length
-            let len = this.metricsParam.requiredEdgeLength;
-            let max = Math.max(len ** 2, (len - this.maxDist) ** 2);
+            let len = this.metricsParam.requiredEdgeLength * this.maxDist;
+            let max = (this.minDist - this.maxDist) ** 2;
             this.normalMetrics.edgeLength = minMaxNorm(
                 this.metricsCache.edgeLength,
                 0,
@@ -508,7 +507,8 @@ function recalculateMetrics() {
                 this.metricsCache.edgeLength += evaluator.edgeLength(
                     this.graph,
                     eId,
-                    this.metricsParam.requiredEdgeLength
+                    this.metricsParam.requiredEdgeLength * this.maxDist,
+                    this.minDist
                 );
             }
 
@@ -608,12 +608,15 @@ function updateMetrics(nodeId, oldPos) {
             targetId === nodeId ? sourceId : targetId
         );
         this.metricsCache.edgeLength -=
-            (this.metricsParam.requiredEdgeLength - distance(oldPos, distTo)) **
+            (this.metricsParam.requiredEdgeLength * this.maxDist -
+                distance(oldPos, distTo)) **
             2;
+
+        let d = distance(this.getNodeAttributes(nodeId), distTo);
+        Math.min(d, this.minDist);
         this.metricsCache.edgeLength +=
-            (this.metricsParam.requiredEdgeLength -
-                distance(this.getNodeAttributes(nodeId), distTo)) **
-            2;
+            (this.metricsParam.requiredEdgeLength * this.maxDist - d) ** 2;
+
         // make sure to update the angular resolution of the connected nodes
         let otherNodeId = this.graph.target(eId);
         if (otherNodeId === nodeId) otherNodeId = this.graph.source(eId);

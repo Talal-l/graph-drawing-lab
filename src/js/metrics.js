@@ -14,7 +14,7 @@ export {
     edgeNodeOcclusion,
     edgeLength,
     edgeCrossing,
-    angularResolution,
+    angularResolution
 };
 
 /**
@@ -76,13 +76,18 @@ function edgeNodeOcclusion(graph, edgeId, min) {
  * @param {object} graph - Graphology graph instance
  * @param {object} edgeId - Id of the edge to measure
  * @param {number} len - The desired edge length
+ * @param {number} min - Min distance
  * @returns {number} - Score
  */
-function edgeLength(graph, edgeId, len) {
+function edgeLength(graph, edgeId, len, min) {
     let [sourceId, targetId] = graph.extremities(edgeId);
     let sourceNode = graph.getNodeAttributes(sourceId);
     let targetNode = graph.getNodeAttributes(targetId);
     let d = distance(sourceNode, targetNode);
+    if (d < min) {
+        d = min;
+    }
+
     return (d - len) ** 2;
 }
 
