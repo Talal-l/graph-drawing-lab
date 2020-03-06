@@ -13,8 +13,10 @@ import {
     isEmpty,
     deepCopy,
     getEdgeId,
-    dfs
+    dfs,
+    sortNeighborsByAngle
 } from "../src/js/util.js";
+import { loadGraph } from "./testUtil.js";
 const Graph = require("graphology");
 
 test("distance ", () => {
@@ -53,4 +55,19 @@ describe("Vector class", () => {
         let a = v1.angle(v2);
         expect(a).toBeCloseTo(0);
     });
+});
+
+test("Should sort edges as expected", () => {
+    // eslint-disable-next-line no-undef
+    let graph = loadGraph(`${__dirname}/data/edgeSortTest.json`);
+    let center = "0";
+    let endPoints = graph.neighbors(center);
+    let baseEndpoint = "1";
+    let sortedEdges = sortNeighborsByAngle(
+        graph,
+        center,
+        baseEndpoint
+    );
+
+    expect(sortedEdges).toEqual(["1", "3", "4", "2"]);
 });

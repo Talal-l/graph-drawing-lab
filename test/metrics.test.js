@@ -3,10 +3,11 @@ import {
     edgeNodeOcclusion,
     edgeLength,
     edgeCrossing,
-    angularResolution
+    angularResolution,
 } from "../src/js/metrics.js";
 
-import { distance } from "../src/js/util.js";
+import { loadGraph } from "./testUtil.js";
+import { distance, Vec } from "../src/js/util.js";
 const Graph = require("graphology");
 describe("node-node occlusion metric", () => {
     let minDist = 10;
@@ -154,18 +155,18 @@ describe("angular resolution metric", () => {
         g.addEdgeWithKey("0-2", 0, 2);
 
         let r = angularResolution(g, "0");
-        expect(r).toBe(180);
+        expect(r).toBeCloseTo(180);
     });
     it(`Should be ${243} when we have 2 sets of overlapping edges (45 deg between the sets)`, () => {
         let g = new Graph();
-        g.addNode(0, { x: 0, y: 0 });
+        g.addNode(0, { id: "0", label: "0", x: 0, y: 0 });
 
-        g.addNode(1, { x: 20, y: 20 });
-        g.addNode(2, { x: 30, y: 30 });
+        g.addNode(1, { id: "1", label: "1", x: 20, y: 20 });
+        g.addNode(2, { id: "2", label: "2", x: 30, y: 30 });
 
-        g.addNode(3, { x: 40, y: 0 });
-        g.addNode(4, { x: 50, y: 0 });
-        g.addNode(5, { x: 60, y: 0 });
+        g.addNode(3, { id: "3", label: "3", x: 40, y: 0 });
+        g.addNode(4, { id: "4", label: "4", x: 50, y: 0 });
+        g.addNode(5, { id: "5", label: "5", x: 60, y: 0 });
         g.addEdgeWithKey("0-1", 0, 1);
         g.addEdgeWithKey("0-2", 0, 2);
         g.addEdgeWithKey("0-3", 0, 3);
@@ -174,5 +175,19 @@ describe("angular resolution metric", () => {
 
         let r = angularResolution(g, "0");
         expect(r).toBe(243);
+    });
+
+    test("Should give expected values for the given graph (calculated manually)", () => {
+        let g = loadGraph(`${__dirname}/data/k3.json`);
+        expect(Math.floor(angularResolution(g, "0"))).toBe(151);
+        expect(Math.floor(angularResolution(g, "1"))).toBe(90);
+        expect(Math.floor(angularResolution(g, "2"))).toBe(118);
+    });
+
+    test("Should give 180 for all nodes if all angles are zero (complete graph with 3 nodes)", () => {
+        let g = loadGraph(`${__dirname}/data/k3-overlap.json`);
+        expect(angularResolution(g, "0")).toBeCloseTo(180);
+        expect(angularResolution(g, "1")).toBeCloseTo(180);
+        expect(angularResolution(g, "2")).toBeCloseTo(180);
     });
 });

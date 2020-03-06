@@ -13,8 +13,10 @@ export {
     isEmpty,
     deepCopy,
     getEdgeId,
-    dfs
+    dfs,
+    sortNeighborsByAngle
 };
+const Graph = require("graphology");
 
 /**
  * A wrapper method to use to enable us to attach a callback function to the refresh method
@@ -265,3 +267,40 @@ function dfs(graph, nodeId, fn) {
     visit(nodeId);
 }
 
+/**
+ * Return the neighbors of a node sorted by their angle from a given base vector
+ * @param {object} graph - Graphology graph
+ * @param {String} nodeId - Center node
+ * @param {String} [baseNodeId = firstNeighbor] - Id of the node to use as the base vector
+ * @returns {Array} Neighbors ids sorted by their angle from the base
+ */
+function sortNeighborsByAngle(graph, nodeId, baseNodeId) {
+    let endPointIds = graph.neighbors(nodeId);
+    let nodePoint = graph.getNodeAttributes(nodeId);
+    let basePoint = graph.getNodeAttributes(baseNodeId || endPointIds[0]);
+
+    let nodeVec = new Vec(nodePoint);
+    let baseVec = new Vec(basePoint).sub(nodeVec);
+
+    let angles = new Array(360);
+
+    for (let pId of endPointIds) {
+        let p = graph.getNodeAttributes(pId);
+        let v = new Vec(p).sub(nodeVec);
+        let a = Math.floor((baseVec.angle(v) * 180) / Math.PI);
+        if (baseVec.cross(v) > 0) a = 360 - a;
+        if (angles[a]) {
+            angles[a].push(pId);
+        } else {
+            angles[a] = [pId];
+        }
+    }
+
+    let sortedEdges = [];
+    for (let a of angles) {
+        if (a) {
+            for (let e of a) sortedEdges.push(e);
+        }
+    }
+    return sortedEdges;
+}

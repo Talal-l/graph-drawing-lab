@@ -5,6 +5,7 @@ import {
     pointSegDistance,
     getEdgeNodes,
     minMaxNorm,
+    sortNeighborsByAngle,
     intersection
 } from "./util.js";
 
@@ -13,7 +14,7 @@ export {
     edgeNodeOcclusion,
     edgeLength,
     edgeCrossing,
-    angularResolution
+    angularResolution,
 };
 
 /**
@@ -132,45 +133,16 @@ function angularResolution(graph, nodeId) {
     let sum = 0;
     let neighborsIds = graph.neighbors(nodeId);
     if (neighborsIds.length > 1) {
-        let adj = adjEdges(graph, nodeId, neighborsIds);
         var maxAngle = 360 / neighborsIds.length;
+        let sorted = sortNeighborsByAngle(graph, nodeId);
 
-        let i = 0;
-        for (let j = 0; j < adj.length; j++) {
-            if (adj[j]) {
-                let a = adj[i] ? j - i : 0;
-                // only get the inner angle
-                if (a > 180) a = 360 - a;
-                sum += maxAngle * (adj[j] - 1);
-                if (a) sum += Math.abs(maxAngle - a);
-                i = j;
-            }
+        let c = graph.getNodeAttributes(nodeId);
+        for (let i = 0; i < sorted.length - 1; i++) {
+            let v = new Vec(graph.getNodeAttributes(sorted[i])).sub(c);
+            let u = new Vec(graph.getNodeAttributes(sorted[i + 1])).sub(c);
+            let a = (v.angle(u) * 180) / Math.PI;
+            sum += Math.abs(maxAngle - a);
         }
     }
     return sum;
-}
-
-/**
- * Get the adj edges sorted by their angle from the x-axis (anticlockwise)
- * @param {object} graph - An object with x,y coordinate
- * @param {string} nId - Node id
- * @param {Array} nodesIds - An array with ids of nodes connected to n
- * @returns {Array} - An array with number of edges at an angle
- * Algorithm author: ebraheem.almuaili@gmail.com
- */
-function adjEdges(graph, nId, nodesIds) {
-    let source = graph.getNodeAttributes(nId);
-    let adj = new Array(360);
-    let nVec = new Vec(source);
-    let base = new Vec(1000, 0);
-    for (const id of nodesIds) {
-        let n = graph.getNodeAttributes(id);
-        let otherN = new Vec(n).sub(nVec);
-        let a = Math.floor((base.angle(otherN) * 180) / Math.PI);
-        // account for angles more than 180 deg
-        if (otherN.y > 0) a = 360 - a;
-        // store number of edges with the same angle (from the base) or less than 1 deg diff
-        adj[a] = adj[a] ? ++adj[a] : 1;
-    }
-    return adj;
 }

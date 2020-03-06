@@ -1,0 +1,78 @@
+{
+  "graph": {
+    "attributes": {},
+    "nodes": [
+      {
+        "key": "0",
+        "attributes": {
+          "label": "0",
+          "id": "0",
+          "x": 0,
+          "y": 0,
+          "size": 10,
+          "color": "#921"
+        }
+      },
+      {
+        "key": "1",
+        "attributes": {
+          "label": "1",
+          "id": "1",
+          "x": 450,
+          "y": 0,
+          "size": 10,
+          "color": "#921"
+        }
+      },
+      {
+        "key": "2",
+        "attributes": {
+          "label": "2",
+          "id": "2",
+          "x": 450,
+          "y": 0,
+          "size": 10,
+          "color": "#921"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "0",
+        "target": "1",
+        "key": "e0-1",
+        "attributes": {
+          "id": "e0-1",
+          "source": "0",
+          "target": "1",
+          "size": 1.5,
+          "color": "#ccc"
+        }
+      },
+      {
+        "source": "0",
+        "target": "2",
+        "key": "e0-2",
+        "attributes": {
+          "id": "e0-2",
+          "source": "0",
+          "target": "2",
+          "size": 1.5,
+          "color": "#ccc"
+        }
+      },
+      {
+        "source": "1",
+        "target": "2",
+        "key": "e1-2",
+        "attributes": {
+          "id": "e1-2",
+          "source": "1",
+          "target": "2",
+          "size": 1.5,
+          "color": "#ccc"
+        }
+      }
+    ]
+  }
+}

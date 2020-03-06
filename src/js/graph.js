@@ -11,7 +11,7 @@ import {
 } from "./util.js";
 import * as evaluator from "./metrics.js";
 
-export {generateGraph, ConcreteGraph };
+export { generateGraph, ConcreteGraph };
 
 //TODO: add options for size and color instead of hard coding them
 /**
@@ -237,7 +237,7 @@ class ConcreteGraph {
                 this.metricsCache.angularResolution,
                 0,
                 // largest value when all nodes have > 1 edge with 0 deg between them
-                this.nodesWithAngles * 360
+                this.nodesWithAngles * 180
             );
         }
 

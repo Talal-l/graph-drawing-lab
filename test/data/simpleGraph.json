@@ -1,0 +1,100 @@
+{
+  "graph": {
+    "attributes": {},
+    "nodes": [
+      {
+        "key": "0",
+        "attributes": {
+          "label": "0",
+          "id": "0",
+          "x": 0,
+          "y": 0,
+          "size": 10,
+          "color": "#921"
+        }
+      },
+      {
+        "key": "1",
+        "attributes": {
+          "label": "1",
+          "id": "1",
+          "x": 0,
+          "y": -100,
+          "size": 10,
+          "color": "#921"
+        }
+      },
+      {
+        "key": "2",
+        "attributes": {
+          "label": "2",
+          "id": "2",
+          "x": 100,
+          "y": 0,
+          "size": 10,
+          "color": "#921"
+        }
+      },
+      {
+        "key": "3",
+        "attributes": {
+          "label": "3",
+          "id": "3",
+          "x": -80,
+          "y": -110,
+          "size": 10,
+          "color": "#921"
+        }
+      },
+      {
+        "key": "4",
+        "attributes": {
+          "label": "4",
+          "id": "4",
+          "x": 80,
+          "y": 50,
+          "size": 10,
+          "color": "#921"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "0",
+        "target": "1",
+        "key": "e0-1",
+        "attributes": {
+          "id": "e0-1",
+          "source": "0",
+          "target": "1",
+          "size": 1.5,
+          "color": "#ccc"
+        }
+      },
+      {
+        "source": "0",
+        "target": "2",
+        "key": "e0-2",
+        "attributes": {
+          "id": "e0-2",
+          "source": "0",
+          "target": "2",
+          "size": 1.5,
+          "color": "#ccc"
+        }
+      },
+      {
+        "source": "3",
+        "target": "4",
+        "key": "e3-4",
+        "attributes": {
+          "id": "e3-4",
+          "source": "3",
+          "target": "4",
+          "size": 1.5,
+          "color": "#ccc"
+        }
+      }
+    ]
+  }
+}
