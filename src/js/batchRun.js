@@ -7,6 +7,7 @@ import { HillClimbing } from "./hillClimbing.js";
 
 // eslint-disable-next-line no-undef
 const sig = new sigma();
+const digits = 3;
 
 let loadedTests = {};
 let runCount = 0;
@@ -165,17 +166,51 @@ sideMenu
 sideMenu
     .querySelector("#menu-sec-metrics")
     .addEventListener("change", event => {
-        // reset current tests
+        let metricsParam = {
+            requiredEdgeLength: parseFloat(
+                document.querySelector("#edge-length-required").value
+            )
+        };
+
+        let options = { weights: getWeights(), metricsParam };
+
         if (event.target.classList.contains("weight-input")) {
-            //reset objective for all rows
-            modifyCol("objective", null, "-");
+            // recalculate objective for all rows
+            for (let filename in loadedTests) {
+                let graph = new ConcreteGraph(
+                    loadedTests[filename].graph,
+                    options
+                );
+
+                modifyCol(
+                    "objective",
+                    [`#filename-${filename}`],
+                    graph.objective().toFixed(digits)
+                );
+            }
         }
 
-        // TODO: handle required length change
         if (event.target.id === "edge-length-required") {
-            console.log(event.target.id);
-            modifyCol("edge-length", null, "-");
-            modifyCol("objective", null, "-");
+            for (let filename in loadedTests) {
+                let graph = new ConcreteGraph(
+                    loadedTests[filename].graph,
+                    options
+                );
+
+                graph.setMetricParam(metricsParam);
+                let { edgeLength } = graph.metrics();
+
+                modifyCol(
+                    "edge-length",
+                    [`#filename-${filename}`],
+                    edgeLength.toFixed(digits)
+                );
+                modifyCol(
+                    "objective",
+                    [`#filename-${filename}`],
+                    graph.objective().toFixed(digits)
+                );
+            }
         }
     });
 
@@ -355,7 +390,6 @@ function loadTest(filename, data) {
 }
 
 function displayGraphInfo(filename) {
-    let digits = 3;
     let sigGraph = sig.graph;
 
     let metricsParam = {
@@ -364,8 +398,8 @@ function displayGraphInfo(filename) {
         )
     };
 
-    let graph = new ConcreteGraph(null, { metricsParam });
-    graph.read(loadedTests[filename].graph);
+    let options = { weights: getWeights(), metricsParam };
+    let graph = new ConcreteGraph(loadedTests[filename].graph, options);
     if (!graph) throw `${filename} not loaded`;
     let layout = loadedTests[filename].layout || "-";
     let metrics = graph.metrics();
