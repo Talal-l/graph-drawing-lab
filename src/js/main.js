@@ -560,11 +560,7 @@ function toolbarClickHandler(event) {
 
     switch (target.id) {
         case "menu":
-            if (sideMenu.style.display === "flex") {
-                sideMenu.style.display = "none";
-            } else {
-                sideMenu.style.display = "flex";
-            }
+            sideMenu.classList.toggle("hidden");
             break;
         case "genGraph":
             if (!GRAPH.nodes().length) genModal.style.display = "flex";
@@ -656,3 +652,5 @@ function toolbarClickHandler(event) {
             break;
     }
 }
+
+window.graph = GRAPH;

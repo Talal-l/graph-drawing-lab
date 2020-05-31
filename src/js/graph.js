@@ -232,12 +232,15 @@ class ConcreteGraph {
 
         // angular resolution
         if (E > 1) {
+            // but if a vertex had E edges than the max angle would be 360/E
             this.normalMetrics.angularResolution = minMaxNorm(
                 this.metricsCache.angularResolution,
                 0,
                 // largest value when all nodes have > 1 edge with 0 deg between them
-                this.nodesWithAngles * 180
+                this.nodesWithAngles * 360 
+                //TODO: Are you sure this is correct?
             );
+
         }
 
         for (let key in this.normalMetrics)

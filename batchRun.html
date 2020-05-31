@@ -69,64 +69,6 @@
                 <div class="menu-section-toggle arrow-down"></div>
             </div>
             <div class="menu-section" id="menu-sec-columns">
-                <div class="menu-item-checkbox">
-                    <input type="checkbox" data-col="filename" checked="true" />
-                    <p>Filename</p>
-                </div>
-
-                <div class="menu-item-checkbox">
-                    <input type="checkbox" data-col="layout" checked="true" />
-                    <p>Layout</p>
-                </div>
-
-                <div class="menu-item-checkbox">
-                    <input type="checkbox" data-col="nodes" checked="true" />
-                    <p>Nodes</p>
-                </div>
-
-                <div class="menu-item-checkbox">
-                    <input type="checkbox" data-col="edges" checked="true" />
-                    <p>Edges</p>
-                </div>
-
-                <div class="menu-item-checkbox">
-                    <input type="checkbox" data-col="density" checked="true" />
-                    <p>Density</p>
-                </div>
-
-                <div class="menu-item-checkbox">
-                    <input type="checkbox" data-col="node-occlusion" checked="true" />
-                    <p>Node occlusion</p>
-                </div>
-
-                <div class="menu-item-checkbox">
-                    <input type="checkbox" data-col="edge-node-occlusion" checked="true" />
-                    <p>Edge-Node occlusion</p>
-                </div>
-
-                <div class="menu-item-checkbox">
-                    <input type="checkbox" data-col="edge-length" checked="true" />
-                    <p>Edge length</p>
-                </div>
-
-                <div class="menu-item-checkbox">
-                    <input type="checkbox" data-col="edge-crossing" checked="true" />
-                    <p>Edge crossing</p>
-                </div>
-                <div class="menu-item-checkbox">
-                    <input type="checkbox" data-col="angular-resolution" checked="true" />
-                    <p>Angular resolution</p>
-                </div>
-
-                <div class="menu-item-checkbox">
-                    <input type="checkbox" data-col="objective" checked="true" />
-                    <p>Objective</p>
-                </div>
-
-                <div class="menu-item-checkbox">
-                    <input type="checkbox" data-col="preview" checked="true" />
-                    <p>Preview</p>
-                </div>
             </div>
 
             <div class="menu-section-label" data-section="menu-sec-metrics">
@@ -200,27 +142,9 @@
         </div>
 
         <main>
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th id="status">Status</th>
-                            <th id="filename">Filename</th>
-                            <th id="layout">Layout</th>
-                            <th id="nodes">Nodes</th>
-                            <th id="edges">Edges</th>
-                            <th id="density">Density</th>
-                            <th id="node-occlusion">Node occlusion</th>
-                            <th id="edge-node-occlusion">Edge-Node occlusion</th>
-                            <th id="edge-length">Edge length</th>
-                            <th id="edge-crossing">Edge crossing</th>
-                            <th id="angular-resolution">Angular resolution</th>
-                            <th id="objective">Objective</th>
-                            <th id="preview">Preview</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
+            <table id="table">
+
+            </table>
 
             <input type="file" id="fileSelector" multiple accept="text/*" style="display:none" />
             <a href="" id="saveGraphLink" download style="display: none">save graph</a>

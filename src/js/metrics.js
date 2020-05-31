@@ -142,9 +142,9 @@ function angularResolution(graph, nodeId) {
         let sorted = sortNeighborsByAngle(graph, nodeId);
 
         let c = graph.getNodeAttributes(nodeId);
-        for (let i = 0; i < sorted.length - 1; i++) {
+        for (let i = 0, len = sorted.length; i < sorted.length; i++) {
             let v = new Vec(graph.getNodeAttributes(sorted[i])).sub(c);
-            let u = new Vec(graph.getNodeAttributes(sorted[i + 1])).sub(c);
+            let u = new Vec(graph.getNodeAttributes(sorted[(i + 1) % len])).sub(c);
             let a = (v.angle(u) * 180) / Math.PI;
             sum += Math.abs(maxAngle - a);
         }

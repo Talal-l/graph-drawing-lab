@@ -5,6 +5,47 @@ import * as evaluator from "./metrics.js";
 import { CircularLayout } from "./circularLayout.js";
 import { HillClimbing } from "./hillClimbing.js";
 
+import { Table } from "./table";
+
+let table = new Table("table");
+let headers = [
+    { id: "status", title: "Status" },
+    { id: "filename", title: "Filename" },
+    { id: "layout", title: "Layout" },
+    { id: "nodes", title: "Nodes" },
+    { id: "edges", title: "Edges" },
+    { id: "density", title: "Density" },
+    { id: "nodeOcclusion", title: "Node occlusion" },
+    { id: "edgeNodeOcclusion", title: "Edge-Node occlusion" },
+    { id: "edgeLength", title: "Edge length" },
+    { id: "edgeCrossing", title: "Edge crossing" },
+    { id: "angularResolution", title: "Angular Resolution" },
+    { id: "objective", title: "Objective" },
+];
+for (const h of headers) {
+    table.addHeader(h);
+}
+table.refresh();
+
+// Add headers to show/hide side menu
+let menuColSecFrag = document.createDocumentFragment();
+    for (const h of headers) {
+        let item = document.createElement("div");
+        item.classList.add("menu-item-checkbox");
+        let checkbox = document.createElement("input");
+        checkbox.setAttribute("type", "checkbox");
+        checkbox.checked = true;
+        checkbox.setAttribute("data-col", h.id);
+        let label = document.createElement("p");
+        label.innerHTML = h.title;
+
+        item.appendChild(checkbox);
+        item.appendChild(label);
+        menuColSecFrag.appendChild(item);
+    }
+document.querySelector("#menu-sec-columns").appendChild(menuColSecFrag);
+
+
 // eslint-disable-next-line no-undef
 const sig = new sigma();
 const digits = 3;
@@ -36,24 +77,6 @@ function getWeights() {
             document.querySelector("#angular-resolution-weight").value
         )
     };
-}
-
-function createRow(name) {
-    let row = document.createElement("TR");
-    row.setAttribute("id", `filename-${name}`);
-
-    //
-    row.add = function(data) {
-        let td = document.createElement("TD");
-        td.innerHTML = data;
-        row.appendChild(td);
-
-        // sync the state of the cell with its header
-        td.hidden = getCellHeader(td).hidden;
-        return row;
-    };
-
-    return row;
 }
 
 const genModal = document.querySelector("#gen-modal"),
@@ -159,8 +182,9 @@ sideMenu
     .querySelector("#menu-sec-columns")
     .addEventListener("change", event => {
         let colId = event.target.getAttribute("data-col");
-        // show if checked
-        showCol(colId, event.target.checked);
+        if (event.target.checked) table.showHeader(colId);
+        else table.hideHeader(colId);
+        table.refresh();
     });
 
 sideMenu
@@ -181,12 +205,8 @@ sideMenu
                     loadedTests[filename].graph,
                     options
                 );
-
-                modifyCol(
-                    "objective",
-                    [`#filename-${filename}`],
-                    graph.objective().toFixed(digits)
-                );
+                let row = table.getRowByHeader("filename", filename);
+                row.objective.value = graph.objective().toFixed(digits);
             }
         }
 
@@ -200,18 +220,13 @@ sideMenu
                 graph.setMetricParam(metricsParam);
                 let { edgeLength } = graph.metrics();
 
-                modifyCol(
-                    "edge-length",
-                    [`#filename-${filename}`],
-                    edgeLength.toFixed(digits)
-                );
-                modifyCol(
-                    "objective",
-                    [`#filename-${filename}`],
-                    graph.objective().toFixed(digits)
-                );
-            }
+                let row = table.getRowByHeader("filename", filename);
+
+                row.edgeLength.value = edgeLength.toFixed(digits);
+                row.objective.value = graph.objective().toFixed(digits);
+           }
         }
+        table.refresh();
     });
 
 let toggleEl = document.querySelectorAll(".menu-section-label");
@@ -251,42 +266,11 @@ function genTest(testNum, nMin, nMax, eMin, eMax, width, height) {
     }
 }
 
-// TODO: Better methods for dealing with columns
-function showCol(colId, show = true) {
-    let index = document.querySelector(`#${colId}`).cellIndex;
-    let rows = document.querySelectorAll("tr");
-    for (let r of rows) {
-        r.querySelector(`:nth-child(${index + 1})`).hidden = !show;
-    }
-}
-// rowsIds null will modify all rows
-function modifyCol(headerId, rowsIds, data) {
-    let index = document.querySelector(`#${headerId}`).cellIndex;
-    let rows = document.querySelectorAll(rowsIds ? rowsIds : "tr");
-    console.log(rows);
-
-    if (index === undefined) throw `${headerId} doesn't exist`;
-    for (let r of rows) {
-        // ignore header row
-        if (r.id !== "") {
-            // TODO: Find a better way to get the filename
-            let filename = r.id.split("-")[1];
-            r.querySelector(`:nth-child(${index + 1})`).innerHTML = data;
-            loadedTests[filename].modified = true;
-        }
-    }
-}
-function getCellHeader(cell) {
-    let index = cell.cellIndex;
-    let colHeader = document
-        .querySelector("tr")
-        .querySelector(`:nth-child(${index + 1})`);
-    return colHeader;
-}
 
 function clearBatch() {
     if (!runCount) {
-        document.querySelectorAll("thead ~ tr").forEach(e => e.remove());
+        table.clear();
+        table.refresh();
         loadedTests = {};
     }
 }
@@ -295,11 +279,7 @@ function toolbarClickHandler(event) {
     let target = event.target;
     switch (target.id) {
         case "menu":
-            if (sideMenu.style.display === "flex") {
-                sideMenu.style.display = "none";
-            } else {
-                sideMenu.style.display = "flex";
-            }
+            sideMenu.classList.toggle("hidden");
             break;
         case "genTest":
             genModal.style.display = "flex";
@@ -343,32 +323,38 @@ function runTest(filename) {
 
     let layoutAlgName = document.querySelector("#layoutAlgList").value;
     let graphData = loadedTests[filename];
+    showIndicator(filename);
+    let row = table.getRowByHeader("filename", filename);
+    row.layout.value = layoutAlgName;
+    table.refresh();
     let worker = new Worker("build/layoutWorker.js");
     worker.postMessage([graphData.graph, layoutAlgName, options, "run"]);
-    showIndicator(filename);
+
+
     worker.onmessage = function(e) {
-        let results = e.data;
         // TODO: store original data before replacing it?
         loadedTests[filename].graph = e.data[0];
         loadedTests[filename].layout = e.data[1];
         displayGraphInfo(filename);
 
-        worker.terminate();
         hideIndicator(filename);
+    table.refresh();
         runCount--;
 
         if (!runCount) {
             // TODO: make this into a general event
         }
+        worker.terminate();
     };
 }
 
 function showIndicator(filename) {
-    // updateRow([filename]|all,column,value)
-    modifyCol("status", [`#filename-${filename}`], "Running");
+    let row = table.getRowByHeader("filename", filename);
+    row.status.value = "Running";
 }
 function hideIndicator(filename) {
-    modifyCol("status", [`#filename-${filename}`], "Done");
+    let row = table.getRowByHeader("filename", filename);
+    row.status.value = "Done";
 }
 
 // get test from file to memory
@@ -390,8 +376,6 @@ function loadTest(filename, data) {
 }
 
 function displayGraphInfo(filename) {
-    let sigGraph = sig.graph;
-
     let metricsParam = {
         requiredEdgeLength: parseFloat(
             document.querySelector("#edge-length-required").value
@@ -404,25 +388,47 @@ function displayGraphInfo(filename) {
     let layout = loadedTests[filename].layout || "-";
     let metrics = graph.metrics();
 
-    let table = document.querySelector("table");
-
-    //  must be added following the order in the table
-    let row = createRow(filename)
-        .add("-")
-        .add(filename)
-        .add(layout)
-        .add(graph.nodes().length)
-        .add(graph.edges().length)
-        .add(graph.density().toFixed(digits))
-        .add(metrics.nodeOcclusion.toFixed(digits))
-        .add(metrics.edgeNodeOcclusion.toFixed(digits))
-        .add(metrics.edgeLength.toFixed(digits))
-        .add(metrics.edgeCrossing.toFixed(digits))
-        .add(metrics.angularResolution.toFixed(digits))
-        .add(graph.objective().toFixed(digits))
-        .add(`<div class="graph-container"></div>`);
-
-    let oldRow = document.querySelector(`#filename-${filename}`);
-    if (oldRow) table.replaceChild(row, oldRow);
-    else table.appendChild(row);
+    let newRow = {
+        status: { value: "-", type: "text" },
+        filename: { value: filename, type: "text" },
+        layout: { value: layout, type: "text" },
+        nodes: { value: graph.nodes().length, type: "text" },
+        edges: { value: graph.edges().length, type: "text" },
+        density: { value: graph.density().toFixed(digits), type: "text" },
+        nodeOcclusion: {
+            value: metrics.nodeOcclusion.toFixed(digits),
+            type: "text"
+        },
+        edgeNodeOcclusion: {
+            value: metrics.edgeNodeOcclusion.toFixed(digits),
+            type: "text"
+        },
+        edgeLength: { value: metrics.edgeLength.toFixed(digits), type: "text" },
+        edgeCrossing: {
+            value: metrics.edgeCrossing.toFixed(digits),
+            type: "text"
+        },
+        angularResolution: {
+            value: metrics.angularResolution.toFixed(digits),
+            type: "text"
+        },
+        objective: { value: graph.objective().toFixed(digits), type: "text" }
+    };
+    let row = table.getRowByHeader("filename", filename);
+    
+    if (!row) {
+        table.addRow(newRow);
+    } else {
+        console.log("Copying to row");
+        
+        // copy values from newRow to row
+        for (const key in row) {
+            if (key !== "status") {
+                row[key].value = newRow[key].value;
+            }
+        }
+    }
+    table.refresh();
 }
+
+window.table = table;
