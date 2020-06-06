@@ -1,28 +1,24 @@
-/** {*/
-/*outline: 1px solid red;*/
-/*}*/
-html {
-  width: 100%;
-  height: 100%;
+
+/* * {
+outline: 1px solid red;
+} */
+
+html body {
+  height: 100vh;
   margin: 0;
   padding: 0;
-  overflow: hidden;
-}
-body {
   display: flex;
   flex-direction: column;
-  margin: 0%;
-  width: 100%;
-  height: 100%;
 }
+
 .wrapper {
   display: flex;
   flex-direction: row;
-  width: 100%;
-  height: 100%;
+  height: calc(100% - 40px );
 }
 main {
   width: 100%;
+  overflow: auto;
 }
 
 .arrow-down {
@@ -83,7 +79,6 @@ main {
 .side-menu {
   display: flex;
   flex-direction: column;
-  height: 100%;
   background: #4a4b4b;
   color: #fff;
   padding: 8px;
@@ -145,6 +140,7 @@ main {
   display: flex;
   justify-content: flex-end;
   width: 100%;
+  margin-right: 36px;
 }
 
 .icon {
@@ -280,13 +276,11 @@ table {
   width: 100%;
 }
 
-thead,
 tr {
   border-bottom: 1px solid #999;
 }
 
-thead tr {
-  border-top: 1px solid #000;
+thead tr{
   border-bottom: 2px solid #000;
 }
 
