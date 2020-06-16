@@ -2,6 +2,7 @@ import { Vec } from "./util.js";
 
 export class HillClimbing {
     constructor(graph, params) {
+        this.params = params;
         this.graph = graph;
         // distance to move the node
         this.squareSize = params.squareSize || 100;

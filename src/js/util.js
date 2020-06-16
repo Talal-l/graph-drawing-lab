@@ -304,3 +304,12 @@ function sortNeighborsByAngle(graph, nodeId, baseNodeId) {
     }
     return sortedEdges;
 }
+export function cleanId(str) {
+    if (str === undefined) return null;
+
+    // TODO: remove newline if any
+    let id = String(str);
+    // replace spaces with -
+    let re = /\s/;
+    return id.replace(/\s/, "-");
+}

@@ -45,19 +45,17 @@
             <div class="icon fas fa-play" id="batchRunTest">
                 <span class="tooltip">Run Tests</span>
             </div>
-            <div class="" id="layoutAlg">
-                <select name="layoutAlg" id="layoutAlgList">
-                    <option value="hillClimbing">Hill Climbing</option>
-                    <option value="circular"> Circular</option>
-                </select>
 
-            </div>
 
 
 
         </div>
 
-        <div class="toolbar-end"></div>
+        <div class="toolbar-end">
+             <div class="icon fas fa-chart-pie" id="summary">
+                <span class="tooltip">Run summary</span>
+            </div>
+        </div>
 
     </div>
 
@@ -142,9 +140,14 @@
         </div>
 
         <main>
-            <table id="table">
+            <div class="tab-list" id="tab-list">
+               <div class="fa fa-plus" id="new-tab" aria-hidden="true"></div>
+            </div>
 
-            </table>
+            <div class="h-divider"></div>
+            <div id="tab-container"></div>
+
+
 
             <input type="file" id="fileSelector" multiple accept="text/*" style="display:none" />
             <a href="" id="saveGraphLink" download style="display: none">save graph</a>

@@ -9,6 +9,7 @@ html body {
   padding: 0;
   display: flex;
   flex-direction: column;
+  min-height: 720px;
 }
 
 .wrapper {
@@ -18,7 +19,7 @@ html body {
 }
 main {
   width: 100%;
-  overflow: auto;
+  height: 100%;
 }
 
 .arrow-down {
@@ -270,6 +271,66 @@ main {
 
 
 /*batch run page*/
+.h-divider{
+    height: 3px;
+    width: 100%;
+    background-color: #000;
+
+}
+
+.tab-container{
+    height: calc(100% - 80px);
+}
+.tab-content{
+    height: 100%;
+    display: none;
+}
+.tab-content-active{
+    display: block;
+}
+.tab-list{
+    display: flex;
+    height: 32px;
+}
+.tab-item{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 150px;
+    flex-shrink: 1;
+    height: 100%;
+    padding-left: 8px;
+    border: solid;
+    border-width: 0 3px 0 0;
+
+}
+.tab-active{
+    height: calc(100% + 3px);
+    background-color: #fff;
+}
+.param-list{
+    display: flex;
+    flex-direction: row;
+}
+
+.param-list *{
+    margin-right: 8px;
+    align-items: baseline;
+}
+.param-container{
+    margin-left: 8px;
+    padding-bottom: 8px;
+}
+
+.table-container{
+  width: 100%;
+  height: calc(100% - 63px);
+  overflow: auto;
+}
+#new-tab{
+    align-self: center;
+    margin-left: 8px;
+}
 
 table {
   border-collapse: collapse;

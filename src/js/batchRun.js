@@ -1,13 +1,11 @@
 import { ConcreteGraph, generateGraph } from "./graph.js";
-import { refreshScreen, distance, getEdgeId } from "./util.js";
+import { refreshScreen, distance, getEdgeId, cleanId} from "./util.js";
 import * as evaluator from "./metrics.js";
 
 import { CircularLayout } from "./circularLayout.js";
 import { HillClimbing } from "./hillClimbing.js";
 
 import { Table } from "./table";
-
-let table = new Table("table");
 let headers = [
     { id: "status", title: "Status" },
     { id: "filename", title: "Filename" },
@@ -20,37 +18,374 @@ let headers = [
     { id: "edgeLength", title: "Edge length" },
     { id: "edgeCrossing", title: "Edge crossing" },
     { id: "angularResolution", title: "Angular Resolution" },
-    { id: "objective", title: "Objective" },
+    { id: "objective", title: "Objective" }
 ];
-for (const h of headers) {
-    table.addHeader(h);
+
+// Tab stuff
+let tabNum = 1;
+let tabs = [];
+// Assume that id is after the last -
+function getTabIdFromElId(id) {
+    return id.split("-").pop();
 }
-table.refresh();
+
+// TODO: double check when taking title as input
+function addTabEl(title, tabId) {
+    let elHtml = `
+            <div class="tab-item" id="tab-${tabId}">
+                ${title}
+             </div> 
+            `;
+    let newTab = document.querySelector("#new-tab");
+    newTab.insertAdjacentHTML("beforebegin", elHtml);
+}
+// TODO: make the layout more dynamic
+function createTabContainerEl() {
+    let html = `
+            <div class="tab-content" id="tab-content-${this.id}">
+                <div class="param-container">
+                    <div class="dropdown" id="layoutAlg">
+                        <span>Layout Algorithm: </span>
+                        <select name="layoutAlg" id="layoutAlgList">
+                            <option value="hillClimbing">Hill Climbing</option>
+                            <option value="circular"> Circular</option>
+                        </select>
+                    </div>
+
+                    <div class="param-list">
+                    </div>
+
+                </div>
+
+            <div class="h-divider">
+
+            </div>
+                <div class="table-container">
+                    <table class="run-table" id="table-${this.id}"><thead><tr></tr></thead><tbody></tbody></table>
+                </div>
+            </div>
+   `;
+    let tabContainer = document.querySelector("#tab-container");
+    tabContainer.insertAdjacentHTML("beforeend", html);
+}
+
+function currentTab() {
+    let activeTabElId = document.querySelector(".tab-active").id;
+    return tabs.find(t => t.id === getTabIdFromElId(activeTabElId));
+}
+
+
+// requires this
+function addParamEl(label, defaultValue) {
+    function options(defaultValue) {
+        let r = "";
+        for (const v of defaultValue) {
+            r += `<option value="${v}">${v}</option>\n`;
+        }
+        return r;
+    }
+
+    let id = cleanId(label);
+
+    if (typeof defaultValue === "number") {
+        var inputHtml = `<input class="param-input" type="number" value="${defaultValue}">`;
+    } else {
+        inputHtml = `
+                    <select name="layoutAlg" class="param-input" id="layoutAlgList">
+                        ${options(defaultValue)}
+                    </select>
+                    `;
+    }
+    let html = `
+                <div class="param-item" id="${id}">
+                    <p class="param-label"> ${label}</p>
+                    ${inputHtml}
+                </div>
+                `;
+    this.tabContentEl
+        .querySelector(".param-list")
+        .insertAdjacentHTML("beforeend", html);
+}
+
+// Assumes to be created in a loaded batchRun page (with side menu)
+// TODO: add option to delete tab. Make sure to clean the data
+// TODO: add option to save tab to disk (save the run)
+class Tab {
+    constructor(name) {
+        let d = new Date();
+        let date = `${d.getFullYear()}${d.getDate()}${d.getDate()}${d.getHours()}${d.getMinutes()}${d.getSeconds()}`;
+        this.creationDate = date;
+        this.id = `${date + Math.floor(Math.random() * 1000)}`;
+        // get visible and hidden headers
+        this.headerStates = document.querySelectorAll(".menu-item-checkbox");
+        this.loadedFiles = {};
+        this.runCount = 0;
+        addTabEl(name ? name : `${tabNum++}`, this.id);
+        createTabContainerEl.call(this);
+        this.tabContentEl = document.querySelector(`#tab-content-${this.id}`);
+        this.table = new Table(`table-${this.id}`);
+        for (const h of headers) {
+            this.table.addHeader(h);
+            // hide col based on colSec. Must be setup before creating this object
+        }
+        this.table.refresh();
+    }
+    // setup ui element interactions and default values that can't be set in the constructor
+    setupUi() {
+
+        // init setup
+        let addParamEl2 = addParamEl.bind(this);
+        addParamEl2("iterations", 500);
+        addParamEl2("squareSize", 100);
+        addParamEl2("moveStrategy", ["immediate", "delayed"]);
+        this.layoutAlgName = "hillClimbing";
+
+
+        // add event listener to layout algorithm list to update parameters on change
+        let layoutAlgList = this.tabContentEl.querySelector("#layoutAlgList");
+        layoutAlgList.addEventListener("change", ({ target }) => {
+            console.log(`this in listener = `);
+            console.log(this);
+
+            this.layoutAlgName = target.value;
+            this.tabContentEl.querySelector(".param-list").innerHTML = "";
+            switch (this.layoutAlgName) {
+                case "hillClimbing":
+                    addParamEl2("iterations", 500);
+                    addParamEl2("squareSize", 100);
+                    addParamEl2("moveStrategy", ["immediate", "delayed"]);
+                    break;
+                case "Tabu":
+                    break;
+                case "circular":
+                    addParamEl2("maxIterations", 1000);
+                    addParamEl2("radius", 450);
+                    break;
+            }
+        });
+
+        return this;
+    }
+    // add the ui and populated with the correct data
+    // run layout for a single graph
+    runTest(filename) {
+        let metricsParam = {
+            requiredEdgeLength: parseFloat(
+                document.querySelector("#edge-length-required").value
+            )
+        };
+        let layoutParam = {};
+        let paramInputs = Array.from(
+            this.tabContentEl.querySelectorAll(".param-item")
+        );
+        for (const el of paramInputs) {
+            let label = el.querySelector(".param-label").innerText;
+            let param = el.querySelector(".param-input").value;
+
+            if (Number(param) !== NaN) param = Number(param);
+
+            layoutParam[label] = param;
+        }
+
+        let options = { weights: getWeights(), metricsParam, layoutParam };
+
+        let layoutAlgName = this.layoutAlgName;
+        let graphData = this.loadedFiles[filename];
+        this.showIndicator(filename);
+        let row = this.table.getRowByHeader("filename", filename);
+        row.layout.value = layoutAlgName;
+        this.table.refresh();
+        let worker = new Worker("build/layoutWorker.js");
+        worker.postMessage([graphData.graph, layoutAlgName, options, "run"]);
+
+        worker.onmessage = function(e) {
+            // TODO: store original data before replacing it?
+            console.log(this.loadedFiles);
+
+            this.loadedFiles[filename].graph = e.data[0];
+            this.loadedFiles[filename].layout = e.data[1];
+            this.updateTableEntry(filename);
+
+            this.hideIndicator(filename);
+            this.table.refresh();
+            runCount--;
+
+            if (!runCount) {
+                // TODO: make this into a general event
+            }
+            worker.terminate();
+        }.bind(this);
+    }
+    runBatch() {
+        for (let filename in this.loadedFiles) {
+            this.runCount++;
+            this.runTest(filename);
+        }
+    }
+    clearBatch() {
+        if (!this.runCount) {
+            this.table.clear();
+            this.table.refresh();
+            this.loadedFiles = {};
+        }
+    }
+
+    showIndicator(filename) {
+        let row = this.table.getRowByHeader("filename", filename);
+        row.status.value = "Running";
+    }
+    hideIndicator(filename) {
+        let row = this.table.getRowByHeader("filename", filename);
+        row.status.value = "Done";
+    }
+    updateTableEntry(filename) {
+        let metricsParam = {
+            requiredEdgeLength: parseFloat(
+                document.querySelector("#edge-length-required").value
+            )
+        };
+
+        let options = { weights: getWeights(), metricsParam };
+        let graph = new ConcreteGraph(
+            this.loadedFiles[filename].graph,
+            options
+        );
+        if (!graph) throw `${filename} not loaded`;
+        let layout = this.loadedFiles[filename].layout || "-";
+        let metrics = graph.metrics();
+
+        let newRow = {
+            status: { value: "-", type: "text" },
+            filename: { value: filename, type: "text" },
+            layout: { value: layout, type: "text" },
+            nodes: { value: graph.nodes().length, type: "text" },
+            edges: { value: graph.edges().length, type: "text" },
+            density: { value: graph.density().toFixed(digits), type: "text" },
+            nodeOcclusion: {
+                value: metrics.nodeOcclusion.toFixed(digits),
+                type: "text"
+            },
+            edgeNodeOcclusion: {
+                value: metrics.edgeNodeOcclusion.toFixed(digits),
+                type: "text"
+            },
+            edgeLength: {
+                value: metrics.edgeLength.toFixed(digits),
+                type: "text"
+            },
+            edgeCrossing: {
+                value: metrics.edgeCrossing.toFixed(digits),
+                type: "text"
+            },
+            angularResolution: {
+                value: metrics.angularResolution.toFixed(digits),
+                type: "text"
+            },
+            objective: {
+                value: graph.objective().toFixed(digits),
+                type: "text"
+            }
+        };
+        let row = this.table.getRowByHeader("filename", filename);
+
+        if (!row) {
+            this.table.addRow(newRow);
+        } else {
+            console.log("Copying to row");
+
+            // copy values from newRow to row
+            for (const key in row) {
+                if (key !== "status") {
+                    row[key].value = newRow[key].value;
+                }
+            }
+        }
+        this.table.refresh();
+    }
+    loadFile(filename, data) {
+        console.log(this);
+
+        /*
+        loadedTests = {
+            filename: {
+                graph: origianlGraph,
+                layout: layoutAlgUsed, // default is null
+            }
+        }
+    */
+        let parsedData = JSON.parse(data);
+        if (!this.loadedFiles[filename]) {
+            this.loadedFiles[filename] = parsedData;
+            this.loadedFiles[filename].layout = null;
+            this.updateTableEntry(filename);
+        }
+    }
+}
+
+let defaultTab = new Tab("0");
+defaultTab.setupUi();
+switchTab(`tab-${defaultTab.id}`);
+tabs.push(defaultTab);
+
+function switchTab(tabElId) {
+    let tabId = getTabIdFromElId(tabElId);
+    let tabEl = document.querySelector(`#${tabElId}`);
+    let tabContent = document.querySelector(`#tab-content-${tabId}`);
+
+    let oldTabEl = document.querySelector(".tab-active");
+    if (oldTabEl && oldTabEl !== tabEl) {
+        let oldTabId = getTabIdFromElId(oldTabEl.id);
+        let oldTabContent = document.querySelector(`#tab-content-${oldTabId}`);
+        oldTabEl.classList.remove("tab-active");
+        oldTabContent.classList.remove("tab-content-active");
+    }
+
+    tabEl.classList.add("tab-active");
+    tabContent.classList.add("tab-content-active");
+}
+// setup tab bar
+let tabList = document.querySelector(".tab-list");
+tabList.addEventListener("click", event => {
+    let el = event.target;
+    // TODO: Limit how far you can click to create a new type to avoid miss-clicks
+    if (el.classList.contains("tab-item")) {
+        switchTab(el.id);
+    } else {
+        let tab = new Tab();
+        tab.setupUi();
+        switchTab(`tab-${tab.id}`);
+        tabs.push(tab);
+    }
+});
+
+// end of tap stuff 
+
+
 
 // Add headers to show/hide side menu
+// TODO: How will this interact with every table in every run?
+//
 let menuColSecFrag = document.createDocumentFragment();
-    for (const h of headers) {
-        let item = document.createElement("div");
-        item.classList.add("menu-item-checkbox");
-        let checkbox = document.createElement("input");
-        checkbox.setAttribute("type", "checkbox");
-        checkbox.checked = true;
-        checkbox.setAttribute("data-col", h.id);
-        let label = document.createElement("p");
-        label.innerHTML = h.title;
+for (const h of headers) {
+    let item = document.createElement("div");
+    item.classList.add("menu-item-checkbox");
+    let checkbox = document.createElement("input");
+    checkbox.setAttribute("type", "checkbox");
+    checkbox.checked = true;
+    checkbox.setAttribute("data-col", h.id);
+    let label = document.createElement("p");
+    label.innerHTML = h.title;
 
-        item.appendChild(checkbox);
-        item.appendChild(label);
-        menuColSecFrag.appendChild(item);
-    }
+    item.appendChild(checkbox);
+    item.appendChild(label);
+    menuColSecFrag.appendChild(item);
+}
 document.querySelector("#menu-sec-columns").appendChild(menuColSecFrag);
-
 
 // eslint-disable-next-line no-undef
 const sig = new sigma();
 const digits = 3;
 
-let loadedTests = {};
 let runCount = 0;
 
 // tool bar
@@ -181,6 +516,7 @@ genMode.addEventListener("change", event => {
 sideMenu
     .querySelector("#menu-sec-columns")
     .addEventListener("change", event => {
+        let table = currentTab().table;
         let colId = event.target.getAttribute("data-col");
         if (event.target.checked) table.showHeader(colId);
         else table.hideHeader(colId);
@@ -190,6 +526,7 @@ sideMenu
 sideMenu
     .querySelector("#menu-sec-metrics")
     .addEventListener("change", event => {
+        let table = currentTab().table;
         let metricsParam = {
             requiredEdgeLength: parseFloat(
                 document.querySelector("#edge-length-required").value
@@ -200,9 +537,9 @@ sideMenu
 
         if (event.target.classList.contains("weight-input")) {
             // recalculate objective for all rows
-            for (let filename in loadedTests) {
+            for (let filename in currentTab().loadedFiles) {
                 let graph = new ConcreteGraph(
-                    loadedTests[filename].graph,
+                    currentTab().loadedFiles[filename].graph,
                     options
                 );
                 let row = table.getRowByHeader("filename", filename);
@@ -211,9 +548,9 @@ sideMenu
         }
 
         if (event.target.id === "edge-length-required") {
-            for (let filename in loadedTests) {
+            for (let filename in currentTab().loadedFiles) {
                 let graph = new ConcreteGraph(
-                    loadedTests[filename].graph,
+                    currentTab().loadedFiles[filename].graph,
                     options
                 );
 
@@ -224,7 +561,7 @@ sideMenu
 
                 row.edgeLength.value = edgeLength.toFixed(digits);
                 row.objective.value = graph.objective().toFixed(digits);
-           }
+            }
         }
         table.refresh();
     });
@@ -266,15 +603,6 @@ function genTest(testNum, nMin, nMax, eMin, eMax, width, height) {
     }
 }
 
-
-function clearBatch() {
-    if (!runCount) {
-        table.clear();
-        table.refresh();
-        loadedTests = {};
-    }
-}
-
 function toolbarClickHandler(event) {
     let target = event.target;
     switch (target.id) {
@@ -288,147 +616,22 @@ function toolbarClickHandler(event) {
             break;
         case "loadFile":
             // eslint-disable-next-line no-undef
-            openFileDialog(loadTest);
+            // TODO: Will loadTest retain its this?
+            let callback = currentTab().loadFile.bind(currentTab());
+            console.log(callback);
+
+            openFileDialog(callback);
             break;
         case "batchRunTest":
-            runBatch(loadedTests);
+            currentTab().runBatch();
             break;
         case "backToMain":
             window.location.replace("index.html");
             break;
         case "clearTest":
-            clearBatch();
+            currentTab().clearBatch();
             break;
         default:
             break;
     }
 }
-
-function runBatch() {
-    for (let filename in loadedTests) {
-        runCount++;
-        runTest(filename);
-    }
-}
-
-// run layout for a single graph
-function runTest(filename) {
-    let metricsParam = {
-        requiredEdgeLength: parseFloat(
-            document.querySelector("#edge-length-required").value
-        )
-    };
-
-    let options = { weights: getWeights(), metricsParam };
-
-    let layoutAlgName = document.querySelector("#layoutAlgList").value;
-    let graphData = loadedTests[filename];
-    showIndicator(filename);
-    let row = table.getRowByHeader("filename", filename);
-    row.layout.value = layoutAlgName;
-    table.refresh();
-    let worker = new Worker("build/layoutWorker.js");
-    worker.postMessage([graphData.graph, layoutAlgName, options, "run"]);
-
-
-    worker.onmessage = function(e) {
-        // TODO: store original data before replacing it?
-        loadedTests[filename].graph = e.data[0];
-        loadedTests[filename].layout = e.data[1];
-        displayGraphInfo(filename);
-
-        hideIndicator(filename);
-    table.refresh();
-        runCount--;
-
-        if (!runCount) {
-            // TODO: make this into a general event
-        }
-        worker.terminate();
-    };
-}
-
-function showIndicator(filename) {
-    let row = table.getRowByHeader("filename", filename);
-    row.status.value = "Running";
-}
-function hideIndicator(filename) {
-    let row = table.getRowByHeader("filename", filename);
-    row.status.value = "Done";
-}
-
-// get test from file to memory
-function loadTest(filename, data) {
-    /*
-        loadedTests = {
-            filename: {
-                graph: origianlGraph,
-                layout: layoutAlgUsed, // default is null
-            }
-        }
-    */
-    let parsedData = JSON.parse(data);
-    if (!loadedTests[filename]) {
-        loadedTests[filename] = parsedData;
-        loadedTests[filename].layout = null;
-        displayGraphInfo(filename);
-    }
-}
-
-function displayGraphInfo(filename) {
-    let metricsParam = {
-        requiredEdgeLength: parseFloat(
-            document.querySelector("#edge-length-required").value
-        )
-    };
-
-    let options = { weights: getWeights(), metricsParam };
-    let graph = new ConcreteGraph(loadedTests[filename].graph, options);
-    if (!graph) throw `${filename} not loaded`;
-    let layout = loadedTests[filename].layout || "-";
-    let metrics = graph.metrics();
-
-    let newRow = {
-        status: { value: "-", type: "text" },
-        filename: { value: filename, type: "text" },
-        layout: { value: layout, type: "text" },
-        nodes: { value: graph.nodes().length, type: "text" },
-        edges: { value: graph.edges().length, type: "text" },
-        density: { value: graph.density().toFixed(digits), type: "text" },
-        nodeOcclusion: {
-            value: metrics.nodeOcclusion.toFixed(digits),
-            type: "text"
-        },
-        edgeNodeOcclusion: {
-            value: metrics.edgeNodeOcclusion.toFixed(digits),
-            type: "text"
-        },
-        edgeLength: { value: metrics.edgeLength.toFixed(digits), type: "text" },
-        edgeCrossing: {
-            value: metrics.edgeCrossing.toFixed(digits),
-            type: "text"
-        },
-        angularResolution: {
-            value: metrics.angularResolution.toFixed(digits),
-            type: "text"
-        },
-        objective: { value: graph.objective().toFixed(digits), type: "text" }
-    };
-    let row = table.getRowByHeader("filename", filename);
-    
-    if (!row) {
-        table.addRow(newRow);
-    } else {
-        console.log("Copying to row");
-        
-        // copy values from newRow to row
-        for (const key in row) {
-            if (key !== "status") {
-                row[key].value = newRow[key].value;
-            }
-        }
-    }
-    table.refresh();
-}
-
-window.table = table;

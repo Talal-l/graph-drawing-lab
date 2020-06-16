@@ -479,18 +479,19 @@ function updateLayoutAlg() {
     );
     layoutAlgOptions = {
         metricsParam: { requiredEdgeLength },
+        layoutParam: {},
         weights: getWeights()
     };
 
     switch (list.value) {
         case "hillClimbing":
             selectedLayoutAlg = "hillClimbing";
-            layoutAlgOptions.squareSize = 100;
+            layoutAlgOptions.layoutParam.squareSize = 100;
             break;
 
         case "circular":
             selectedLayoutAlg = "circular";
-            layoutAlgOptions.radius = 500;
+            layoutAlgOptions.layoutParam.radius = 500;
             break;
     }
 }

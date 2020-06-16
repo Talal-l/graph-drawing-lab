@@ -11,6 +11,8 @@ onmessage = function(e) {
     let [graph, layoutAlgName, options, command] = e.data;
 
     let graphParam = options.metricsParam;
+    let layoutParam = options.layoutParam;
+    
     GRAPH.read(graph);
     GRAPH.setMetricParam(graphParam);
     GRAPH.setWeights(options.weights);
@@ -18,10 +20,10 @@ onmessage = function(e) {
     let layoutAlg = null;
     switch (layoutAlgName) {
         case "hillClimbing":
-            layoutAlg = new HillClimbing(GRAPH, options);
+            layoutAlg = new HillClimbing(GRAPH, layoutParam);
             break;
         case "circular":
-            layoutAlg = new CircularLayout(GRAPH, options);
+            layoutAlg = new CircularLayout(GRAPH, layoutParam);
             break;
     }
     layoutAlg[command]();
