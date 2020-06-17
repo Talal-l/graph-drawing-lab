@@ -1,5 +1,5 @@
 import { ConcreteGraph, generateGraph } from "./graph.js";
-import { refreshScreen, distance, getEdgeId, cleanId} from "./util.js";
+import { refreshScreen, distance, getEdgeId, cleanId, deepCopy } from "./util.js";
 import * as evaluator from "./metrics.js";
 
 import { CircularLayout } from "./circularLayout.js";
@@ -40,9 +40,9 @@ function addTabEl(title, tabId) {
     newTab.insertAdjacentHTML("beforebegin", elHtml);
 }
 // TODO: make the layout more dynamic
-function createTabContainerEl() {
+function createTabContentEl(id) {
     let html = `
-            <div class="tab-content" id="tab-content-${this.id}">
+            <div class="tab-content" id="tab-content-${id}">
                 <div class="param-container">
                     <div class="dropdown" id="layoutAlg">
                         <span>Layout Algorithm: </span>
@@ -61,19 +61,19 @@ function createTabContainerEl() {
 
             </div>
                 <div class="table-container">
-                    <table class="run-table" id="table-${this.id}"><thead><tr></tr></thead><tbody></tbody></table>
+                    <table class="run-table" id="table-${id}"><thead><tr></tr></thead><tbody></tbody></table>
                 </div>
             </div>
    `;
     let tabContainer = document.querySelector("#tab-container");
     tabContainer.insertAdjacentHTML("beforeend", html);
+    return document.querySelector(`tab-content-${id}`);
 }
 
 function currentTab() {
     let activeTabElId = document.querySelector(".tab-active").id;
     return tabs.find(t => t.id === getTabIdFromElId(activeTabElId));
 }
-
 
 // requires this
 function addParamEl(label, defaultValue) {
@@ -87,7 +87,8 @@ function addParamEl(label, defaultValue) {
 
     let id = cleanId(label);
 
-    if (typeof defaultValue === "number") {
+    if (isFinite(Number(defaultValue))) {
+        defaultValue = Number(defaultValue);
         var inputHtml = `<input class="param-input" type="number" value="${defaultValue}">`;
     } else {
         inputHtml = `
@@ -102,7 +103,9 @@ function addParamEl(label, defaultValue) {
                     ${inputHtml}
                 </div>
                 `;
-    this.tabContentEl
+    console.log(this.getTabContent());
+
+    this.getTabContent()
         .querySelector(".param-list")
         .insertAdjacentHTML("beforeend", html);
 }
@@ -111,7 +114,7 @@ function addParamEl(label, defaultValue) {
 // TODO: add option to delete tab. Make sure to clean the data
 // TODO: add option to save tab to disk (save the run)
 class Tab {
-    constructor(name) {
+    constructor(title) {
         let d = new Date();
         let date = `${d.getFullYear()}${d.getDate()}${d.getDate()}${d.getHours()}${d.getMinutes()}${d.getSeconds()}`;
         this.creationDate = date;
@@ -120,50 +123,119 @@ class Tab {
         this.headerStates = document.querySelectorAll(".menu-item-checkbox");
         this.loadedFiles = {};
         this.runCount = 0;
-        addTabEl(name ? name : `${tabNum++}`, this.id);
-        createTabContainerEl.call(this);
-        this.tabContentEl = document.querySelector(`#tab-content-${this.id}`);
-        this.table = new Table(`table-${this.id}`);
-        for (const h of headers) {
-            this.table.addHeader(h);
-            // hide col based on colSec. Must be setup before creating this object
+        // create tab outside and use the tab array to get the content
+        this.title = title;
+        this.layoutParam = null;
+    }
+    getTabContent() {
+        let content = document.querySelector(`#tab-content-${this.id}`);
+        // if (content === null){
+        //     console.log("creating new tab content");
+        //     content = createTabContentEl(this.id);
+        // }
+        return content;
+    }
+    restoreFrom(saved) {
+        this.creationDate = saved.creationDate;
+        this.id = saved.id;
+        this.title = saved.title;
+        // copy param
+        this.layoutParam = saved.layoutParam;
+        this.layoutAlgName = saved.layoutAlgName;
+        this.loadedFiles = saved.loadedFiles;
+
+        this.setupUi();
+        // copy table
+        console.log(saved);
+
+        for (const row of saved.table.table.rows) {
+            this.table.addRow(row);
         }
         this.table.refresh();
+
+        return this;
     }
     // setup ui element interactions and default values that can't be set in the constructor
     setupUi() {
+        console.log("setupUi");
 
+        createTabContentEl(this.id);
+        this.table = new Table(`table-${this.id}`);
+        for (const h of headers) {
+            this.table.addHeader(h);
+        }
+        this.table.refresh();
         // init setup
         let addParamEl2 = addParamEl.bind(this);
-        addParamEl2("iterations", 500);
-        addParamEl2("squareSize", 100);
-        addParamEl2("moveStrategy", ["immediate", "delayed"]);
-        this.layoutAlgName = "hillClimbing";
-
-
         // add event listener to layout algorithm list to update parameters on change
-        let layoutAlgList = this.tabContentEl.querySelector("#layoutAlgList");
+        let layoutAlgList = this.getTabContent().querySelector(
+            "#layoutAlgList"
+        );
+        if (this.layoutParam) {
+            console.log("restoring param");
+
+            this.getTabContent().querySelector(".param-list").innerHTML = "";
+            switch (this.layoutAlgName) {
+                case "hillClimbing":
+                    addParamEl2("iterations", this.layoutParam.iterations);
+                    addParamEl2("squareSize", this.layoutParam.squareSize);
+                    addParamEl2("moveStrategy", [
+                        this.layoutParam.moveStrategy
+                    ]);
+                    layoutAlgList.value = "hillClimbing";
+
+                    break;
+                case "Tabu":
+                    break;
+                case "circular":
+                    addParamEl2(
+                        "maxIterations",
+                        this.layoutParam.maxIterations
+                    );
+                    addParamEl2("radius", this.layoutParam.radius);
+                    layoutAlgList.value = "circular";
+                    break;
+            }
+        } else {
+            addParamEl2("iterations", 500);
+            addParamEl2("squareSize", 100);
+            addParamEl2("moveStrategy", ["immediate", "delayed"]);
+            this.layoutAlgName = "hillClimbing";
+            this.layoutParam = {
+                iterations: 500,
+                squareSize: 100,
+                moveStrategy: "immediate"
+            };
+        }
+
         layoutAlgList.addEventListener("change", ({ target }) => {
             console.log(`this in listener = `);
             console.log(this);
 
             this.layoutAlgName = target.value;
-            this.tabContentEl.querySelector(".param-list").innerHTML = "";
+            this.getTabContent().querySelector(".param-list").innerHTML = "";
             switch (this.layoutAlgName) {
                 case "hillClimbing":
                     addParamEl2("iterations", 500);
                     addParamEl2("squareSize", 100);
                     addParamEl2("moveStrategy", ["immediate", "delayed"]);
+                    this.layoutParam = {
+                        iterations: 500,
+                        squareSize: 100,
+                        moveStrategy: "immediate"
+                    };
                     break;
                 case "Tabu":
                     break;
                 case "circular":
+                    this.layoutParam = { maxIterations: 1000, radius: 450 };
                     addParamEl2("maxIterations", 1000);
                     addParamEl2("radius", 450);
                     break;
             }
         });
 
+        this.table.refresh();
         return this;
     }
     // add the ui and populated with the correct data
@@ -176,18 +248,19 @@ class Tab {
         };
         let layoutParam = {};
         let paramInputs = Array.from(
-            this.tabContentEl.querySelectorAll(".param-item")
+            this.getTabContent().querySelectorAll(".param-item")
         );
         for (const el of paramInputs) {
             let label = el.querySelector(".param-label").innerText;
             let param = el.querySelector(".param-input").value;
 
-            if (Number(param) !== NaN) param = Number(param);
+            if (isFinite(Number(param))) param = Number(param);
 
             layoutParam[label] = param;
         }
 
         let options = { weights: getWeights(), metricsParam, layoutParam };
+        this.layoutParam = layoutParam;
 
         let layoutAlgName = this.layoutAlgName;
         let graphData = this.loadedFiles[filename];
@@ -199,18 +272,19 @@ class Tab {
         worker.postMessage([graphData.graph, layoutAlgName, options, "run"]);
 
         worker.onmessage = function(e) {
-            // TODO: store original data before replacing it?
             console.log(this.loadedFiles);
 
+            this.loadedFiles[filename].originalGraph = deepCopy(this.loadedFiles[filename].graph); 
             this.loadedFiles[filename].graph = e.data[0];
             this.loadedFiles[filename].layout = e.data[1];
+            this.loadedFiles[filename].options = e.data[2];
             this.updateTableEntry(filename);
 
             this.hideIndicator(filename);
             this.table.refresh();
-            runCount--;
+            this.runCount--;
 
-            if (!runCount) {
+            if (!this.runCount) {
                 // TODO: make this into a general event
             }
             worker.terminate();
@@ -253,6 +327,17 @@ class Tab {
         if (!graph) throw `${filename} not loaded`;
         let layout = this.loadedFiles[filename].layout || "-";
         let metrics = graph.metrics();
+
+        if (this.loadedFiles[filename].originalMetrics === null) {
+            this.loadedFiles[filename].originalGraph = deepCopy(this.loadedFiles[filename].graph); 
+            this.loadedFiles[filename].originalMetrics = metrics;
+            this.loadedFiles[filename].originalObjective = graph.objective();
+            this.loadedFiles[filename].originalOptions = options;
+        } else {
+            this.loadedFiles[filename].metrics = metrics;
+            this.loadedFiles[filename].objective = graph.objective();
+            this.loadedFiles[filename].options = options;
+        }
 
         let newRow = {
             status: { value: "-", type: "text" },
@@ -300,6 +385,8 @@ class Tab {
                 }
             }
         }
+        console.log(this.table);
+
         this.table.refresh();
     }
     loadFile(filename, data) {
@@ -310,22 +397,41 @@ class Tab {
             filename: {
                 graph: origianlGraph,
                 layout: layoutAlgUsed, // default is null
+                originalMetrics:{),
+                metrics:{}
+                options:{
+                    weights:{},
+                    metricParam:{},
+                    layoutParam:{}
+                }
+
             }
         }
     */
         let parsedData = JSON.parse(data);
-        if (!this.loadedFiles[filename]) {
-            this.loadedFiles[filename] = parsedData;
-            this.loadedFiles[filename].layout = null;
-            this.updateTableEntry(filename);
+        console.log(this.loadedFiles[filename]);
+
+        if (this.loadedFiles[filename]) {
+
+            let rowIndex = this.table
+                .getRows()
+                .findIndex(e => e.filename.value === filename);
+            this.table.removeRow(rowIndex);
+            this.table.refresh();
         }
+
+        this.loadedFiles[filename] = parsedData;
+        this.loadedFiles[filename].layout = null;
+        this.loadedFiles[filename].metrics = null;
+        this.loadedFiles[filename].objective = null;
+        this.loadedFiles[filename].options = null;
+        this.loadedFiles[filename].originalMetrics = null;
+        this.loadedFiles[filename].originalObjective = null;
+        this.loadedFiles[filename].originalOptions = null;
+
+        this.updateTableEntry(filename);
     }
 }
-
-let defaultTab = new Tab("0");
-defaultTab.setupUi();
-switchTab(`tab-${defaultTab.id}`);
-tabs.push(defaultTab);
 
 function switchTab(tabElId) {
     let tabId = getTabIdFromElId(tabElId);
@@ -343,7 +449,27 @@ function switchTab(tabElId) {
     tabEl.classList.add("tab-active");
     tabContent.classList.add("tab-content-active");
 }
+
 // setup tab bar
+let savedTabs = JSON.parse(localStorage.getItem("runs"));
+console.log(savedTabs);
+
+if (savedTabs) {
+    for (const tab of savedTabs) {
+        let nTab = new Tab("new one");
+        nTab.restoreFrom(tab);
+        addTabEl(nTab.title, nTab.id);
+        tabs.push(nTab);
+    }
+
+    switchTab(`tab-${tabs[0].id}`);
+} else {
+    let defaultTab = new Tab("Run 0").setupUi();
+    addTabEl(defaultTab.title, defaultTab.id);
+    switchTab(`tab-${defaultTab.id}`);
+    tabs.push(defaultTab);
+}
+
 let tabList = document.querySelector(".tab-list");
 tabList.addEventListener("click", event => {
     let el = event.target;
@@ -351,16 +477,61 @@ tabList.addEventListener("click", event => {
     if (el.classList.contains("tab-item")) {
         switchTab(el.id);
     } else {
-        let tab = new Tab();
+        // TODO: change this when you can delete tabs
+        console.log("Adding new tab");
+        let tab = new Tab(`Run ${tabs.length}`);
+        let prevTab = null;
+        if (tabs.length > 0) {
+            prevTab =  tabs[tabs.length - 1];
+            tab.loadedFiles = prevTab.loadedFiles;
+
+        }
         tab.setupUi();
+        addTabEl(tab.title, tab.id);
         switchTab(`tab-${tab.id}`);
         tabs.push(tab);
+
+        // set param
+        let layoutAlgList = tab.getTabContent().querySelector("#layoutAlgList");
+        if (prevTab.layoutParam) {
+            console.log("restoring param from prev");
+            console.log(prevTab);
+
+            let addParamEl2 = addParamEl.bind(tab);
+            tab.getTabContent().querySelector(".param-list").innerHTML = "";
+            tab.layoutAlgName = prevTab.layoutAlgName;
+            tab.layoutParam = prevTab.layoutParam;
+            switch (prevTab.layoutAlgName) {
+                case "hillClimbing":
+                    addParamEl2("iterations", prevTab.layoutParam.iterations);
+                    addParamEl2("squareSize", prevTab.layoutParam.squareSize);
+                    addParamEl2("moveStrategy", [
+                        prevTab.layoutParam.moveStrategy
+                    ]);
+                    layoutAlgList.value = "hillClimbing";
+                    break;
+                case "Tabu":
+                    break;
+                case "circular":
+                    addParamEl2(
+                        "maxIterations",
+                        prevTab.layoutParam.maxIterations
+                    );
+                    addParamEl2("radius", prevTab.layoutParam.radius);
+                    layoutAlgList.value = "circular";
+                    break;
+            }
+        }
+            
+            for (const filename in prevTab.loadedFiles) {
+                tab.loadedFiles[filename].graph = prevTab.loadedFiles[filename].originalGraph;
+                tab.loadedFiles[filename].layout = null;
+                tab.updateTableEntry(filename);
+            }
     }
 });
 
-// end of tap stuff 
-
-
+// end of tap stuff
 
 // Add headers to show/hide side menu
 // TODO: How will this interact with every table in every run?
@@ -385,8 +556,6 @@ document.querySelector("#menu-sec-columns").appendChild(menuColSecFrag);
 // eslint-disable-next-line no-undef
 const sig = new sigma();
 const digits = 3;
-
-let runCount = 0;
 
 // tool bar
 const toolbar = document.querySelector(".toolbar-container"),
@@ -629,9 +798,17 @@ function toolbarClickHandler(event) {
             window.location.replace("index.html");
             break;
         case "clearTest":
-            currentTab().clearBatch();
+            localStorage.removeItem("runs");
+            window.location.replace("batchRun.html");
+            break;
+        case "summary":
+            // save tabs to local storage
+            localStorage.setItem("runs", JSON.stringify(tabs));
+            window.location.replace("summary.html");
             break;
         default:
             break;
     }
 }
+
+window.tabs = tabs;

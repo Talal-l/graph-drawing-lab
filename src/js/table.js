@@ -103,7 +103,7 @@ export class Table {
     }
 
     /**
-     * Add header to table with an optional index. Default id is the title with spaces replaced with -
+     * Add header to table with an optional index.
      * @param {object} header - Header object with a valid id
      * @param {number} [index] - Where to insert the header (starts from 0)
      */

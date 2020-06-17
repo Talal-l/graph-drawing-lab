@@ -3,6 +3,7 @@ module.exports = {
     mode: "production",
     entry: {
         main: "./src/js/main.js",
+        summary: "./src/js/summary.js",
         batchRun: "./src/js/batchRun.js",
         layoutWorker: "./src/js/layoutWorker.js"
     },

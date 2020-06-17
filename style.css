@@ -381,3 +381,30 @@ td {
 .grid-input {
   justify-self: center;
 }
+
+
+/* start summary stuff*/
+.summary-container{
+    display: flex;
+    flex-direction: column;
+    width: 80%;
+    margin: auto;
+    margin-bottom: 100px;
+}
+
+.summary-param-entry{
+    font-size: large;
+    display: flex;
+    flex-direction: column;
+    margin-left: 8px;
+    border: solid black;
+    padding: 4px;
+}
+.summary-param-container{
+    font-size: large;
+    flex-wrap: wrap;
+    display: flex;
+    flex-direction: row;
+}
+
+/* summary stuff  end*/
