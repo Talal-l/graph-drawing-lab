@@ -1,5 +1,11 @@
 import { ConcreteGraph, generateGraph } from "./graph.js";
-import { refreshScreen, distance, getEdgeId, cleanId, deepCopy } from "./util.js";
+import {
+    refreshScreen,
+    distance,
+    getEdgeId,
+    cleanId,
+    deepCopy
+} from "./util.js";
 import * as evaluator from "./metrics.js";
 
 import { CircularLayout } from "./circularLayout.js";
@@ -136,6 +142,7 @@ class Tab {
         return content;
     }
     restoreFrom(saved) {
+        console.log(`restoring from save \n${saved}`);
         this.creationDate = saved.creationDate;
         this.id = saved.id;
         this.title = saved.title;
@@ -180,7 +187,10 @@ class Tab {
                     addParamEl2("iterations", this.layoutParam.iterations);
                     addParamEl2("squareSize", this.layoutParam.squareSize);
                     addParamEl2("moveStrategy", [
-                        this.layoutParam.moveStrategy
+                        this.layoutParam.moveStrategy,
+                        ["immediate", "delayed"].find(
+                            e => e !== this.layoutParam.moveStrategy
+                        )
                     ]);
                     layoutAlgList.value = "hillClimbing";
 
@@ -270,17 +280,20 @@ class Tab {
         this.table.refresh();
         let worker = new Worker("build/layoutWorker.js");
         worker.postMessage([graphData.graph, layoutAlgName, options, "run"]);
+        this.loadedFiles[filename].originalGraph = deepCopy(
+            this.loadedFiles[filename].graph
+        );
 
         worker.onmessage = function(e) {
             console.log(this.loadedFiles);
 
-            this.loadedFiles[filename].originalGraph = deepCopy(this.loadedFiles[filename].graph); 
             this.loadedFiles[filename].graph = e.data[0];
             this.loadedFiles[filename].layout = e.data[1];
             this.loadedFiles[filename].options = e.data[2];
             this.updateTableEntry(filename);
 
             this.hideIndicator(filename);
+
             this.table.refresh();
             this.runCount--;
 
@@ -329,7 +342,9 @@ class Tab {
         let metrics = graph.metrics();
 
         if (this.loadedFiles[filename].originalMetrics === null) {
-            this.loadedFiles[filename].originalGraph = deepCopy(this.loadedFiles[filename].graph); 
+            this.loadedFiles[filename].originalGraph = deepCopy(
+                this.loadedFiles[filename].graph
+            );
             this.loadedFiles[filename].originalMetrics = metrics;
             this.loadedFiles[filename].originalObjective = graph.objective();
             this.loadedFiles[filename].originalOptions = options;
@@ -412,7 +427,6 @@ class Tab {
         console.log(this.loadedFiles[filename]);
 
         if (this.loadedFiles[filename]) {
-
             let rowIndex = this.table
                 .getRows()
                 .findIndex(e => e.filename.value === filename);
@@ -482,9 +496,8 @@ tabList.addEventListener("click", event => {
         let tab = new Tab(`Run ${tabs.length}`);
         let prevTab = null;
         if (tabs.length > 0) {
-            prevTab =  tabs[tabs.length - 1];
-            tab.loadedFiles = prevTab.loadedFiles;
-
+            prevTab = tabs[tabs.length - 1];
+            tab.loadedFiles = deepCopy(prevTab.loadedFiles);
         }
         tab.setupUi();
         addTabEl(tab.title, tab.id);
@@ -499,14 +512,16 @@ tabList.addEventListener("click", event => {
 
             let addParamEl2 = addParamEl.bind(tab);
             tab.getTabContent().querySelector(".param-list").innerHTML = "";
-            tab.layoutAlgName = prevTab.layoutAlgName;
-            tab.layoutParam = prevTab.layoutParam;
+            tab.layoutParam = deepCopy(prevTab.layoutParam);
             switch (prevTab.layoutAlgName) {
                 case "hillClimbing":
                     addParamEl2("iterations", prevTab.layoutParam.iterations);
                     addParamEl2("squareSize", prevTab.layoutParam.squareSize);
                     addParamEl2("moveStrategy", [
-                        prevTab.layoutParam.moveStrategy
+                        prevTab.layoutParam.moveStrategy,
+                        ["immediate", "delayed"].find(
+                            e => e !== prevTab.layoutParam.moveStrategy
+                        )
                     ]);
                     layoutAlgList.value = "hillClimbing";
                     break;
@@ -522,12 +537,14 @@ tabList.addEventListener("click", event => {
                     break;
             }
         }
-            
-            for (const filename in prevTab.loadedFiles) {
-                tab.loadedFiles[filename].graph = prevTab.loadedFiles[filename].originalGraph;
-                tab.loadedFiles[filename].layout = null;
-                tab.updateTableEntry(filename);
-            }
+
+        for (const filename in prevTab.loadedFiles) {
+            tab.loadedFiles[filename].graph = deepCopy(
+                prevTab.loadedFiles[filename].originalGraph
+            );
+            tab.loadedFiles[filename].layout = null;
+            tab.updateTableEntry(filename);
+        }
     }
 });
 
@@ -787,8 +804,6 @@ function toolbarClickHandler(event) {
             // eslint-disable-next-line no-undef
             // TODO: Will loadTest retain its this?
             let callback = currentTab().loadFile.bind(currentTab());
-            console.log(callback);
-
             openFileDialog(callback);
             break;
         case "batchRunTest":
@@ -803,6 +818,7 @@ function toolbarClickHandler(event) {
             break;
         case "summary":
             // save tabs to local storage
+            console.log(tabs);
             localStorage.setItem("runs", JSON.stringify(tabs));
             window.location.replace("summary.html");
             break;

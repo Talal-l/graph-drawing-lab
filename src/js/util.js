@@ -233,8 +233,11 @@ function isEmpty(obj) {
     return true;
 }
 function deepCopy(source) {
+    if (!source) return source;
     let proto = Object.getPrototypeOf(source);
-    let copy = Object.create(proto);
+    let copy;
+    if (Array.isArray(source)) copy = new Array();
+    else copy = Object.create(proto);
     for (let key in source) {
         // ignore proto
         if (proto && source.hasOwnProperty(key)) {
@@ -242,8 +245,9 @@ function deepCopy(source) {
                 copy[key] = deepCopy(source[key]);
             } else if (typeof source[key] === "function") {
                 copy[key] = source[key].toString();
+            } else {
+                copy[key] = source[key];
             }
-            copy[key] = source[key];
         }
     }
     return copy;

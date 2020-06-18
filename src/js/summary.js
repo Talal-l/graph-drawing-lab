@@ -63,8 +63,9 @@ for (const run of runs) {
 
     run.median = d3.median(run.objectives);
 
+    let layoutName = run.runCount > 0?run.layoutAlgName:"-";
     let row = {
-        layoutAlgorithm: { value: run.layoutAlgName, type: "text" },
+        layoutAlgorithm: { value: layoutName, type: "text" },
         runName: { value: run.title, type: "text" },
         objective: { value: oldObjAverage, type: "text" },
         objectiveAfterRun: { value: objAverage, type: "text" },

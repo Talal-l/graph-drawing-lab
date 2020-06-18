@@ -63,11 +63,51 @@ test("Should sort edges as expected", () => {
     let center = "0";
     let endPoints = graph.neighbors(center);
     let baseEndpoint = "1";
-    let sortedEdges = sortNeighborsByAngle(
-        graph,
-        center,
-        baseEndpoint
-    );
+    let sortedEdges = sortNeighborsByAngle(graph, center, baseEndpoint);
 
     expect(sortedEdges).toEqual(["1", "3", "4", "2"]);
+});
+
+describe("deepCopy", () => {
+    test("simple object", () => {
+        let source = { a: 1, b: 2 };
+        let copy = deepCopy(source);
+        copy.a = 12;
+
+        expect(source).not.toEqual(copy);
+    });
+    test("nested object 1", () => {
+        let source = { a: { a1: 0, b2: 0 }, b: 0 };
+        let copy = deepCopy(source);
+        copy.a.a1 = 12;
+
+        expect(source).not.toEqual(copy);
+    });
+    test("with array ", () => {
+        let source = { a: [1, 2, 3], b: 2 };
+        let copy = deepCopy(source);
+        copy.a[1] = 111;
+        expect(source).not.toEqual(copy);
+        expect(Array.isArray(copy.a)).toBe(true);
+    });
+    test("with nested array  ", () => {
+        let source = { a: [[0, 0, 0], 0], b: 2 };
+        let copy = deepCopy(source);
+        copy.a[0][0] = 1;
+        expect(source).not.toEqual(copy);
+        expect(Array.isArray(copy.a)).toBe(true);
+    });
+    test("with nested object with array  ", () => {
+        let source = { a: [[{ a: 0 }, 0, 0], 0], b: 2 };
+        let copy = deepCopy(source);
+        copy.a[0][0].a = 1;
+        expect(source).not.toEqual(copy);
+        expect(Array.isArray(copy.a)).toBe(true);
+    });
+
+    test("null", () => {
+        let source = null;
+        let copy = deepCopy(source);
+        expect(copy).toEqual(null);
+    });
 });
