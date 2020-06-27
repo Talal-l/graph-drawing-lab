@@ -10,52 +10,185 @@ import * as evaluator from "./metrics.js";
 
 import { CircularLayout } from "./circularLayout.js";
 import { HillClimbing } from "./hillClimbing.js";
-
 import { Table } from "./table";
-let headers = [
-    { id: "status", title: "Status" },
-    { id: "filename", title: "Filename" },
-    { id: "layout", title: "Layout" },
-    { id: "nodes", title: "Nodes" },
-    { id: "edges", title: "Edges" },
-    { id: "density", title: "Density" },
-    { id: "nodeOcclusion", title: "Node occlusion" },
-    { id: "edgeNodeOcclusion", title: "Edge-Node occlusion" },
-    { id: "edgeLength", title: "Edge length" },
-    { id: "edgeCrossing", title: "Edge crossing" },
-    { id: "angularResolution", title: "Angular Resolution" },
-    { id: "objective", title: "Objective" }
+const headers = [
+    { id: "status", title: "Status", visible: true },
+    { id: "filename", title: "Filename", visible: true },
+    { id: "layout", title: "Layout", visible: true },
+    { id: "nodes", title: "Nodes", visible: true },
+    { id: "edges", title: "Edges", visible: true },
+    { id: "density", title: "Density", visible: true },
+    { id: "nodeOcclusion", title: "Node occlusion", visible: true },
+    { id: "edgeNodeOcclusion", title: "Edge-Node occlusion", visible: true },
+    { id: "edgeLength", title: "Edge length", visible: true },
+    { id: "edgeCrossing", title: "Edge crossing", visible: true },
+    { id: "angularResolution", title: "Angular Resolution", visible: true },
+    { id: "objective", title: "Objective", visible: true }
 ];
 
-// Tab stuff
-let tabNum = 1;
-let tabs = [];
-// Assume that id is after the last -
-function getTabIdFromElId(id) {
-    return id.split("-").pop();
+const layouts = {
+    hillClimbing: {
+        name: "hillClimbing",
+        displayName: "Hill Climbing",
+        params: [
+            {
+                type: "number",
+                name: "iterations",
+                value: 500,
+                displayName: "Max Iterations"
+            },
+            {
+                type: "number",
+                name: "squareSize",
+                value: 100,
+                displayName: "Square Size"
+            },
+            {
+                type: "list",
+                name: "moveStrategy",
+                displayName: "Move Strategy",
+                options: [
+                    { name: "immediate", displayName: "Immediate" },
+                    { name: "delayed", displayName: "Delayed" }
+                ],
+                selectedOptionIndex: 0
+            }
+        ]
+    },
+    tabu: {
+        name: "tabu",
+        displayName: "Tabu Search",
+        params: [
+            {
+                type: "number",
+                name: "iterations",
+                value: 500,
+                displayName: "Max Iterations"
+            },
+            {
+                type: "number",
+                name: "squareSize",
+                value: 100,
+                displayName: "Square Size"
+            },
+            {
+                type: "list",
+                name: "selectionStrategy",
+                displayName: "Selection Strategy",
+                options: [
+                    { name: "bestWorst", displayName: "Best and Worst" },
+                    { name: "bestSecond", displayName: "Best and Second Best" },
+                    { name: "random", displayName: "Random" },
+                    { name: "mostDistance", displayName: "Most Distance" }
+                ],
+                selectedOptionIndex: 2
+            }
+        ]
+    },
+    circular: {
+        name: "circular",
+        displayName: "Circular",
+        params: [
+            {
+                type: "number",
+                name: "maxIterations",
+                value: 1000,
+                displayName: "Max Iterations"
+            },
+            {
+                type: "number",
+                name: "radius",
+                value: 450,
+                displayName: "Radius"
+            }
+        ]
+    }
+};
+
+function createLayoutList(selectedLayout) {
+    let htmlOptions = "";
+    for (const [name, { displayName }] of Object.entries(layouts)) {
+        htmlOptions += `<option value="${name}" ${
+            name === selectedLayout ? "selected" : ""
+        }>${displayName}</option>`;
+    }
+    let selectHtml = `
+        <select name="layoutAlg" id="layoutAlgList">
+        ${htmlOptions}
+        </select>
+    `;
+    return selectHtml;
+}
+function createLayoutParam(params) {
+    function createItemWrapper(item) {
+        return `<div class="menu-item-group">
+            <div class="menu-item">
+                ${item}
+            </div>
+        </div>`;
+    }
+
+    function createInputParam({ name, displayName, value }) {
+        let inputHtml = `<div class=param-input-label>${displayName}</div>
+            <input type="number" name="${name}" class="param-input" id="${name}" value="${value}" </input>
+            `;
+        return inputHtml;
+    }
+    function createSelectParam({
+        name,
+        displayName,
+        selectedOptionIndex,
+        options
+    }) {
+        let htmlOptions = "";
+        for (let i = 0; i < options.length; i++) {
+            const { name, displayName } = options[i];
+            htmlOptions += `<option value="${name}" ${
+                selectedOptionIndex === i ? "selected" : ""
+            }>${displayName}</option>`;
+        }
+
+        let selectHtml = `<div class=param-input-label>${displayName}</div>
+            <select name="${name}">${htmlOptions}</select>
+
+            `;
+
+        return selectHtml;
+    }
+
+    let html = "";
+    for (const param of params) {
+        let paramHtml = "";
+        if (param.type === "number") paramHtml = createInputParam(param);
+        else if (param.type === "list") paramHtml = createSelectParam(param);
+        html += createItemWrapper(paramHtml);
+    }
+    return html;
 }
 
-// TODO: double check when taking title as input
-function addTabEl(title, tabId) {
-    let elHtml = `
+function createTabEl(title, tabId) {
+    let html = `
             <div class="tab-item" id="tab-${tabId}">
                 ${title}
+                ${
+                    // prevent the default tab from being deleted
+                    tabId !== tabs[0].id
+                        ? `<span class="fas fa-times tab-close-icon"></span>`
+                        : ``
+                }
              </div> 
             `;
-    let newTab = document.querySelector("#new-tab");
-    newTab.insertAdjacentHTML("beforebegin", elHtml);
+    return html;
 }
-// TODO: make the layout more dynamic
-function createTabContentEl(id) {
+
+function createTabContent({ id, layout }) {
     let html = `
             <div class="tab-content" id="tab-content-${id}">
                 <div class="param-container">
                     <div class="dropdown" id="layoutAlg">
                         <span>Layout Algorithm: </span>
-                        <select name="layoutAlg" id="layoutAlgList">
-                            <option value="hillClimbing">Hill Climbing</option>
-                            <option value="circular"> Circular</option>
-                        </select>
+                        ${createLayoutList(layout)}
+
                     </div>
 
                     <div class="param-list">
@@ -71,9 +204,141 @@ function createTabContentEl(id) {
                 </div>
             </div>
    `;
+    return html;
+}
+// util function
+
+// Assume that id is after the last -
+function getTabIdFromElId(id) {
+    return id.split("-").pop();
+}
+
+function layoutParamHandler({ target }) {}
+
+function addLayoutParam(layoutParam) {
+    let layoutParamSec = document.querySelector("#menu-sec-layout-param");
+    layoutParamSec.innerHTML = "";
+    layoutParamSec.insertAdjacentHTML(
+        "beforeend",
+        createLayoutParam(layoutParam)
+    );
+    // add param layout event listener
+}
+
+function addNewTab(tabList, tab) {
+    console.log("adding new tab", tab);
+    // add the tab to the list of tabs
+    tabList.push(tab);
+    // add it to html tab list
+    addTabEl(tab);
+    // add html content
+    addTabContentEl(tab);
+}
+
+// add new tab element and add it's tab before the new tab icon
+// TODO: find a better name. This name conflicts with addNewTab
+function addTabEl(tab) {
+    let newTab = document.querySelector("#new-tab");
+    newTab.insertAdjacentHTML("beforebegin", createTabEl(tab.title, tab.id));
+
+    // add even listener to tab
+    //tab  close event
+}
+
+function addTabContentEl(tab) {
     let tabContainer = document.querySelector("#tab-container");
-    tabContainer.insertAdjacentHTML("beforeend", html);
-    return document.querySelector(`tab-content-${id}`);
+    tabContainer.innerHTML = "";
+    tabContainer.insertAdjacentHTML("beforeend", createTabContent(tab));
+
+    const contentEl = document.querySelector(`#tab-content-${tab.id}`);
+
+    addTable(tab);
+    addSideMenuColSec(tab);
+    addSideMenuMetricSec(tab);
+    addLayoutParam(tab.layoutParam);
+
+    // add event listener to layout algorithm list to update parameters on change
+    let layoutAlgList = contentEl.querySelector("#layoutAlgList");
+    layoutAlgList.onchange = ({ target }) => {
+        tab.layout = target.value;
+        tab.layoutParam = deepCopy(layouts[tab.layout].params);
+        addLayoutParam(currentTab().layoutParam);
+    };
+
+    // add event listener for the table
+    tabContainer.querySelector("table").onclick = ({ target }) => {
+        let btn = null;
+        let h = null;
+        if (target.nodeName === "TH") {
+            btn = target.querySelector("button");
+            h = target.id;
+        } else if (target.nodeName === "BUTTON") {
+            btn = target;
+            h = target.parentNode.id;
+        }
+        if (tab.table.getHeader(h)) {
+            tab.table.sort(h, !(tab.table.sortClass === "sort-asc"));
+            tab.table.refresh();
+            tab.sortDirection = tab.table.sortClass;
+            tab.sortHeader = h;
+        }
+    };
+}
+
+function addTable(tab) {
+    let table = new Table(`table-${tab.id}`);
+    tab.table = table;
+
+    for (const h of tab.headers) {
+        table.addHeader(h);
+        if (h.visible === false) table.hideHeader(h.id);
+    }
+
+    for (const [filename, file] of Object.entries(tab.files)) {
+        let graph = null;
+        if (!file.concreteGraph) {
+            graph = new ConcreteGraph(file.graph, {
+                weights: tab.weights,
+                metricsParam: tab.metricsParam
+            });
+        } else {
+            graph = file.concreteGraph;
+        }
+
+        let {
+            nodeOcclusion,
+            edgeNodeOcclusion,
+            edgeLength,
+            edgeCrossing,
+            angularResolution
+        } = graph.metrics();
+
+        let row = {
+            status: { value: file.status, type: "text" },
+            filename: { value: filename, type: "text" },
+            layout: {
+                value: file.status !== "-" ? tab.layout : "-",
+                type: "text"
+            },
+            nodes: { value: graph.nodes().length, type: "text" },
+            edges: { value: graph.edges().length, type: "text" },
+            density: { value: graph.density(), type: "text" },
+            nodeOcclusion: { value: nodeOcclusion, type: "text" },
+            edgeNodeOcclusion: { value: edgeNodeOcclusion, type: "text" },
+            edgeLength: { value: edgeLength, type: "text" },
+            edgeCrossing: { value: edgeCrossing, type: "text" },
+            angularResolution: { value: angularResolution, type: "text" },
+            objective: { value: graph.objective(), type: "text" }
+        };
+
+        table.addRow(row);
+    }
+
+    if (tab.sortHeader && tab.sortDirection !== "sort-neutral") {
+        tab.table.sort(tab.sortHeader, tab.sortDirection === "sort-asc");
+    }
+
+    table.refresh();
 }
 
 function currentTab() {
@@ -81,407 +346,167 @@ function currentTab() {
     return tabs.find(t => t.id === getTabIdFromElId(activeTabElId));
 }
 
-// requires this
-function addParamEl(label, defaultValue) {
-    function options(defaultValue) {
-        let r = "";
-        for (const v of defaultValue) {
-            r += `<option value="${v}">${v}</option>\n`;
-        }
-        return r;
+function switchTab(tab) {
+    let tabEl = document.querySelector(`#tab-${tab.id}`);
+    if (!tabEl) throw `no tab with id tab-${tab.id}`;
+
+    let oldTabEl = document.querySelector(".tab-active");
+    if (oldTabEl && oldTabEl !== tabEl) {
+        let oldTabId = getTabIdFromElId(oldTabEl.id);
+        oldTabEl.classList.remove("tab-active");
     }
 
-    let id = cleanId(label);
+    tabEl.classList.add("tab-active");
 
-    if (isFinite(Number(defaultValue))) {
-        defaultValue = Number(defaultValue);
-        var inputHtml = `<input class="param-input" type="number" value="${defaultValue}">`;
-    } else {
-        inputHtml = `
-                    <select name="layoutAlg" class="param-input" id="layoutAlgList">
-                        ${options(defaultValue)}
-                    </select>
-                    `;
-    }
-    let html = `
-                <div class="param-item" id="${id}">
-                    <p class="param-label"> ${label}</p>
-                    ${inputHtml}
-                </div>
-                `;
-    console.log(this.getTabContent());
-
-    this.getTabContent()
-        .querySelector(".param-list")
-        .insertAdjacentHTML("beforeend", html);
+    addTabContentEl(tab);
 }
 
+let tabNum = 1;
+let tabs = [];
+
+const metricsParam = {
+    requiredEdgeLength: 0.5
+};
+const weights = {
+    nodeOcclusion: 1,
+    edgeNodeOcclusion: 1,
+    edgeLength: 1,
+    edgeCrossing: 1,
+    angularResolution: 1
+};
+
 // Assumes to be created in a loaded batchRun page (with side menu)
-// TODO: add option to delete tab. Make sure to clean the data
 // TODO: add option to save tab to disk (save the run)
 class Tab {
-    constructor(title) {
+    constructor(title, otherTab) {
         let d = new Date();
         let date = `${d.getFullYear()}${d.getDate()}${d.getDate()}${d.getHours()}${d.getMinutes()}${d.getSeconds()}`;
         this.creationDate = date;
+        this.table = null; // mainly used to control the sort
         this.id = `${date + Math.floor(Math.random() * 1000)}`;
-        // get visible and hidden headers
-        this.headerStates = document.querySelectorAll(".menu-item-checkbox");
-        this.loadedFiles = {};
+        this.headers = deepCopy(otherTab ? otherTab.headers : headers);
+        this.sortHeader = otherTab ? otherTab.sortHeader : null;
+        this.sortDirection = otherTab ? otherTab.sortDirection : "sort-neutral";
+        this.weights = deepCopy(otherTab ? otherTab.weights : weights);
+        this.metricsParam = deepCopy(
+            otherTab ? otherTab.metricsParam : metricsParam
+        );
+
+        this.files = {};
+        if (otherTab) {
+            // remove the computed graph from the current tab
+            for (let [filename, file] of Object.entries(otherTab.files)) {
+                this.files[filename] = {
+                    graph: deepCopy(file.originalGraph),
+                    originalGraph: deepCopy(file.originalGraph),
+                    status: "-"
+                };
+            }
+        }
+
         this.runCount = 0;
-        // create tab outside and use the tab array to get the content
         this.title = title;
-        this.layoutParam = null;
+        this.layoutParam = deepCopy(
+            otherTab ? otherTab.layoutParam : layouts["hillClimbing"].params
+        );
+        this.metricsParam = deepCopy(
+            otherTab ? otherTab.metricsParam : metricsParam
+        );
+        this.layout = otherTab ? otherTab.layout : "hillClimbing";
     }
     getTabContent() {
         let content = document.querySelector(`#tab-content-${this.id}`);
-        // if (content === null){
-        //     console.log("creating new tab content");
-        //     content = createTabContentEl(this.id);
-        // }
         return content;
     }
+    // shallow copy save into the current object
     restoreFrom(saved) {
-        console.log(`restoring from save \n${saved}`);
-        this.creationDate = saved.creationDate;
-        this.id = saved.id;
-        this.title = saved.title;
-        // copy param
-        this.layoutParam = saved.layoutParam;
-        this.layoutAlgName = saved.layoutAlgName;
-        this.loadedFiles = saved.loadedFiles;
+        Object.assign(this, saved);
 
-        this.setupUi();
-        // copy table
-        console.log(saved);
-
-        for (const row of saved.table.table.rows) {
-            this.table.addRow(row);
-        }
-        this.table.refresh();
-
+        console.log(`restoring from save \n${saved}`, this);
         return this;
     }
-    // setup ui element interactions and default values that can't be set in the constructor
-    setupUi() {
-        console.log("setupUi");
 
-        createTabContentEl(this.id);
-        this.table = new Table(`table-${this.id}`);
-        for (const h of headers) {
-            this.table.addHeader(h);
-        }
-        this.table.refresh();
-        // init setup
-        let addParamEl2 = addParamEl.bind(this);
-        // add event listener to layout algorithm list to update parameters on change
-        let layoutAlgList = this.getTabContent().querySelector(
-            "#layoutAlgList"
-        );
-        if (this.layoutParam) {
-            console.log("restoring param");
-
-            this.getTabContent().querySelector(".param-list").innerHTML = "";
-            switch (this.layoutAlgName) {
-                case "hillClimbing":
-                    addParamEl2("iterations", this.layoutParam.iterations);
-                    addParamEl2("squareSize", this.layoutParam.squareSize);
-                    addParamEl2("moveStrategy", [
-                        this.layoutParam.moveStrategy,
-                        ["immediate", "delayed"].find(
-                            e => e !== this.layoutParam.moveStrategy
-                        )
-                    ]);
-                    layoutAlgList.value = "hillClimbing";
-
-                    break;
-                case "Tabu":
-                    break;
-                case "circular":
-                    addParamEl2(
-                        "maxIterations",
-                        this.layoutParam.maxIterations
-                    );
-                    addParamEl2("radius", this.layoutParam.radius);
-                    layoutAlgList.value = "circular";
-                    break;
-            }
-        } else {
-            addParamEl2("iterations", 500);
-            addParamEl2("squareSize", 100);
-            addParamEl2("moveStrategy", ["immediate", "delayed"]);
-            this.layoutAlgName = "hillClimbing";
-            this.layoutParam = {
-                iterations: 500,
-                squareSize: 100,
-                moveStrategy: "immediate"
-            };
-        }
-
-        layoutAlgList.addEventListener("change", ({ target }) => {
-            console.log(`this in listener = `);
-            console.log(this);
-
-            this.layoutAlgName = target.value;
-            this.getTabContent().querySelector(".param-list").innerHTML = "";
-            switch (this.layoutAlgName) {
-                case "hillClimbing":
-                    addParamEl2("iterations", 500);
-                    addParamEl2("squareSize", 100);
-                    addParamEl2("moveStrategy", ["immediate", "delayed"]);
-                    this.layoutParam = {
-                        iterations: 500,
-                        squareSize: 100,
-                        moveStrategy: "immediate"
-                    };
-                    break;
-                case "Tabu":
-                    break;
-                case "circular":
-                    this.layoutParam = { maxIterations: 1000, radius: 450 };
-                    addParamEl2("maxIterations", 1000);
-                    addParamEl2("radius", 450);
-                    break;
-            }
-        });
-
-        this.table.refresh();
-        return this;
-    }
-    // add the ui and populated with the correct data
-    // run layout for a single graph
     runTest(filename) {
-        let metricsParam = {
-            requiredEdgeLength: parseFloat(
-                document.querySelector("#edge-length-required").value
-            )
+        let options = {
+            weights: this.weights,
+            metricsParam: this.metricsParam,
+            layoutParam: {}
         };
-        let layoutParam = {};
-        let paramInputs = Array.from(
-            this.getTabContent().querySelectorAll(".param-item")
-        );
-        for (const el of paramInputs) {
-            let label = el.querySelector(".param-label").innerText;
-            let param = el.querySelector(".param-input").value;
-
-            if (isFinite(Number(param))) param = Number(param);
-
-            layoutParam[label] = param;
+        for (let p of this.layoutParam) {
+            options.layoutParam[p.name] = p.value;
         }
+        let graphData = currentTab().files[filename].originalGraph;
 
-        let options = { weights: getWeights(), metricsParam, layoutParam };
-        this.layoutParam = layoutParam;
-
-        let layoutAlgName = this.layoutAlgName;
-        let graphData = this.loadedFiles[filename];
-        this.showIndicator(filename);
-        let row = this.table.getRowByHeader("filename", filename);
-        row.layout.value = layoutAlgName;
-        this.table.refresh();
         let worker = new Worker("build/layoutWorker.js");
-        worker.postMessage([graphData.graph, layoutAlgName, options, "run"]);
-        this.loadedFiles[filename].originalGraph = deepCopy(
-            this.loadedFiles[filename].graph
-        );
+        worker.postMessage([graphData, currentTab().layout, options, "run"]);
+
+        currentTab().files[filename].status = "running";
 
         worker.onmessage = function(e) {
-            console.log(this.loadedFiles);
+            this.files[filename].graph = e.data[0];
+            this.files[filename].layout = e.data[1];
+            this.files[filename].status = "done";
 
-            this.loadedFiles[filename].graph = e.data[0];
-            this.loadedFiles[filename].layout = e.data[1];
-            this.loadedFiles[filename].options = e.data[2];
-            this.updateTableEntry(filename);
+            // TODO: Make sure the options are in sync with the ui
+            currentTab().options = e.data[2];
 
-            this.hideIndicator(filename);
-
-            this.table.refresh();
             this.runCount--;
 
             if (!this.runCount) {
-                // TODO: make this into a general event
             }
+            addTable(currentTab());
             worker.terminate();
         }.bind(this);
     }
     runBatch() {
-        for (let filename in this.loadedFiles) {
+        for (let filename in this.files) {
             this.runCount++;
             this.runTest(filename);
         }
+        addTable(this);
     }
     clearBatch() {
         if (!this.runCount) {
-            this.table.clear();
-            this.table.refresh();
-            this.loadedFiles = {};
+            this.files = {};
+            addTable(this);
         }
     }
-
-    showIndicator(filename) {
-        let row = this.table.getRowByHeader("filename", filename);
-        row.status.value = "Running";
-    }
-    hideIndicator(filename) {
-        let row = this.table.getRowByHeader("filename", filename);
-        row.status.value = "Done";
-    }
-    updateTableEntry(filename) {
-        let metricsParam = {
-            requiredEdgeLength: parseFloat(
-                document.querySelector("#edge-length-required").value
-            )
-        };
-
-        let options = { weights: getWeights(), metricsParam };
-        let graph = new ConcreteGraph(
-            this.loadedFiles[filename].graph,
-            options
-        );
-        if (!graph) throw `${filename} not loaded`;
-        let layout = this.loadedFiles[filename].layout || "-";
-        let metrics = graph.metrics();
-
-        if (this.loadedFiles[filename].originalMetrics === null) {
-            this.loadedFiles[filename].originalGraph = deepCopy(
-                this.loadedFiles[filename].graph
-            );
-            this.loadedFiles[filename].originalMetrics = metrics;
-            this.loadedFiles[filename].originalObjective = graph.objective();
-            this.loadedFiles[filename].originalOptions = options;
-        } else {
-            this.loadedFiles[filename].metrics = metrics;
-            this.loadedFiles[filename].objective = graph.objective();
-            this.loadedFiles[filename].options = options;
-        }
-
-        let newRow = {
-            status: { value: "-", type: "text" },
-            filename: { value: filename, type: "text" },
-            layout: { value: layout, type: "text" },
-            nodes: { value: graph.nodes().length, type: "text" },
-            edges: { value: graph.edges().length, type: "text" },
-            density: { value: graph.density().toFixed(digits), type: "text" },
-            nodeOcclusion: {
-                value: metrics.nodeOcclusion.toFixed(digits),
-                type: "text"
-            },
-            edgeNodeOcclusion: {
-                value: metrics.edgeNodeOcclusion.toFixed(digits),
-                type: "text"
-            },
-            edgeLength: {
-                value: metrics.edgeLength.toFixed(digits),
-                type: "text"
-            },
-            edgeCrossing: {
-                value: metrics.edgeCrossing.toFixed(digits),
-                type: "text"
-            },
-            angularResolution: {
-                value: metrics.angularResolution.toFixed(digits),
-                type: "text"
-            },
-            objective: {
-                value: graph.objective().toFixed(digits),
-                type: "text"
-            }
-        };
-        let row = this.table.getRowByHeader("filename", filename);
-
-        if (!row) {
-            this.table.addRow(newRow);
-        } else {
-            console.log("Copying to row");
-
-            // copy values from newRow to row
-            for (const key in row) {
-                if (key !== "status") {
-                    row[key].value = newRow[key].value;
-                }
-            }
-        }
-        console.log(this.table);
-
-        this.table.refresh();
-    }
-    loadFile(filename, data) {
-        console.log(this);
-
-        /*
+}
+function loadFile(filename, data) {
+    /*
         loadedTests = {
             filename: {
                 graph: origianlGraph,
                 layout: layoutAlgUsed, // default is null
                 originalMetrics:{),
                 metrics:{}
-                options:{
-                    weights:{},
-                    metricParam:{},
-                    layoutParam:{}
-                }
-
             }
         }
     */
-        let parsedData = JSON.parse(data);
-        console.log(this.loadedFiles[filename]);
+    let parsedData = JSON.parse(data);
 
-        if (this.loadedFiles[filename]) {
-            let rowIndex = this.table
-                .getRows()
-                .findIndex(e => e.filename.value === filename);
-            this.table.removeRow(rowIndex);
-            this.table.refresh();
-        }
-
-        this.loadedFiles[filename] = parsedData;
-        this.loadedFiles[filename].layout = null;
-        this.loadedFiles[filename].metrics = null;
-        this.loadedFiles[filename].objective = null;
-        this.loadedFiles[filename].options = null;
-        this.loadedFiles[filename].originalMetrics = null;
-        this.loadedFiles[filename].originalObjective = null;
-        this.loadedFiles[filename].originalOptions = null;
-
-        this.updateTableEntry(filename);
-    }
+    currentTab().files[filename] = {
+        graph: parsedData.graph,
+        originalGraph: deepCopy(parsedData.graph),
+        status: "-"
+    };
+    addTable(currentTab());
 }
-
-function switchTab(tabElId) {
-    let tabId = getTabIdFromElId(tabElId);
-    let tabEl = document.querySelector(`#${tabElId}`);
-    let tabContent = document.querySelector(`#tab-content-${tabId}`);
-
-    let oldTabEl = document.querySelector(".tab-active");
-    if (oldTabEl && oldTabEl !== tabEl) {
-        let oldTabId = getTabIdFromElId(oldTabEl.id);
-        let oldTabContent = document.querySelector(`#tab-content-${oldTabId}`);
-        oldTabEl.classList.remove("tab-active");
-        oldTabContent.classList.remove("tab-content-active");
-    }
-
-    tabEl.classList.add("tab-active");
-    tabContent.classList.add("tab-content-active");
-}
-
 // setup tab bar
 let savedTabs = JSON.parse(localStorage.getItem("runs"));
-console.log(savedTabs);
 
 if (savedTabs) {
     for (const tab of savedTabs) {
         let nTab = new Tab("new one");
         nTab.restoreFrom(tab);
-        addTabEl(nTab.title, nTab.id);
-        tabs.push(nTab);
+        addNewTab(tabs, nTab);
     }
 
-    switchTab(`tab-${tabs[0].id}`);
+    switchTab(tabs[0]);
 } else {
-    let defaultTab = new Tab("Run 0").setupUi();
-    addTabEl(defaultTab.title, defaultTab.id);
-    switchTab(`tab-${defaultTab.id}`);
-    tabs.push(defaultTab);
+    let defaultTab = new Tab("Run 0");
+    addNewTab(tabs, defaultTab);
+    switchTab(defaultTab);
 }
 
 let tabList = document.querySelector(".tab-list");
@@ -489,62 +514,23 @@ tabList.addEventListener("click", event => {
     let el = event.target;
     // TODO: Limit how far you can click to create a new type to avoid miss-clicks
     if (el.classList.contains("tab-item")) {
-        switchTab(el.id);
-    } else {
+        const selectedTab = tabs.find(t => t.id === getTabIdFromElId(el.id));
+        switchTab(selectedTab);
+    } else if (el.id === "new-tab") {
         // TODO: change this when you can delete tabs
-        console.log("Adding new tab");
-        let tab = new Tab(`Run ${tabs.length}`);
         let prevTab = null;
-        if (tabs.length > 0) {
-            prevTab = tabs[tabs.length - 1];
-            tab.loadedFiles = deepCopy(prevTab.loadedFiles);
-        }
-        tab.setupUi();
-        addTabEl(tab.title, tab.id);
-        switchTab(`tab-${tab.id}`);
-        tabs.push(tab);
-
-        // set param
-        let layoutAlgList = tab.getTabContent().querySelector("#layoutAlgList");
-        if (prevTab.layoutParam) {
-            console.log("restoring param from prev");
-            console.log(prevTab);
-
-            let addParamEl2 = addParamEl.bind(tab);
-            tab.getTabContent().querySelector(".param-list").innerHTML = "";
-            tab.layoutParam = deepCopy(prevTab.layoutParam);
-            switch (prevTab.layoutAlgName) {
-                case "hillClimbing":
-                    addParamEl2("iterations", prevTab.layoutParam.iterations);
-                    addParamEl2("squareSize", prevTab.layoutParam.squareSize);
-                    addParamEl2("moveStrategy", [
-                        prevTab.layoutParam.moveStrategy,
-                        ["immediate", "delayed"].find(
-                            e => e !== prevTab.layoutParam.moveStrategy
-                        )
-                    ]);
-                    layoutAlgList.value = "hillClimbing";
-                    break;
-                case "Tabu":
-                    break;
-                case "circular":
-                    addParamEl2(
-                        "maxIterations",
-                        prevTab.layoutParam.maxIterations
-                    );
-                    addParamEl2("radius", prevTab.layoutParam.radius);
-                    layoutAlgList.value = "circular";
-                    break;
-            }
-        }
-
-        for (const filename in prevTab.loadedFiles) {
-            tab.loadedFiles[filename].graph = deepCopy(
-                prevTab.loadedFiles[filename].originalGraph
-            );
-            tab.loadedFiles[filename].layout = null;
-            tab.updateTableEntry(filename);
-        }
+        if (tabs.length > 0) prevTab = tabs[tabs.length - 1];
+        let tab = new Tab(`Run ${tabs.length}`, prevTab);
+        addNewTab(tabs, tab);
+        switchTab(tab);
+    } else if (el.classList.contains("tab-close-icon")) {
+        let id = getTabIdFromElId(el.parentNode.id);
+        let index = tabs.findIndex(e => e.id === id);
+        tabs.splice(index, 1);
+        index = index > 0 ? index - 1 : 0;
+        el.parentNode.remove();
+        if (el.parentNode.classList.contains("tab-active"))
+            switchTab(tabs[index]);
     }
 });
 
@@ -553,22 +539,110 @@ tabList.addEventListener("click", event => {
 // Add headers to show/hide side menu
 // TODO: How will this interact with every table in every run?
 //
-let menuColSecFrag = document.createDocumentFragment();
-for (const h of headers) {
-    let item = document.createElement("div");
-    item.classList.add("menu-item-checkbox");
-    let checkbox = document.createElement("input");
-    checkbox.setAttribute("type", "checkbox");
-    checkbox.checked = true;
-    checkbox.setAttribute("data-col", h.id);
-    let label = document.createElement("p");
-    label.innerHTML = h.title;
 
-    item.appendChild(checkbox);
-    item.appendChild(label);
-    menuColSecFrag.appendChild(item);
+function addSideMenuColSec(tab) {
+    let menuColSecFrag = document.createDocumentFragment();
+    for (const h of tab.headers) {
+        let item = document.createElement("div");
+        item.classList.add("menu-item-checkbox");
+        let checkbox = document.createElement("input");
+        checkbox.setAttribute("type", "checkbox");
+        checkbox.checked = h.visible;
+        checkbox.setAttribute("data-col", h.id);
+        let label = document.createElement("p");
+        label.innerHTML = h.title;
+
+        item.appendChild(checkbox);
+        item.appendChild(label);
+        menuColSecFrag.appendChild(item);
+    }
+    let el = document.querySelector("#menu-sec-columns");
+    el.innerHTML = "";
+    el.appendChild(menuColSecFrag);
 }
-document.querySelector("#menu-sec-columns").appendChild(menuColSecFrag);
+
+function createSideMenuMetricSec(tab) {
+    const { weights, metricsParam } = tab;
+    const {
+        nodeOcclusion,
+        edgeNodeOcclusion,
+        edgeLength,
+        edgeCrossing,
+        angularResolution
+    } = tab.weights;
+    const { requiredEdgeLength } = tab.metricsParam;
+    let html = `
+    <div class="menu-item-group">
+        <div class="menu-item">
+            <p>Node occlusion</p>
+        </div>
+
+        <div class="menu-item">
+            <p>Weight</p>
+            <input type="number" class="weight-input" id="node-occlusion-weight" value="${nodeOcclusion}" step="0.01"
+                min="0" max="1" />
+        </div>
+
+    </div>
+    <div class="menu-item-group">
+        <div class="menu-item">
+            <p>Edge node occlusion:</p>
+        </div>
+        <div class="menu-item">
+            <p>Weight</p>
+            <input type="number" class="weight-input" id="edge-node-occlusion-weight" value="${edgeNodeOcclusion}" step="0.01"
+                min="0" max="1" />
+        </div>
+
+    </div>
+    <div class="menu-item-group">
+        <div class="menu-item">
+            <p>Edge length</p>
+        </div>
+
+        <div class="menu-item">
+            <p>Weight</p>
+            <input type="number" class="weight-input" id="edge-length-weight" value="${edgeLength}" step="0.01" min="0"
+                max="1" />
+        </div>
+
+        <div class="menu-item">
+            <p>Required length</p>
+            <input type="number" id="edge-length-required" value="${requiredEdgeLength}" step="0.01" min="0" max="1" />
+        </div>
+
+    </div>
+
+    <div class="menu-item-group">
+        <div class="menu-item">
+            <p>Edge crossing</p>
+        </div>
+        <div class="menu-item">
+            <p>Weight</p>
+            <input type="number" class="weight-input" id="edge-crossing-weight" value="${edgeCrossing}" step="0.01"
+                min="0" max="1" />
+        </div>
+
+    </div>
+    <div class="menu-item-group">
+        <div class="menu-item">
+            <p>Angular resolution</p>
+        </div>
+        <div class="menu-item">
+            <p>Weight</p>
+            <input type="number" class="weight-input" id="angular-resolution-weight" value="${angularResolution}" step="0.01"
+                min="0" max="1" />
+        </div>
+    </div>
+    `;
+    return html;
+}
+
+function addSideMenuMetricSec(tab) {
+    let el = document.querySelector("#menu-sec-metrics");
+    el.innerHTML = "";
+    el.insertAdjacentHTML("beforeend", createSideMenuMetricSec(tab));
+}
 
 // eslint-disable-next-line no-undef
 const sig = new sigma();
@@ -579,7 +653,39 @@ const toolbar = document.querySelector(".toolbar-container"),
     sideMenu = document.querySelector("#side-menu");
 
 toolbar.addEventListener("click", toolbarClickHandler);
-
+function toolbarClickHandler(event) {
+    let target = event.target;
+    switch (target.id) {
+        case "menu":
+            sideMenu.classList.toggle("hidden");
+            break;
+        case "genTest":
+            genModal.style.display = "flex";
+            break;
+        case "saveTest":
+            break;
+        case "loadFile":
+            openFileDialog(loadFile);
+            break;
+        case "batchRunTest":
+            currentTab().runBatch();
+            break;
+        case "backToMain":
+            window.location.replace("index.html");
+            break;
+        case "clearTest":
+            localStorage.removeItem("runs");
+            window.location.replace("batchRun.html");
+            break;
+        case "summary":
+            // save tabs to local storage
+            localStorage.setItem("runs", JSON.stringify(tabs));
+            window.location.replace("summary.html");
+            break;
+        default:
+            break;
+    }
+}
 function getWeights() {
     return {
         nodeOcclusion: parseFloat(
@@ -697,59 +803,48 @@ genMode.addEventListener("change", event => {
         edgeNumMaxEl.value = null;
     }
 });
-
 // side menu events
 sideMenu
     .querySelector("#menu-sec-columns")
-    .addEventListener("change", event => {
+    .addEventListener("change", ({ target }) => {
         let table = currentTab().table;
-        let colId = event.target.getAttribute("data-col");
-        if (event.target.checked) table.showHeader(colId);
-        else table.hideHeader(colId);
-        table.refresh();
+        let colId = target.getAttribute("data-col");
+
+        // sync ui with data
+        let header = currentTab().headers.find(({ id }) => id === colId);
+        header.visible = target.checked;
+
+        addTable(currentTab());
     });
 
 sideMenu
     .querySelector("#menu-sec-metrics")
     .addEventListener("change", event => {
         let table = currentTab().table;
-        let metricsParam = {
+
+        let options = { weights: getWeights(), metricsParam };
+
+        currentTab().weights = getWeights();
+        currentTab().metricsParam = {
             requiredEdgeLength: parseFloat(
                 document.querySelector("#edge-length-required").value
             )
         };
+    });
 
-        let options = { weights: getWeights(), metricsParam };
+sideMenu
+    .querySelector("#menu-sec-layout-param")
+    .addEventListener("change", ({ target }) => {
+        let type = target.nodeName;
+        let param = currentTab().layoutParam.find(e => e.name === target.name);
 
-        if (event.target.classList.contains("weight-input")) {
-            // recalculate objective for all rows
-            for (let filename in currentTab().loadedFiles) {
-                let graph = new ConcreteGraph(
-                    currentTab().loadedFiles[filename].graph,
-                    options
-                );
-                let row = table.getRowByHeader("filename", filename);
-                row.objective.value = graph.objective().toFixed(digits);
-            }
+        if (type === "INPUT") {
+            param.value = Number(target.value);
+        } else {
+            let index = param.options.findIndex(e => e.name === target.value);
+            param.selectedOptionIndex = index;
         }
-
-        if (event.target.id === "edge-length-required") {
-            for (let filename in currentTab().loadedFiles) {
-                let graph = new ConcreteGraph(
-                    currentTab().loadedFiles[filename].graph,
-                    options
-                );
-
-                graph.setMetricParam(metricsParam);
-                let { edgeLength } = graph.metrics();
-
-                let row = table.getRowByHeader("filename", filename);
-
-                row.edgeLength.value = edgeLength.toFixed(digits);
-                row.objective.value = graph.objective().toFixed(digits);
-            }
-        }
-        table.refresh();
+        param.value = target.value;
     });
 
 let toggleEl = document.querySelectorAll(".menu-section-label");
@@ -786,44 +881,6 @@ function genTest(testNum, nMin, nMax, eMin, eMax, width, height) {
         let json = JSON.stringify(obj);
         // eslint-disable-next-line no-undef
         saveFile(json);
-    }
-}
-
-function toolbarClickHandler(event) {
-    let target = event.target;
-    switch (target.id) {
-        case "menu":
-            sideMenu.classList.toggle("hidden");
-            break;
-        case "genTest":
-            genModal.style.display = "flex";
-            break;
-        case "saveTest":
-            break;
-        case "loadFile":
-            // eslint-disable-next-line no-undef
-            // TODO: Will loadTest retain its this?
-            let callback = currentTab().loadFile.bind(currentTab());
-            openFileDialog(callback);
-            break;
-        case "batchRunTest":
-            currentTab().runBatch();
-            break;
-        case "backToMain":
-            window.location.replace("index.html");
-            break;
-        case "clearTest":
-            localStorage.removeItem("runs");
-            window.location.replace("batchRun.html");
-            break;
-        case "summary":
-            // save tabs to local storage
-            console.log(tabs);
-            localStorage.setItem("runs", JSON.stringify(tabs));
-            window.location.replace("summary.html");
-            break;
-        default:
-            break;
     }
 }
 

@@ -12,11 +12,11 @@ onmessage = function(e) {
 
     let graphParam = options.metricsParam;
     let layoutParam = options.layoutParam;
-    
+
     GRAPH.read(graph);
     GRAPH.setMetricParam(graphParam);
     GRAPH.setWeights(options.weights);
-    
+
     let layoutAlg = null;
     switch (layoutAlgName) {
         case "hillClimbing":

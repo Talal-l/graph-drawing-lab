@@ -33,6 +33,7 @@ export class Table {
         // each row object contain a pointer to its header
         if (table) {
             // TODO: validate table object
+            // TODO: create a deepCopy
             this.table = table;
         } else {
             this.table = {
@@ -41,6 +42,8 @@ export class Table {
             };
         }
 
+        this.sortClass = "sort-neutral";
+        this.sortHeader = null;
         this.tableEl = document.querySelector(`#${tableElId}`);
     }
 
@@ -58,6 +61,14 @@ export class Table {
                 let th = document.createElement("th");
                 th.id = col.id;
                 th.append(col.title);
+
+                let button = document.createElement("button");
+                button.classList.add(
+                    "sort",
+                    this.sortHeader === col.id ? this.sortClass : "sort-neutral"
+                );
+                th.append(button);
+
                 theadRow.append(th);
             }
         }
@@ -74,7 +85,7 @@ export class Table {
             // order must match the headers
             for (let col of this.table.headers) {
                 if (row[col.id] === undefined) {
-                    row[col.id] = {value: "-", type: "text" };
+                    row[col.id] = { value: "-", type: "text" };
                 }
                 if (typeof row[col.id] !== "object") {
                     row[col.id] = {
@@ -82,7 +93,7 @@ export class Table {
                         type: "text"
                     };
                 }
-                if (!row[col.id].hidden) {
+                if (!col.hidden) {
                     let td = document.createElement("td");
                     // TODO: use default
                     let data = "-";
@@ -266,7 +277,7 @@ export class Table {
             throw `${index} is out of bound`;
         return this.getRows()[index];
     }
-    // Return first occurrence 
+    // Return first occurrence
     getRowByHeader(header, value) {
         let rows = this.getRows();
         for (let i = 0; i < rows.length; i++) {
@@ -280,9 +291,6 @@ export class Table {
         let header = this.getHeader(id);
         if (!header) throw `No header with id ${id}`;
         header.hidden = true;
-        for (var i = 0, len = rows.length; i < len; i++) {
-            rows[i][id].hidden = true;
-        }
     }
 
     hideRow(index) {
@@ -309,6 +317,33 @@ export class Table {
         let row = this.getRow(index);
         if (row.prop && row.prop.hidden) {
             row.prop.hidden = false;
+        }
+    }
+    sort(header, ascending = true) {
+
+        if (ascending) this.sortClass = "sort-asc";
+        else this.sortClass = "sort-desc";
+
+        this.sortHeader = header;
+        let rows = this.getRows();
+
+        let cmpNumber = (a, b) => {
+            a = Number(a);
+            b = Number(b);
+            return ascending ? a - b : b - a;
+        };
+        let cmpString = (a, b) => {
+            if (a < b) return ascending ? -1 : 1;
+            else if (a > b) return ascending ? 1 : -1;
+            else return 0;
+        };
+
+        let cmp;
+        let sample = rows[0];
+        if (sample) {
+            if (isFinite(Number(sample[header].value))) cmp = cmpNumber;
+            else cmp = cmpString;
+            rows.sort((a, b) => cmp(a[header].value, b[header].value));
         }
     }
 
