@@ -489,6 +489,9 @@ function updateLayoutAlg() {
             layoutAlgOptions.layoutParam.squareSize = 100;
             break;
 
+        case "tabu":
+            selectedLayoutAlg = "tabu";
+            break;
         case "circular":
             selectedLayoutAlg = "circular";
             layoutAlgOptions.layoutParam.radius = 500;

@@ -1,4 +1,5 @@
 import { CircularLayout } from "./circularLayout.js";
+import { Tabu} from "./tabu.js";
 import { HillClimbing } from "./hillClimbing.js";
 import { ConcreteGraph, generateGraph } from "./graph.js";
 
@@ -23,6 +24,9 @@ onmessage = function(e) {
             break;
         case "circular":
             layoutAlg = new CircularLayout(GRAPH, layoutParam);
+            break;
+        case "tabu":
+            layoutAlg = new Tabu(GRAPH, layoutParam);
             break;
     }
     layoutAlg[command]();

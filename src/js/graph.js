@@ -237,10 +237,9 @@ class ConcreteGraph {
                 this.metricsCache.angularResolution,
                 0,
                 // largest value when all nodes have > 1 edge with 0 deg between them
-                this.nodesWithAngles * 360 
+                this.nodesWithAngles * 360
                 //TODO: Are you sure this is correct?
             );
-
         }
 
         for (let key in this.normalMetrics)
@@ -324,6 +323,10 @@ class ConcreteGraph {
         let a = new Vec(node);
         let b = new Vec(newPos);
         this.moveNode(nodeId, b.sub(a), effectBounds);
+    }
+    getNodePos(nodeId) {
+        let attr = this.getNodeAttributes(nodeId);
+        return { x: attr.x, y: attr.y };
     }
 
     withinBounds(x, y) {
