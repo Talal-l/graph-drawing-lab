@@ -8,7 +8,9 @@ export class HillClimbing {
         this.it = 0;
         this.maxIt = params.iterations || 500;
         this.done = false;
-        this.strategy = params.moveStrategy || "immediate";
+        this.strategy = params.moveStrategy || "dealyed";
+        this.evaluatedSolutions = 0;
+        this.executionTime = 0; // in ms
 
         /* 
             Assuming the following
@@ -26,8 +28,6 @@ export class HillClimbing {
         for (let a = 45; a < 315; a += 45) {
             this.vectors.push(v.rotate(a));
         }
-        console.log(`move strategy ${this.strategy}`);
-        
     }
 
     // single iteration of the layout algorithm
@@ -37,44 +37,43 @@ export class HillClimbing {
             // start with no move as the best move
 
             switch (this.strategy) {
-                case "immediate":{
+                //case "immediate":{
 
-                    let bestMoveIndex = null;
-                    let bestObj = this.graph.objective();
+                //let bestMoveIndex = null;
+                //let bestObj = this.graph.objective();
 
-                    for (let i = 0; i < this.vectors.length; i++) {
-                        let newObj = this.graph.testMove(nId, this.vectors[i]);
-                        if (newObj !== null && newObj < bestObj) {
-                            bestObj = newObj;
-                            bestMoveIndex = i;
-                        }
-                    }
-                    if (bestMoveIndex !== null) {
-                        this.graph.moveNode(nId, this.vectors[bestMoveIndex]);
-                    }
-                    break;
-                }
+                //for (let i = 0; i < this.vectors.length; i++) {
+                //let newObj = this.graph.testMove(nId, this.vectors[i]);
+                //if (newObj !== null && newObj < bestObj) {
+                //bestObj = newObj;
+                //bestMoveIndex = i;
+                //}
+                //}
+                //if (bestMoveIndex !== null) {
+                //this.graph.moveNode(nId, this.vectors[bestMoveIndex]);
+                //}
+                //break;
+                //}
 
-                case "delayed":{
-
+                default: {
                     let bestMoveIndex = null;
                     let bestMovePerNode = [];
                     let bestObj = this.graph.objective();
 
                     for (let i = 0; i < this.vectors.length; i++) {
+                        this.evaluatedSolutions++;
                         let newObj = this.graph.testMove(nId, this.vectors[i]);
                         if (newObj !== null && newObj < bestObj) {
                             bestObj = newObj;
                             bestMoveIndex = i;
-                            bestMovePerNode.push([nId,i]);
+                            bestMovePerNode.push([nId, i]);
                         }
                     }
                     for (const e of bestMovePerNode) {
-                       this.graph.moveNode(e[0],this.vectors[e[1]]); 
+                        this.graph.moveNode(e[0], this.vectors[e[1]]);
                     }
                     break;
                 }
-
             }
         }
 
@@ -86,13 +85,11 @@ export class HillClimbing {
 
     // run
     run() {
+        let start = new Date().getTime();
         this.done = false;
         while (this.it < this.maxIt && !this.done) {
             this.step();
         }
+        this.executionTime = new Date().getTime() - start;
     }
 }
-
-
-
-

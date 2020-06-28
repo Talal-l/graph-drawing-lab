@@ -22,7 +22,6 @@ const toolbar = document.querySelector(".toolbar-container"),
 sideMenu.classList.toggle("hidden");
 toolbar.addEventListener("click", toolbarClickHandler);
 
-// {-------------------------------- summary stuff --------------------------------
 let runs = JSON.parse(localStorage.getItem("runs"));
 console.log(runs);
 
@@ -42,14 +41,17 @@ aveObjectiveTable.refresh();
 for (const run of runs) {
     run.originalObjectives = [];
     run.objectives = [];
-
-    console.log(paramEntryEl(run));
+    run.executionTimeList = [];
+    run.evaluatedSolutionsList = [];
     addParamEntryEl(run, "summary-param-container");
 
-    for (const key in run.loadedFiles) {
-        let file = run.loadedFiles[key];
+    for (const key in run.files) {
+        let file = run.files[key];
         run.originalObjectives.push(file.originalObjective);
         run.objectives.push(file.objective);
+
+        run.executionTimeList.push(file.info.executionTime);
+        run.evaluatedSolutionsList.push(file.info.evaluatedSolutions);
     }
 
     let objAverage =
@@ -63,23 +65,19 @@ for (const run of runs) {
 
     run.median = d3.median(run.objectives);
 
-    let layoutName = run.runCount > 0?run.layoutAlgName:"-";
+    let layoutName = run.runCount > 0 ? run.layout : "-";
     let row = {
-        layoutAlgorithm: { value: layoutName, type: "text" },
+        layoutAlgorithm: { value: run.layout, type: "text" },
         runName: { value: run.title, type: "text" },
         objective: { value: oldObjAverage, type: "text" },
         objectiveAfterRun: { value: objAverage, type: "text" },
         diff: { value: Math.abs(oldObjAverage - objAverage), type: "text" },
-        median:{value: run.median, type: "text"},
+        median: { value: run.median, type: "text" }
     };
     aveObjectiveTable.addRow(row);
 
     aveObjectiveTable.refresh();
 }
-
-// -------------------------------- summary stuff --------------------------------}
-
-// start methods
 
 function paramEntryEl(run) {
     function paramItemEl(key, value) {
@@ -95,16 +93,13 @@ function paramEntryEl(run) {
         <div class="summary-param-entry">
             <h3>${run.title}</h3>
 
-            ${paramItemEl("layout", run.layoutAlgName)}
+            ${paramItemEl("layout", run.layout)}
             ${(() => {
                 let html2 = "";
-                console.log(run.layoutParam);
 
-                for (const key in run.layoutParam) {
-                    let value = run.layoutParam[key];
-                    html2 += paramItemEl(key, value);
+                for (const p of run.layoutParam) {
+                    html2 += paramItemEl(p.name, p.value);
                 }
-                console.log(html2);
 
                 return html2;
             })()}
@@ -118,57 +113,130 @@ function addParamEntryEl(run, containerId) {
     container.insertAdjacentHTML("beforeend", paramEntryEl(run));
 }
 
-// end methods
+function barChart(id, xLabel, yLabel, data) {
+    console.log(id, data);
+    const margin = { top: 60, right: 60, bottom: 40, left: 60 };
+    const width = 1000;
+    const height = 600;
+    const innerWidth = width - margin.right - margin.left;
+    const innerHeight = height - margin.top - margin.bottom;
 
-const margin = 60;
-const width = 1000 - 2 * margin;
-const height = 600 - 2 * margin;
+    const svg = d3.select(`#${id}`);
+    console.log(svg);
 
-const svg = d3.select("svg");
+    const chart = svg
+        .append("g")
+        .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
-const chart = svg
-    .append("g")
-    .attr("transform", `translate(${margin}, ${margin})`);
+    const yScale = d3
+        .scaleLinear()
+        .range([innerHeight, 0])
+        .domain([0, d3.max(data.map(e => e.y))]);
+    chart.append("g").call(d3.axisLeft(yScale));
 
-const yScale = d3
-    .scaleLinear()
-    .range([height, 0])
-    .domain([0, d3.max(runs.map(s => s.objAvg))]);
+    const xScale = d3
+        .scaleBand()
+        .range([0, innerWidth])
+        .domain(data.map(e => e.x))
+        .padding(0.2);
 
-chart.append("g").call(d3.axisLeft(yScale));
+    chart
+        .append("g")
+        .attr("transform", `translate(0, ${innerHeight})`)
+        .call(d3.axisBottom(xScale));
 
-const xScale = d3
-    .scaleBand()
-    .range([0, width])
-    .domain(runs.map(s => s.title))
-    .padding(0.2);
+    chart
+        .selectAll()
+        .data(data)
+        .enter()
+        .append("rect")
+        .attr("fill", "steelblue")
+        .attr("x", s => xScale(s.x))
+        .attr("y", s => yScale(s.y))
+        .attr("height", s => innerHeight - yScale(s.y))
+        .attr("width", xScale.bandwidth());
 
-chart
-    .append("g")
-    .attr("transform", `translate(0, ${height})`)
-    .call(d3.axisBottom(xScale));
-chart
-    .selectAll()
-    .data(runs)
-    .enter()
-    .append("rect").attr("fill","steelblue")
-    .attr("x", s => xScale(s.title))
-    .attr("y", s => yScale(s.objAvg))
-    .attr("height", s => height - yScale(s.objAvg))
-    .attr("width", xScale.bandwidth());
-svg.append('text')
-    .attr('x', -(height / 2) - margin)
-    .attr('y', margin / 2.4)
-    .attr('transform', 'rotate(-90)')
-    .attr('text-anchor', 'middle')
-    .text('Average objective');
+    svg.append("text")
+        .attr("x", width / 2)
+        .attr("y", height)
+        .attr("text-anchor", "middle")
+        .text(xLabel);
 
-svg.append('text')
-    .attr('x', width / 2 + margin)
-    .attr('y', 40)
-    .attr('text-anchor', 'middle')
-    .text('Run');
+    svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("x", -height / 2)
+        .attr("y", 15)
+        .attr("text-anchor", "middle")
+        .text(yLabel);
+}
 
+barChart(
+    "chart-avg-objective",
+    "run",
+    "Average objective",
+    runs.map(s => ({ x: s.title, y: d3.mean(s.objectives) }))
+);
 
+let avgExecutionTable = new Table("average-execution-table");
+[
+    { title: "Run name", id: "runName" },
+    { title: "Layout Algorithm", id: "layoutAlgorithm" },
+    { title: "Average execution time", id: "avgExecution" },
+    { title: "median execution time ", id: "medianExcution" }
+].forEach(header => avgExecutionTable.addHeader(header));
+
+for (let run of runs) {
+    let row = {
+        layoutAlgorithm: { value: run.layout, type: "text" },
+        runName: { value: run.title, type: "text" },
+        avgExecution: { value: d3.mean(run.executionTimeList), type: "text" },
+        medianExecution: {
+            value: d3.median(run.executionTimeList),
+            type: "text"
+        }
+    };
+    avgExecutionTable.addRow(row);
+}
+
+avgExecutionTable.refresh();
+barChart(
+    "execution-chart",
+    "run",
+    "Average execution time",
+    runs.map(s => ({ x: s.title, y: d3.mean(s.executionTimeList) }))
+);
+
+let evaluatedTable = new Table("average-evaluated-table");
+[
+    { title: "Run name", id: "runName" },
+    { title: "Layout Algorithm", id: "layoutAlgorithm" },
+    { title: "Average evaluated solutions", id: "avgEvaluated" },
+    { title: "Median evaluated solutions ", id: "medianEvaluated" }
+].forEach(header => evaluatedTable.addHeader(header));
+
+for (let run of runs) {
+    let row = {
+        layoutAlgorithm: { value: run.layout, type: "text" },
+        runName: { value: run.title, type: "text" },
+        avgEvaluated: {
+            value: d3.mean(run.evaluatedSolutionsList),
+            type: "text"
+        },
+        medianEvaluated: {
+            value: d3.median(run.evaluatedSolutionsList),
+            type: "text"
+        }
+    };
+    evaluatedTable.addRow(row);
+}
+
+evaluatedTable.refresh();
+
+barChart(
+    "evaluated-chart",
+    "run",
+    "Average evluated solutions",
+    runs.map(s => ({ x: s.title, y: d3.mean(s.evaluatedSolutionsList) }))
+);
 
 window.runs = runs;

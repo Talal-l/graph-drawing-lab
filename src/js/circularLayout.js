@@ -6,12 +6,15 @@ export class CircularLayout {
         this.iterationCount = 0;
         this.maxIteration = params.maxIteration || 1000;
         this.radius = params.radius || 450;
+        this.executionTime = 0;
     }
 
     run() {
+        let start = new Date().getTime();
         while (this.iterationCount < this.maxIteration) {
             this.step();
         }
+        this.executionTime = new Date().getTime() - start;
         this.iterationCount = 0;
     }
 

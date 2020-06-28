@@ -495,6 +495,19 @@ function updateLayoutAlg() {
             break;
     }
 }
+function updateLayoutInfo(data) {
+    let info = data[4];
+    let layout = data[1];
+
+    let layoutInfoSec = document.querySelector("#menu-sec-layout-info");
+    layoutInfoSec.querySelector("#layout").innerHTML = layout;
+    layoutInfoSec.querySelector(
+        "#execution-time"
+    ).innerHTML = `${info.executionTime} ms`;
+    layoutInfoSec.querySelector(
+        "#evaluated-solutions"
+    ).innerHTML = info.evaluatedSolutions ? info.evaluatedSolutions : "-";
+}
 
 function disableToolbar(init) {
     let elements = document.querySelectorAll(
@@ -615,6 +628,7 @@ function toolbarClickHandler(event) {
                 GRAPH.read(e.data[0]);
                 refreshScreen(sig, updateMetrics);
                 enableToolbar("runLayout");
+                updateLayoutInfo(e.data);
             };
             break;
         case "stepLayout":

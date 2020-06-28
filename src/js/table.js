@@ -96,13 +96,14 @@ export class Table {
                 if (!col.hidden) {
                     let td = document.createElement("td");
                     // TODO: use default
-                    let data = "-";
+                    let data = null;
                     if (row[col.id].type === "text") {
                         data = row[col.id].value;
                     } else if (row[col.id].type === "image") {
                         let img = document.createElement("img");
                         img.src = row[col.id].src;
                     }
+                    if (!data) data = "-";
                     td.append(data);
                     tr.append(td);
                 }

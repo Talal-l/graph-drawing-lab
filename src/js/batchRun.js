@@ -14,6 +14,8 @@ import { Table } from "./table";
 const headers = [
     { id: "status", title: "Status", visible: true },
     { id: "filename", title: "Filename", visible: true },
+    { id: "executionTime", title: "execution time", visible: true },
+    { id: "evaluatedSolutions", title: "evaluated solutions", visible: true },
     { id: "layout", title: "Layout", visible: true },
     { id: "nodes", title: "Nodes", visible: true },
     { id: "edges", title: "Edges", visible: true },
@@ -26,6 +28,7 @@ const headers = [
     { id: "objective", title: "Objective", visible: true }
 ];
 
+const digits = 3;
 const layouts = {
     hillClimbing: {
         name: "hillClimbing",
@@ -42,16 +45,6 @@ const layouts = {
                 name: "squareSize",
                 value: 100,
                 displayName: "Square Size"
-            },
-            {
-                type: "list",
-                name: "moveStrategy",
-                displayName: "Move Strategy",
-                options: [
-                    { name: "immediate", displayName: "Immediate" },
-                    { name: "delayed", displayName: "Delayed" }
-                ],
-                selectedOptionIndex: 0
             }
         ]
     },
@@ -301,17 +294,26 @@ function addTable(tab) {
                 weights: tab.weights,
                 metricsParam: tab.metricsParam
             });
-        } else {
-            graph = file.concreteGraph;
         }
+        let info = {
+            evaluatedSolutions: file.info ? file.info.evaluatedSolutions : "-",
+            executionTime: file.info ? file.info.executionTime : "-"
+        };
 
+        file.metrics = graph.metrics();
+        file.objective = graph.objective();
         let {
             nodeOcclusion,
             edgeNodeOcclusion,
             edgeLength,
             edgeCrossing,
             angularResolution
-        } = graph.metrics();
+        } = file.metrics;
+
+        if (!file.originalMetrics) {
+            file.originalMetrics = file.metrics;
+            file.originalObjective = file.objective;
+        }
 
         let row = {
             status: { value: file.status, type: "text" },
@@ -322,13 +324,30 @@ function addTable(tab) {
             },
             nodes: { value: graph.nodes().length, type: "text" },
             edges: { value: graph.edges().length, type: "text" },
-            density: { value: graph.density(), type: "text" },
-            nodeOcclusion: { value: nodeOcclusion, type: "text" },
-            edgeNodeOcclusion: { value: edgeNodeOcclusion, type: "text" },
-            edgeLength: { value: edgeLength, type: "text" },
-            edgeCrossing: { value: edgeCrossing, type: "text" },
-            angularResolution: { value: angularResolution, type: "text" },
-            objective: { value: graph.objective(), type: "text" }
+            executionTime: { value: info.executionTime, type: "text" },
+            evaluatedSolutions: {
+                value: info.evaluatedSolutions,
+                type: "text"
+            },
+            density: { value: graph.density().toFixed(digits), type: "text" },
+            nodeOcclusion: {
+                value: nodeOcclusion.toFixed(digits),
+                type: "text"
+            },
+            edgeNodeOcclusion: {
+                value: edgeNodeOcclusion.toFixed(digits),
+                type: "text"
+            },
+            edgeLength: { value: edgeLength.toFixed(digits), type: "text" },
+            edgeCrossing: { value: edgeCrossing.toFixed(digits), type: "text" },
+            angularResolution: {
+                value: angularResolution.toFixed(digits),
+                type: "text"
+            },
+            objective: {
+                value: graph.objective().toFixed(digits),
+                type: "text"
+            }
         };
 
         table.addRow(row);
@@ -391,6 +410,7 @@ class Tab {
         this.metricsParam = deepCopy(
             otherTab ? otherTab.metricsParam : metricsParam
         );
+        
 
         this.files = {};
         if (otherTab) {
@@ -401,6 +421,8 @@ class Tab {
                     originalGraph: deepCopy(file.originalGraph),
                     status: "-"
                 };
+                this.originalMetrics = null;
+                this.originalObjective = null;
             }
         }
 
@@ -446,6 +468,7 @@ class Tab {
             this.files[filename].graph = e.data[0];
             this.files[filename].layout = e.data[1];
             this.files[filename].status = "done";
+            this.files[filename].info = e.data[4];
 
             // TODO: Make sure the options are in sync with the ui
             currentTab().options = e.data[2];
@@ -646,7 +669,6 @@ function addSideMenuMetricSec(tab) {
 
 // eslint-disable-next-line no-undef
 const sig = new sigma();
-const digits = 3;
 
 // tool bar
 const toolbar = document.querySelector(".toolbar-container"),
@@ -844,7 +866,6 @@ sideMenu
             let index = param.options.findIndex(e => e.name === target.value);
             param.selectedOptionIndex = index;
         }
-        param.value = target.value;
     });
 
 let toggleEl = document.querySelectorAll(".menu-section-label");

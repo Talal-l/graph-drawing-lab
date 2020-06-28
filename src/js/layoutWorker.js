@@ -4,7 +4,6 @@ import { ConcreteGraph, generateGraph } from "./graph.js";
 
 let GRAPH = new ConcreteGraph();
 let layoutAlgList = { CircularLayout, HillClimbing };
-console.log(layoutAlgList);
 
 onmessage = function(e) {
     console.log(e.data);
@@ -28,5 +27,10 @@ onmessage = function(e) {
     }
     layoutAlg[command]();
 
-    postMessage([GRAPH.graph.toJSON(), layoutAlgName, options, command]);
+    let info = {
+        executionTime: layoutAlg.executionTime,
+        evaluatedSolutions: layoutAlg.evaluatedSolutions
+    }
+
+    postMessage([GRAPH.graph.toJSON(), layoutAlgName, options, command, info]);
 };
