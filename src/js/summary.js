@@ -1,5 +1,7 @@
 const { Table } = require("./table");
 
+import * as d3 from "d3";
+
 // tool bar
 function toolbarClickHandler(event) {
     let target = event.target;
@@ -139,6 +141,13 @@ function barChart(id, xLabel, yLabel, data) {
         .range([0, innerWidth])
         .domain(data.map(e => e.x))
         .padding(0.2);
+    
+
+
+    const myColor= d3.scaleOrdinal(d3.schemeAccent);
+
+
+
 
     chart
         .append("g")
@@ -150,7 +159,7 @@ function barChart(id, xLabel, yLabel, data) {
         .data(data)
         .enter()
         .append("rect")
-        .attr("fill", "steelblue")
+        .attr("fill", (_,i) => myColor(i))
         .attr("x", s => xScale(s.x))
         .attr("y", s => yScale(s.y))
         .attr("height", s => innerHeight - yScale(s.y))

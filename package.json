@@ -33,6 +33,7 @@
     "webpack-cli": "^3.3.10"
   },
   "dependencies": {
+    "d3": "^5.16.0",
     "graphology": "^0.14.1"
   },
   "keywords": [
