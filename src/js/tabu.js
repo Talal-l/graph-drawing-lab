@@ -80,6 +80,7 @@ function pathRelinking(refSet, params) {
 export class Tabu {
     constructor(graph, params) {
         this.graph = graph;
+        if (!params) params = {};
         this.params = params;
         // distance to move the node
         this.squareSize = params.squareSize || 100;
@@ -145,7 +146,6 @@ export class Tabu {
                     if (ratio > this.cutoff) {
                         this.tabuSet.push(candidateSol);
                     } else if (candidateSolObj < chosenSolObj) {
-                        console.log(candidateSolObj, chosenSolObj);
                         chosenSolObj = candidateSolObj;
                         chosenSol = candidateSol;
                     }
@@ -153,8 +153,7 @@ export class Tabu {
             }
 
             if (chosenSol !== null) {
-                console.log(chosenSol);
-                layout.setNodePos(chosenSol.nodeId, chosenSol.pos);
+                layout.setNodePos(chosenSol.nodeId, chosenSol.pos, false);
                 let currentSol = {
                     nodeId: nId,
                     pos: currentPos,
