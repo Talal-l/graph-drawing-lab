@@ -163,12 +163,14 @@ function createTabEl(title, tabId) {
     let html = `
             <div class="tab-item" id="tab-${tabId}">
                 ${title}
+
                 ${
                     // prevent the default tab from being deleted
                     tabId !== tabs[0].id
                         ? `<span class="fas fa-times tab-close-icon"></span>`
                         : ``
                 }
+
              </div> 
             `;
     return html;
@@ -186,7 +188,12 @@ function createTabContent({ id, layout }) {
 
                     <div class="param-list">
                     </div>
-
+                    <div class="file-number">
+                    
+                    <span>Number of files: </span>
+                    ${
+                        Object.keys(tabs.find(e => e.id === id).files).length
+                    }</div>
                 </div>
 
             <div class="h-divider">
@@ -233,10 +240,8 @@ function addNewTab(tabList, tab) {
 function addTabEl(tab) {
     let newTab = document.querySelector("#new-tab");
     newTab.insertAdjacentHTML("beforebegin", createTabEl(tab.title, tab.id));
-
-    // add even listener to tab
-    //tab  close event
 }
+
 
 function addTabContentEl(tab) {
     let tabContainer = document.querySelector("#tab-container");
@@ -410,7 +415,6 @@ class Tab {
         this.metricsParam = deepCopy(
             otherTab ? otherTab.metricsParam : metricsParam
         );
-        
 
         this.files = {};
         if (otherTab) {
@@ -513,7 +517,8 @@ function loadFile(filename, data) {
         originalGraph: deepCopy(parsedData.graph),
         status: "-"
     };
-    addTable(currentTab());
+    // addTable(currentTab());
+    addTabContentEl(currentTab());
 }
 // setup tab bar
 let savedTabs = JSON.parse(localStorage.getItem("runs"));
