@@ -102,6 +102,10 @@ export class Table {
                     } else if (row[col.id].type === "image") {
                         let img = document.createElement("img");
                         img.src = row[col.id].src;
+                    } else if (row[col.id].type === "html") {
+                        data = document.createElement("div");
+                        data.insertAdjacentHTML("beforeend", row[col.id].value);
+                        data.onclick = row[col.id].onClick;
                     }
                     if (!data) data = "-";
                     td.append(data);
@@ -321,7 +325,6 @@ export class Table {
         }
     }
     sort(header, ascending = true) {
-
         if (ascending) this.sortClass = "sort-asc";
         else this.sortClass = "sort-desc";
 

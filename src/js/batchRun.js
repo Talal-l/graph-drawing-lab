@@ -12,8 +12,8 @@ import { CircularLayout } from "./circularLayout.js";
 import { HillClimbing } from "./hillClimbing.js";
 import { Table } from "./table";
 const headers = [
-    { id: "status", title: "Status", visible: true },
     { id: "filename", title: "Filename", visible: true },
+    { id: "status", title: "Status", visible: true },
     { id: "executionTime", title: "execution time", visible: true },
     { id: "evaluatedSolutions", title: "evaluated solutions", visible: true },
     { id: "layout", title: "Layout", visible: true },
@@ -25,7 +25,8 @@ const headers = [
     { id: "edgeLength", title: "Edge length", visible: true },
     { id: "edgeCrossing", title: "Edge crossing", visible: true },
     { id: "angularResolution", title: "Angular Resolution", visible: true },
-    { id: "objective", title: "Objective", visible: true }
+    { id: "objective", title: "Objective", visible: true },
+    { id: "action", title: "Action", visible: true }
 ];
 
 const digits = 3;
@@ -242,7 +243,6 @@ function addTabEl(tab) {
     newTab.insertAdjacentHTML("beforebegin", createTabEl(tab.title, tab.id));
 }
 
-
 function addTabContentEl(tab) {
     let tabContainer = document.querySelector("#tab-container");
     tabContainer.innerHTML = "";
@@ -352,6 +352,19 @@ function addTable(tab) {
             objective: {
                 value: graph.objective().toFixed(digits),
                 type: "text"
+            },
+            action: {
+                value: `<a href=# class="row-delete" data-filename="${filename}" >Delete</a>`,
+                type: "html",
+                onClick: e => {
+                    // delete file from all tabs
+                    console.log(filename);
+                    for (let tab of tabs){
+                        delete tab.files[filename];
+                    }
+                    addTabContentEl(tab);
+
+                }
             }
         };
 

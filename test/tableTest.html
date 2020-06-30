@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>table test</title>
+
+
+    <style>
+        table-container {
+            width: 100%;
+            height: calc(100% - 63px);
+            overflow: auto;
+        }
+
+        #new-tab {
+            align-self: center;
+            margin-left: 8px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        tr {
+            border-bottom: 1px solid #999;
+        }
+
+        tr:hover {
+            color: black;
+        }
+
+        thead tr {
+            border-bottom: 2px solid #000;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            text-align: center;
+            color: #13012d;
+        }
+
+        td {
+            padding: 10px 10px 10px 10px;
+            width: 10px;
+        }
+
+        th {
+            cursor: pointer;
+        }
+
+
+
+
+
+        tbody tr:hover {
+            background-color: #e5e7eb;
+        }
+
+        tbody tr:focus {
+            background-color: #e5e7eb;
+        }
+
+        .row-selected{
+            background-color: #a8d1ff;
+        }
+
+
+
+
+
+        th:hover {
+            background-color: #e5e7eb;
+        }
+
+        th:focus {
+            background-color: #e5e7eb;
+        }
+
+        button.sort {
+            background-color: white;
+            border: none;
+            float: right;
+            height: 24px;
+            width: 16px;
+            background-repeat: no-repeat;
+        }
+
+        button.sort-neutral {
+            opacity: 0.3;
+            background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAr0lEQVQ4T6WTUQ5BQQxFz1uG4IdnH2xHgo3w/xKLYSOEiMQqkCatSE2nwfy297Rz70zDn6dJ9APgAVyjvhpgAuyAOzADDiVIBDBxX0WXCFICeLENLkI8oAX2gE32WwtkChyt4AFzYJkYuwG2EeDrULMYU6AHLIBVoloDXXSFkZo4DCBnNfFU82CsD8hDPsQCiTzwkKK4BpCaQeQpS/avtd+vl6XQ0890++UzpRFKwxNZzCARuMPL3wAAAABJRU5ErkJggg==");
+            background-position-y: center;
+        }
+
+        button.sort-asc {
+            padding-bottom: 6px;
+            background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAaUlEQVQ4T+3SsQ1AUBQF0GMfQ5hEoddILKHR6VT2MIZtJBoSkf/9iE68+t1T3NzMy8te5v2AZAc1Vgyxsu9KbNHtwQZ9CIkB5/CRCyIhIBSOIlegwpgYV4np+LkCOYoEMGOJAY+X/YEpbzl7DBHJyXtQAAAAAElFTkSuQmCC");
+            background-position-y: top;
+        }
+
+        button.sort-desc {
+            padding-top: 6px;
+            background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAc0lEQVQ4T2NkoBAwUqifYRgaIMPAwGBAIFzOMzAwPIWpQQ+DYgYGhh4CBuQzMDBMwmUAEwMDw1QGBoYMHIaA5HIZGBj+4zIAJI7LEAzNIMW4ohHdEKya8RkAc0kvAwPDHwYGhjJkZyN7bxgmJJLzFsVhAAAclRAR/sEwnwAAAABJRU5ErkJggg==");
+            background-position-y: bottom;
+        }
+    </style>
+</head>
+
+<body>
+
+    <table id="test-table"></table>
+
+    <script type="module">
+        import { Table } from "../src/js/table.js";
+        window.table = new Table("test-table");
+        const headers = [
+            { id: "status", title: "Status", visible: true },
+            { id: "filename", title: "Filename", visible: true },
+            { id: "executionTime", title: "execution time", visible: true },
+            { id: "evaluatedSolutions", title: "evaluated solutions", visible: true },
+            { id: "layout", title: "Layout", visible: true },
+            { id: "nodes", title: "Nodes", visible: true },
+            { id: "edges", title: "Edges", visible: true },
+            { id: "density", title: "Density", visible: true },
+            { id: "nodeOcclusion", title: "Node occlusion", visible: true },
+            { id: "edgeNodeOcclusion", title: "Edge-Node occlusion", visible: true },
+            { id: "edgeLength", title: "Edge length", visible: true },
+            { id: "edgeCrossing", title: "Edge crossing", visible: true },
+            { id: "angularResolution", title: "Angular Resolution", visible: true },
+            { id: "objective", title: "Objective", visible: true }
+        ].forEach(e => window.table.addHeader(e));
+
+        let N = 15;
+        for (let i = 0; i < N; i++) {
+
+            let row = {
+                "status": { value: i, type: "text" },
+                "filename": { value: i, type: "text" },
+                "executionTime": { value: i, type: "text" },
+                "evaluatedSolutions": { value: i, type: "text" },
+                "layout": { value: i, type: "text" },
+                "nodes": { value: i, type: "text" },
+                "edges": { value: i, type: "text" },
+                "density": { value: i, type: "text" },
+                "nodeOcclusion": { value: i, type: "text" },
+                "edgeNodeOcclusion": { value: i, type: "text" },
+                "edgeLength": { value: i, type: "text" },
+                "edgeCrossing": { value: i, type: "text" },
+                "angularResolution": { value: i, type: "text" },
+                "objective": { value: i, type: "text" }
+            }
+            window.table.addRow(row);
+        }
+        window.table.refresh();
+
+    </script>
+</body>
+
+</html>
