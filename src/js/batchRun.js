@@ -363,7 +363,7 @@ function addTable(tab) {
                 type: "html",
                 onClick: e => {
                     // delete file from all tabs
-                    console.log("delete file",filename);
+                    console.log("delete file", filename);
                     for (let tab of tabs) {
                         // kill any running web worker
                         let worker = tab.files[filename].worker;
@@ -389,6 +389,15 @@ function addTable(tab) {
     }
 
     table.refresh();
+    // update play button state
+    let runTestEl = document.querySelector("#batchRunTest");
+    if (tab.status === tabStatus.RUNNING) {
+        runTestEl.classList.add("fa-stop");
+        runTestEl.classList.remove("fa-play");
+    } else {
+        runTestEl.classList.add("fa-play");
+        runTestEl.classList.remove("fa-stop");
+    }
 }
 
 function currentTab() {
@@ -563,7 +572,8 @@ function loadFile(filename, data) {
     currentTab().files[filename] = {
         graph: parsedData.graph,
         originalGraph: deepCopy(parsedData.graph),
-        status: "-"
+        status: "-",
+        info: null
     };
     currentTab().status = tabStatus.LOADED;
     addTabContentEl(currentTab());
@@ -743,7 +753,32 @@ function toolbarClickHandler(event) {
             openFileDialog(loadFile);
             break;
         case "batchRunTest":
-            currentTab().runBatch();
+            // change play to stop
+            if (target.classList.contains("fa-play")) {
+                target.classList.remove("fa-play");
+                target.classList.add("fa-stop");
+                currentTab().runBatch();
+            } else {
+                target.classList.remove("fa-stop");
+                target.classList.add("fa-play");
+                let tab = currentTab();
+                tab.status = tabStatus.FRESH;
+                tab.runCount = 0;
+                for (const [filename, file] of Object.entries(tab.files)) {
+                    file.status = "-";
+                    file.graph = deepCopy(file.originalGraph);
+                    file.metrics = deepCopy(file.originalMetrics);
+                    file.objective = file.originalObjective;
+                    file.layout = null;
+                    if (file.info) {
+                        file.info.evaluatedSolutions = null;
+                        file.info.executionTime = null;
+                    }
+
+                    if (file.worker) file.worker.terminate();
+                }
+                addTabContentEl(tab);
+            }
             break;
         case "backToMain":
             window.location.replace("index.html");
@@ -775,7 +810,7 @@ function toolbarClickHandler(event) {
                             `Parameter changed without a re-run in ${tab.title}`
                         );
                     } else {
-                        alert(`Runs not complete in ${tab.title}`);
+                        alert(`Incomplete run in:  ${tab.title}`);
                     }
                     break;
                 }
