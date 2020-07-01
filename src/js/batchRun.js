@@ -250,6 +250,10 @@ function addTabContentEl(tab) {
 
     const contentEl = document.querySelector(`#tab-content-${tab.id}`);
 
+    if (Object.keys(tab.files).length === 0) {
+        tab.status = tabStatus.FRESH;
+    }
+
     addTable(tab);
     addSideMenuColSec(tab);
     addSideMenuMetricSec(tab);
@@ -359,8 +363,17 @@ function addTable(tab) {
                 type: "html",
                 onClick: e => {
                     // delete file from all tabs
-                    console.log(filename);
+                    console.log("delete file",filename);
                     for (let tab of tabs) {
+                        // kill any running web worker
+                        let worker = tab.files[filename].worker;
+                        if (worker) {
+                            tab.runCount--;
+                            if (tab.runCount === 0) {
+                                tab.status = tabStatus.DONE;
+                            }
+                            worker.terminate();
+                        }
                         delete tab.files[filename];
                     }
                     addTabContentEl(tab);
@@ -492,12 +505,15 @@ class Tab {
         worker.postMessage([graphData, currentTab().layout, options, "run"]);
 
         currentTab().files[filename].status = "running";
+        currentTab().files[filename].worker = worker;
 
         worker.onmessage = function(e) {
+            console.log("onmessage");
             this.files[filename].graph = e.data[0];
             this.files[filename].layout = e.data[1];
             this.files[filename].status = "done";
             this.files[filename].info = e.data[4];
+            this.files[filename].worker = null;
 
             // TODO: Make sure the options are in sync with the ui
             currentTab().options = e.data[2];
