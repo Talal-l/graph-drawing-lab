@@ -258,6 +258,7 @@ function addTabContentEl(tab) {
     // add event listener to layout algorithm list to update parameters on change
     let layoutAlgList = contentEl.querySelector("#layoutAlgList");
     layoutAlgList.onchange = ({ target }) => {
+        currentTab().status = tabStatus.DIRTY;
         tab.layout = target.value;
         tab.layoutParam = deepCopy(layouts[tab.layout].params);
         addLayoutParam(currentTab().layoutParam);
@@ -359,11 +360,10 @@ function addTable(tab) {
                 onClick: e => {
                     // delete file from all tabs
                     console.log(filename);
-                    for (let tab of tabs){
+                    for (let tab of tabs) {
                         delete tab.files[filename];
                     }
                     addTabContentEl(tab);
-
                 }
             }
         };
@@ -412,6 +412,16 @@ const weights = {
     angularResolution: 1
 };
 
+const tabStatus = {
+    FRESH: 0, // tab was just created
+    LOADING: 1, // still loading files
+    LOADED: 2, // all files have been loaded
+    RUNNING: 3, // running on files
+    PAUSED: 4, // paused after a run
+    DONE: 5, // Done running
+    DIRTY: 6 // Something is out of sync (ex param changed but no run was triggered yet)
+};
+
 // Assumes to be created in a loaded batchRun page (with side menu)
 // TODO: add option to save tab to disk (save the run)
 class Tab {
@@ -423,6 +433,7 @@ class Tab {
         this.id = `${date + Math.floor(Math.random() * 1000)}`;
         this.headers = deepCopy(otherTab ? otherTab.headers : headers);
         this.sortHeader = otherTab ? otherTab.sortHeader : null;
+        this.status = tabStatus.FRESH;
         this.sortDirection = otherTab ? otherTab.sortDirection : "sort-neutral";
         this.weights = deepCopy(otherTab ? otherTab.weights : weights);
         this.metricsParam = deepCopy(
@@ -466,6 +477,7 @@ class Tab {
     }
 
     runTest(filename) {
+        this.status = tabStatus.RUNNING;
         let options = {
             weights: this.weights,
             metricsParam: this.metricsParam,
@@ -492,13 +504,16 @@ class Tab {
 
             this.runCount--;
 
-            if (!this.runCount) {
+            if (this.runCount === 0) {
+                this.status = tabStatus.DONE;
             }
             addTable(currentTab());
             worker.terminate();
         }.bind(this);
     }
     runBatch() {
+        // every batch run starts over
+        this.runCount = 0;
         for (let filename in this.files) {
             this.runCount++;
             this.runTest(filename);
@@ -506,9 +521,13 @@ class Tab {
         addTable(this);
     }
     clearBatch() {
-        if (!this.runCount) {
+        console.log(this.status);
+        if (this.status !== tabStatus.RUNNING) {
             this.files = {};
+            this.status = tabStatus.FRESH;
             addTable(this);
+        } else {
+            alert("some tabs are still running!");
         }
     }
 }
@@ -530,7 +549,7 @@ function loadFile(filename, data) {
         originalGraph: deepCopy(parsedData.graph),
         status: "-"
     };
-    // addTable(currentTab());
+    currentTab().status = tabStatus.LOADED;
     addTabContentEl(currentTab());
 }
 // setup tab bar
@@ -714,13 +733,42 @@ function toolbarClickHandler(event) {
             window.location.replace("index.html");
             break;
         case "clearTest":
-            localStorage.removeItem("runs");
-            window.location.replace("batchRun.html");
+            let canClear = true;
+            for (const tab of tabs) {
+                if (tab.status === tabStatus.RUNNING) {
+                    canClear = false;
+                    break;
+                }
+            }
+            if (canClear) {
+                localStorage.removeItem("runs");
+                window.location.replace("batchRun.html");
+            } else {
+                alert("some tabs are still running!");
+            }
             break;
         case "summary":
-            // save tabs to local storage
-            localStorage.setItem("runs", JSON.stringify(tabs));
-            window.location.replace("summary.html");
+            // don't switch if we have no data
+
+            let completeBatch = true;
+            for (const tab of tabs) {
+                if (tab.status !== tabStatus.DONE) {
+                    completeBatch = false;
+                    if (tab.status === tabStatus.DIRTY) {
+                        alert(
+                            `Parameter changed without a re-run in ${tab.title}`
+                        );
+                    } else {
+                        alert(`Runs not complete in ${tab.title}`);
+                    }
+                    break;
+                }
+            }
+            if (completeBatch) {
+                // save tabs to local storage
+                localStorage.setItem("runs", JSON.stringify(tabs));
+                window.location.replace("summary.html");
+            }
             break;
         default:
             break;
@@ -860,10 +908,7 @@ sideMenu
 sideMenu
     .querySelector("#menu-sec-metrics")
     .addEventListener("change", event => {
-        let table = currentTab().table;
-
-        let options = { weights: getWeights(), metricsParam };
-
+        currentTab().status = tabStatus.DIRTY;
         currentTab().weights = getWeights();
         currentTab().metricsParam = {
             requiredEdgeLength: parseFloat(
@@ -875,6 +920,7 @@ sideMenu
 sideMenu
     .querySelector("#menu-sec-layout-param")
     .addEventListener("change", ({ target }) => {
+        currentTab().status = tabStatus.DIRTY;
         let type = target.nodeName;
         let param = currentTab().layoutParam.find(e => e.name === target.name);
 
