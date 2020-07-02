@@ -30,6 +30,7 @@ const headers = [
 ];
 
 const digits = 3;
+let lastTabNum = 0;
 const layouts = {
     hillClimbing: {
         name: "hillClimbing",
@@ -163,15 +164,20 @@ function createLayoutParam(params) {
 function createTabEl(title, tabId) {
     let html = `
             <div class="tab-item" id="tab-${tabId}">
-                ${title}
+                <div class="tab-title">
+                    ${title}
+                </div>
 
-                ${
-                    // prevent the default tab from being deleted
-                    tabId !== tabs[0].id
-                        ? `<span class="fas fa-times tab-close-icon"></span>`
-                        : ``
-                }
+                <div class="tab-control">
+                    ${createSpinner()}
+                    ${
+                        // prevent the default tab from being deleted
+                        tabId !== tabs[0].id
+                            ? `<span class="fas fa-times tab-close-icon"></span>`
+                            : ``
+                    }
 
+                </div> 
              </div> 
             `;
     return html;
@@ -207,7 +213,29 @@ function createTabContent({ id, layout }) {
    `;
     return html;
 }
-// util function
+
+function createSpinner() {
+    console.log("create spinner");
+    return `
+       <div class="lds-ring tab-spinner">
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+       </div>
+`;
+}
+
+function showTabSpinner(tab) {
+    let tabEl = document.querySelector(`#tab-${tab.id}`);
+    let spinnerEl = tabEl.querySelector(".tab-spinner");
+    spinnerEl.classList.add("tab-spinner-active");
+}
+function hideTabSpinner(tab) {
+    let tabEl = document.querySelector(`#tab-${tab.id}`);
+    let spinnerEl = tabEl.querySelector(".tab-spinner");
+    spinnerEl.classList.remove("tab-spinner-active");
+}
 
 // Assume that id is after the last -
 function getTabIdFromElId(id) {
@@ -371,6 +399,7 @@ function addTable(tab) {
                             tab.runCount--;
                             if (tab.runCount === 0) {
                                 tab.status = tabStatus.DONE;
+                                hideTabSpinner(tab);
                             }
                             worker.terminate();
                         }
@@ -500,6 +529,7 @@ class Tab {
 
     runTest(filename) {
         this.status = tabStatus.RUNNING;
+        showTabSpinner(this);
         let options = {
             weights: this.weights,
             metricsParam: this.metricsParam,
@@ -531,6 +561,7 @@ class Tab {
 
             if (this.runCount === 0) {
                 this.status = tabStatus.DONE;
+                hideTabSpinner(this);
             }
             addTable(currentTab());
             worker.terminate();
@@ -603,19 +634,18 @@ tabList.addEventListener("click", event => {
         const selectedTab = tabs.find(t => t.id === getTabIdFromElId(el.id));
         switchTab(selectedTab);
     } else if (el.id === "new-tab") {
-        // TODO: change this when you can delete tabs
         let prevTab = null;
         if (tabs.length > 0) prevTab = tabs[tabs.length - 1];
-        let tab = new Tab(`Run ${tabs.length}`, prevTab);
+        let tab = new Tab(`Run ${lastTabNum++}`, prevTab);
         addNewTab(tabs, tab);
         switchTab(tab);
     } else if (el.classList.contains("tab-close-icon")) {
-        let id = getTabIdFromElId(el.parentNode.id);
+        let id = getTabIdFromElId(el.parentNode.parentNode.id);
         let index = tabs.findIndex(e => e.id === id);
         tabs.splice(index, 1);
         index = index > 0 ? index - 1 : 0;
-        el.parentNode.remove();
-        if (el.parentNode.classList.contains("tab-active"))
+        el.parentNode.parentNode.remove();
+        if (el.parentNode.parentNode.classList.contains("tab-active"))
             switchTab(tabs[index]);
     }
 });
@@ -753,7 +783,6 @@ function toolbarClickHandler(event) {
             openFileDialog(loadFile);
             break;
         case "batchRunTest":
-            // change play to stop
             if (target.classList.contains("fa-play")) {
                 target.classList.remove("fa-play");
                 target.classList.add("fa-stop");
