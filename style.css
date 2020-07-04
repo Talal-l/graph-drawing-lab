@@ -303,7 +303,7 @@ main {
     border: solid;
     border-width: 0 3px 0 0;
 }
-.tab-control{
+.tab-control {
     display: flex;
     align-items: center;
 }
@@ -466,7 +466,6 @@ button.sort-desc {
     display: inline-block;
     width: var(--size);
     height: var(--size);
-
 }
 .lds-ring div {
     box-sizing: border-box;

@@ -11,6 +11,7 @@ import * as evaluator from "./metrics.js";
 import { CircularLayout } from "./circularLayout.js";
 import { HillClimbing } from "./hillClimbing.js";
 import { Table } from "./table";
+import { FileModal } from "./components/fileModal.js";
 const headers = [
     { id: "filename", title: "Filename", visible: true },
     { id: "status", title: "Status", visible: true },
@@ -28,9 +29,9 @@ const headers = [
     { id: "objective", title: "Objective", visible: true },
     { id: "action", title: "Action", visible: true }
 ];
-
+let modalOffset = 0;
 const digits = 3;
-let lastTabNum = 0;
+let lastTabNum = 1;
 const layouts = {
     hillClimbing: {
         name: "hillClimbing",
@@ -355,7 +356,23 @@ function addTable(tab) {
 
         let row = {
             status: { value: file.status, type: "text" },
-            filename: { value: filename, type: "text" },
+            filename: {
+                value: `<a href=# class="row-delete" data-filename="${filename}" >${filename}</a>`,
+                type: "html",
+                onClick: e => {
+                    if (
+                        document.querySelector(`[filename="${file.name}"][tab-id="${tab.id}"]`) ===
+                        null
+                    ) {
+                        let fileModal = new FileModal();
+                        fileModal.file = file;
+                        fileModal.tab = tab;
+                        modalOffset += 10;
+                        fileModal.initOffset = modalOffset;
+                        document.body.appendChild(fileModal);
+                    }
+                }
+            },
             layout: {
                 value: file.status !== "-" ? tab.layout : "-",
                 type: "text"
@@ -498,7 +515,8 @@ class Tab {
                 this.files[filename] = {
                     graph: deepCopy(file.originalGraph),
                     originalGraph: deepCopy(file.originalGraph),
-                    status: "-"
+                    status: "-",
+                    name: file.name
                 };
                 this.originalMetrics = null;
                 this.originalObjective = null;
@@ -604,13 +622,15 @@ function loadFile(filename, data) {
         graph: parsedData.graph,
         originalGraph: deepCopy(parsedData.graph),
         status: "-",
-        info: null
+        info: null,
+        name: filename
     };
     currentTab().status = tabStatus.LOADED;
     addTabContentEl(currentTab());
 }
 // setup tab bar
 let savedTabs = JSON.parse(localStorage.getItem("runs"));
+lastTabNum = JSON.parse(localStorage.getItem("lastTabNum")) || 1;
 
 if (savedTabs) {
     for (const tab of savedTabs) {
@@ -822,6 +842,7 @@ function toolbarClickHandler(event) {
             }
             if (canClear) {
                 localStorage.removeItem("runs");
+                localStorage.removeItem("lastTabNum");
                 window.location.replace("batchRun.html");
             } else {
                 alert("some tabs are still running!");
@@ -847,6 +868,7 @@ function toolbarClickHandler(event) {
             if (completeBatch) {
                 // save tabs to local storage
                 localStorage.setItem("runs", JSON.stringify(tabs));
+                localStorage.setItem("lastTabNum", JSON.stringify(lastTabNum));
                 window.location.replace("summary.html");
             }
             break;
