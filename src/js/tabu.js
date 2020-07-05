@@ -55,9 +55,6 @@ function replaceWorseSol(refSet, sol) {
     }
 }
 
-function reduceCutoff(cutoff, reduction) {}
-function reduceSquare(size, reduction) {}
-
 function moveAlongPath() {}
 
 function pathRelinking(refSet, params) {
@@ -79,18 +76,21 @@ function pathRelinking(refSet, params) {
 
 export class Tabu {
     constructor(graph, params) {
+        console.log("tabu params", JSON.stringify(params));
         this.graph = graph;
         if (!params) params = {};
         this.params = params;
         // distance to move the node
-        this.squareSize = params.squareSize || 100;
-        this.squareReduction = params.squareReduction || 10;
+        this.squareSize = params.squareSize || 512;
+        this.initSquareSize = this.squareSize;
+        this.squareReduction = params.squareReduction || 4;
         this.refSetSize = 10;
-        this.maxIt = params.iterations || 100;
-        this.intensifyIt = params.intensifyIt || 200;
-        this.cutoff = params.cutoff || 1;
-        this.cutoffReduction = params.cutoffReduction || 10;
-        this.duration = params.duration || 100;
+        this.maxIt = params.iterations || 40;
+        this.intensifyIt = params.intensifyIt || 5;
+        this.cutoff = params.cutoff || 4;
+        this.initCutoff = this.cutoff;
+        this.cutoffReduction = params.cutoffReduction || 0.005;
+        this.duration = params.duration || 5;
 
         this.executionTime = 0;
         this.evaluatedSolutions = 0;
@@ -163,11 +163,8 @@ export class Tabu {
             }
 
             if (this.it % this.intensifyIt === 0) {
-                this.squareSize = reduceSquare(
-                    this.squareSize,
-                    this.squareReduction
-                );
-                this.cutoff = reduceCutoff(this.cutoff, this.cutoffReduction);
+                this.squareSize = this.squareSize / this.squareReduction;
+                this.cutoff -= this.cutoffReduction * this.intensifyIt;
             }
             // remove old sol from tabu set
             this.tabuSet = this.tabuSet.filter(

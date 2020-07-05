@@ -486,7 +486,6 @@ function updateLayoutAlg() {
     switch (list.value) {
         case "hillClimbing":
             selectedLayoutAlg = "hillClimbing";
-            layoutAlgOptions.layoutParam.squareSize = 100;
             break;
 
         case "tabu":
@@ -494,7 +493,6 @@ function updateLayoutAlg() {
             break;
         case "circular":
             selectedLayoutAlg = "circular";
-            layoutAlgOptions.layoutParam.radius = 500;
             break;
     }
 }

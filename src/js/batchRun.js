@@ -46,8 +46,14 @@ const layouts = {
             {
                 type: "number",
                 name: "squareSize",
-                value: 100,
+                value: 512,
                 displayName: "Square Size"
+            },
+            {
+                type: "number",
+                name: "squareReduction",
+                value: 4,
+                displayName: "Square Reduction"
             }
         ]
     },
@@ -58,14 +64,44 @@ const layouts = {
             {
                 type: "number",
                 name: "iterations",
-                value: 500,
+                value: 40,
                 displayName: "Max Iterations"
             },
             {
                 type: "number",
                 name: "squareSize",
-                value: 100,
+                value: 512,
                 displayName: "Square Size"
+            },
+            {
+                type: "number",
+                name: "squareReduction",
+                value: 4,
+                displayName: "Square Reduction"
+            },
+            {
+                type: "number",
+                name: "intensifyIt",
+                value: 5,
+                displayName: "Intensify Iteration"
+            },
+            {
+                type: "number",
+                name: "cutoff",
+                value: 4,
+                displayName: "Initial Cutoff"
+            },
+            {
+                type: "number",
+                name: "cutoffReduction",
+                value: 0.005,
+                displayName: "Cutoff Reduction"
+            },
+            {
+                type: "number",
+                name: "duration",
+                value: 5,
+                displayName: "Duration"
             },
             {
                 type: "list",
@@ -361,8 +397,9 @@ function addTable(tab) {
                 type: "html",
                 onClick: e => {
                     if (
-                        document.querySelector(`[filename="${file.name}"][tab-id="${tab.id}"]`) ===
-                        null
+                        document.querySelector(
+                            `[filename="${file.name}"][tab-id="${tab.id}"]`
+                        ) === null
                     ) {
                         let fileModal = new FileModal();
                         fileModal.file = file;
@@ -811,6 +848,7 @@ function toolbarClickHandler(event) {
                 target.classList.remove("fa-stop");
                 target.classList.add("fa-play");
                 let tab = currentTab();
+                hideTabSpinner(tab);
                 tab.status = tabStatus.FRESH;
                 tab.runCount = 0;
                 for (const [filename, file] of Object.entries(tab.files)) {
