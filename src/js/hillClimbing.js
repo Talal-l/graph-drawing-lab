@@ -2,7 +2,6 @@ import { Vec } from "./util.js";
 
 function equal(a, b) {
     const EPS = 1e-10;
-    console.log(a, b, Math.abs(a - b) < EPS);
     return Math.abs(a - b) < EPS;
 }
 export class HillClimbing {
@@ -44,25 +43,25 @@ export class HillClimbing {
             // start with no move as the best move
 
             switch (this.strategy) {
-                //case "immediate":{
+                case "immediate": {
+                    let bestMoveIndex = null;
+                    let bestObj = this.graph.objective();
 
-                //let bestMoveIndex = null;
-                //let bestObj = this.graph.objective();
+                    for (let i = 0; i < this.vectors.length; i++) {
+                        this.evaluatedSolutions++;
+                        let newObj = this.graph.testMove(nId, this.vectors[i]);
+                        if (newObj !== null && newObj < bestObj) {
+                            bestObj = newObj;
+                            bestMoveIndex = i;
+                        }
+                    }
+                    if (bestMoveIndex !== null) {
+                        this.graph.moveNode(nId, this.vectors[bestMoveIndex]);
+                    }
+                    break;
+                }
 
-                //for (let i = 0; i < this.vectors.length; i++) {
-                //let newObj = this.graph.testMove(nId, this.vectors[i]);
-                //if (newObj !== null && newObj < bestObj) {
-                //bestObj = newObj;
-                //bestMoveIndex = i;
-                //}
-                //}
-                //if (bestMoveIndex !== null) {
-                //this.graph.moveNode(nId, this.vectors[bestMoveIndex]);
-                //}
-                //break;
-                //}
-
-                default: {
+                case "delayed": {
                     let bestMoveIndex = null;
                     let bestObj = this.graph.objective();
 

@@ -76,14 +76,13 @@ function pathRelinking(refSet, params) {
 
 export class Tabu {
     constructor(graph, params) {
-        console.log("tabu params", JSON.stringify(params));
         this.graph = graph;
         if (!params) params = {};
         this.params = params;
         // distance to move the node
         this.squareSize = params.squareSize || 512;
         this.initSquareSize = this.squareSize;
-        this.squareReduction = params.squareReduction || 4;
+        this.squareReduction = params.squareReduction || 1;
         this.refSetSize = 10;
         this.maxIt = params.iterations || 40;
         this.intensifyIt = params.intensifyIt || 5;
@@ -110,13 +109,6 @@ export class Tabu {
                    v  0,1
 
         */
-
-        // generate the 8 vectors around the square
-        let v = new Vec(this.squareSize, 0);
-        this.vectors = [v];
-        for (let a = 45; a < 315; a += 45) {
-            this.vectors.push(v.rotate(a));
-        }
     }
 
     // single iteration of the layout algorithm
@@ -130,8 +122,17 @@ export class Tabu {
             const currentPos = layout.getNodePos(nId);
             let chosenSol = null;
             let chosenSolObj = Infinity;
+
+            // generate the 8 vectors around the square
+            let v = new Vec(this.squareSize, 0);
+            this.vectors = [v];
+            for (let a = 45; a < 315; a += 45) {
+                this.vectors.push(v.rotate(a));
+            }
+
             for (let v of this.vectors) {
                 this.evaluatedSolutions++;
+
                 let candidateSol = {
                     nodeId: nId,
                     pos: v.add(currentPos),
@@ -154,6 +155,7 @@ export class Tabu {
 
             if (chosenSol !== null) {
                 layout.setNodePos(chosenSol.nodeId, chosenSol.pos, false);
+
                 let currentSol = {
                     nodeId: nId,
                     pos: currentPos,
@@ -163,23 +165,23 @@ export class Tabu {
             }
 
             if (this.it % this.intensifyIt === 0) {
-                this.squareSize = this.squareSize / this.squareReduction;
+                // this.squareSize = this.squareSize / this.squareReduction;
                 this.cutoff -= this.cutoffReduction * this.intensifyIt;
             }
             // remove old sol from tabu set
-            this.tabuSet = this.tabuSet.filter(
+            let filtered = this.tabuSet.filter(
                 s => this.it - s.it < this.duration
             );
-
-            this.it++;
+            if (filtered.length < this.tabuSet.length) this.tabuSet = filtered;
         }
+        this.it++;
     }
 
     // run
     run() {
         let start = new Date().getTime();
         this.done = false;
-        while (this.it < this.maxIt && !this.done) {
+        while (this.it < this.maxIt) {
             this.step();
         }
         this.executionTime = new Date().getTime() - start;
