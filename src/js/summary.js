@@ -100,7 +100,16 @@ function paramEntryEl(run) {
                 let html2 = "";
 
                 for (const p of run.layoutParam) {
-                    html2 += paramItemEl(p.name, p.value);
+                    let name = null;
+                    let value = null;
+                    if (p.type === "number") {
+                        name = p.name;
+                        value = p.value;
+                    } else if (p.type === "list") {
+                        name = p.name;
+                        value = p.options[p.selectedOptionIndex].name;
+                    }
+                        html2 += paramItemEl(name, value);
                 }
 
                 return html2;

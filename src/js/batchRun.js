@@ -54,6 +54,16 @@ const layouts = {
                 name: "squareReduction",
                 value: 4,
                 displayName: "Square Reduction"
+            },
+            {
+                type: "list",
+                name: "moveStrategy",
+                displayName: "Move Strategy",
+                options: [
+                    { name: "delayed", displayName: "Delayed" },
+                    { name: "immediate", displayName: "Immediate" }
+                ],
+                selectedOptionIndex: 0
             }
         ]
     },
@@ -288,7 +298,19 @@ function addLayoutParam(layoutParam) {
         "beforeend",
         createLayoutParam(layoutParam)
     );
+    function onSelectChange({ target }) {
+        let name = target.getAttribute("name");
+        let type = target.nodeName;
+        if (type === "INPUT") {
+            let tab = currentTab();
+            let options = tab.layoutParam[name].options;
+            let index = options.find(e => e.name === name);
+            tab.layoutParam[name].selectedOptionIndex = index;
+        }
+    }
+
     // add param layout event listener
+    // layoutParamSec.addEventListener("change", onSelectChange);
 }
 
 function addNewTab(tabList, tab) {
@@ -591,7 +613,12 @@ class Tab {
             layoutParam: {}
         };
         for (let p of this.layoutParam) {
-            options.layoutParam[p.name] = p.value;
+            if (p.type === "number") {
+                options.layoutParam[p.name] = p.value;
+            } else if (p.type === "list") {
+                let value = p.options[p.selectedOptionIndex].name;
+                options.layoutParam[p.name] = value;
+            }
         }
         let graphData = currentTab().files[filename].originalGraph;
 
@@ -602,7 +629,6 @@ class Tab {
         currentTab().files[filename].worker = worker;
 
         worker.onmessage = function(e) {
-            console.log("onmessage");
             this.files[filename].graph = e.data[0];
             this.files[filename].layout = e.data[1];
             this.files[filename].status = "done";
