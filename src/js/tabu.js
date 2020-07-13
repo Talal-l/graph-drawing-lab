@@ -131,7 +131,6 @@ export class Tabu {
             }
 
             for (let v of this.vectors) {
-                this.evaluatedSolutions++;
 
                 let candidateSol = {
                     nodeId: nId,
@@ -140,6 +139,7 @@ export class Tabu {
                 };
 
                 if (!inTabuSet(this.tabuSet, candidateSol)) {
+                    this.evaluatedSolutions++;
                     // get the objective if node was moved in the direction of v
                     let candidateSolObj = layout.testMove(nId, v);
                     let ratio = candidateSolObj / currentObj;
@@ -163,17 +163,15 @@ export class Tabu {
                 };
                 this.tabuSet.push(currentSol);
             }
-
-            if (this.it % this.intensifyIt === 0) {
-                // this.squareSize = this.squareSize / this.squareReduction;
-                this.cutoff -= this.cutoffReduction * this.intensifyIt;
-            }
-            // remove old sol from tabu set
-            let filtered = this.tabuSet.filter(
-                s => this.it - s.it < this.duration
-            );
-            if (filtered.length < this.tabuSet.length) this.tabuSet = filtered;
         }
+
+        if (this.it % this.intensifyIt === 0) {
+            this.squareSize = this.squareSize / this.squareReduction;
+            this.cutoff -= this.cutoffReduction * this.intensifyIt;
+        }
+        // remove old sol from tabu set
+        let filtered = this.tabuSet.filter(s => this.it - s.it < this.duration);
+        if (filtered.length < this.tabuSet.length) this.tabuSet = filtered;
         this.it++;
     }
 

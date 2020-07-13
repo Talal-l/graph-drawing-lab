@@ -10,6 +10,7 @@ export class HillClimbing {
         this.graph = graph;
         // distance to move the node
         this.squareSize = params.squareSize || 512;
+        this.squareReduction = params.squareReduction || 4;
         this.it = 0;
         this.maxIt = params.iterations || 500;
         this.done = false;
@@ -27,16 +28,15 @@ export class HillClimbing {
                    v  0,1
 
         */
+    }
 
+    // single iteration of the layout algorithm
+    step() {
         let v = new Vec(this.squareSize, 0);
         this.vectors = [v];
         for (let a = 45; a < 315; a += 45) {
             this.vectors.push(v.rotate(a));
         }
-    }
-
-    // single iteration of the layout algorithm
-    step() {
         let lastObj = this.graph.objective();
         let bestMovePerNode = [];
         for (let nId of this.graph.nodes()) {
@@ -50,6 +50,7 @@ export class HillClimbing {
                     for (let i = 0; i < this.vectors.length; i++) {
                         this.evaluatedSolutions++;
                         let newObj = this.graph.testMove(nId, this.vectors[i]);
+
                         if (newObj !== null && newObj < bestObj) {
                             bestObj = newObj;
                             bestMoveIndex = i;
@@ -96,9 +97,12 @@ export class HillClimbing {
             }
         }
 
-        if (equal(lastObj, this.graph.objective())) {
-            this.done = true;
+        let currentObj = this.graph.objective();
+
+        if (equal(lastObj, currentObj) || currentObj > lastObj) {
+            this.squareSize /= this.squareReduction;
         }
+
         this.it++;
     }
 
@@ -106,7 +110,7 @@ export class HillClimbing {
     run() {
         let start = new Date().getTime();
         this.done = false;
-        while (this.it < this.maxIt && !this.done) {
+        while (this.it < this.maxIt && this.squareSize >= 1) {
             this.step();
         }
         this.executionTime = new Date().getTime() - start;
