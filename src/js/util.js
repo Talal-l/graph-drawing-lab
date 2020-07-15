@@ -234,6 +234,7 @@ function isEmpty(obj) {
 }
 function deepCopy(source) {
     if (!source) return source;
+    if (typeof source !== "object") return source;
     let proto = Object.getPrototypeOf(source);
     let copy;
     if (Array.isArray(source)) copy = new Array();

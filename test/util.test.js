@@ -118,6 +118,38 @@ describe("deepCopy", () => {
         expect(source).not.toEqual(copy);
         expect(Array.isArray(copy.a)).toBe(true);
     });
+    test("Is a Number", () => {
+        let source = 0;
+        let copy = deepCopy(source);
+
+        expect(source).toEqual(copy);
+    });
+    test("Is a boolean", () => {
+        let source = true;
+        let copy = deepCopy(source);
+
+        expect(source).toEqual(copy);
+    });
+
+    test("Is a string", () => {
+        let source = "test";
+        let copy = deepCopy(source);
+
+        expect(source).toEqual(copy);
+    });
+    test("Is a bigint", () => {
+        let source = 42n;
+        let copy = deepCopy(source);
+
+        expect(source).toEqual(copy);
+    });
+    test("Is a symbol", () => {
+        let s = Symbol("test");
+        let source = s;
+        let copy = deepCopy(source);
+
+        expect(source).toEqual(copy);
+    });
 
     test("null", () => {
         let source = null;
