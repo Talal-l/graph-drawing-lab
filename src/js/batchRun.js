@@ -385,33 +385,22 @@ function addTable(tab) {
     }
 
     for (const [filename, file] of Object.entries(tab.files)) {
-        let graph = null;
-        if (!file.concreteGraph) {
-            graph = new ConcreteGraph(file.graph, {
-                weights: tab.weights,
-                metricsParam: tab.metricsParam
-            });
-        }
+        // TODO: make sure the weights are up to date when we reach this step
+        let graph = file.graph;
         let info = {
             evaluatedSolutions: file.info ? file.info.evaluatedSolutions : "-",
             executionTime: file.info ? file.info.executionTime : "-"
         };
 
-        file.metrics = graph.metrics();
-        file.objective = graph.objective();
+        let metrics = graph.metrics();
+        let objective = graph.objective();
         let {
             nodeOcclusion,
             edgeNodeOcclusion,
             edgeLength,
             edgeCrossing,
             angularResolution
-        } = file.metrics;
-
-        if (!file.originalMetrics) {
-            file.originalMetrics = file.metrics;
-            file.originalObjective = file.objective;
-        }
-
+        } = metrics;
         let row = {
             status: { value: file.status, type: "text" },
             filename: {
@@ -488,7 +477,6 @@ function addTable(tab) {
 
         table.addRow(row);
     }
-
     if (tab.sortHeader && tab.sortDirection !== "sort-neutral") {
         tab.table.sort(tab.sortHeader, tab.sortDirection === "sort-asc");
     }
@@ -548,6 +536,12 @@ const tabStatus = {
     DONE: 5, // Done running
     DIRTY: 6 // Something is out of sync (ex param changed but no run was triggered yet)
 };
+const fileStatus = {
+    LOADED: 0,
+    RUNNING: 1,
+    COMPUTED: 2,
+    DIRTY: 3
+};
 
 // Assumes to be created in a loaded batchRun page (with side menu)
 // TODO: add option to save tab to disk (save the run)
@@ -571,14 +565,18 @@ class Tab {
         if (otherTab) {
             // remove the computed graph from the current tab
             for (let [filename, file] of Object.entries(otherTab.files)) {
+                console.time("Tab-constructor-restoring-graph");
+                let graph = new ConcreteGraph().restoreFrom(file.originalGraph);
+                let originalGraph = new ConcreteGraph().restoreFrom(
+                    file.originalGraph
+                );
+                console.timeEnd("Tab-constructor-restoring-graph");
                 this.files[filename] = {
-                    graph: deepCopy(file.originalGraph),
-                    originalGraph: deepCopy(file.originalGraph),
+                    graph: graph,
+                    originalGraph: originalGraph,
                     status: "-",
                     name: file.name
                 };
-                this.originalMetrics = null;
-                this.originalObjective = null;
             }
         }
 
@@ -599,6 +597,15 @@ class Tab {
     // shallow copy save into the current object
     restoreFrom(saved) {
         Object.assign(this, saved);
+        // resote graph objects
+
+        let tab = this;
+        for (const [filename, file] of Object.entries(tab.files)) {
+            file.graph = new ConcreteGraph().restoreFrom(file.graph);
+            file.originalGraph = new ConcreteGraph().restoreFrom(
+                file.originalGraph
+            );
+        }
 
         console.log(`restoring from save \n${saved}`, this);
         return this;
@@ -620,7 +627,8 @@ class Tab {
                 options.layoutParam[p.name] = value;
             }
         }
-        let graphData = currentTab().files[filename].originalGraph;
+        let graphData = currentTab().files[filename].originalGraph.toJSON();
+        console.log("graphData", graphData);
 
         let worker = new Worker("build/layoutWorker.js");
         worker.postMessage([graphData, currentTab().layout, options, "run"]);
@@ -629,11 +637,19 @@ class Tab {
         currentTab().files[filename].worker = worker;
 
         worker.onmessage = function(e) {
-            this.files[filename].graph = e.data[0];
+            console.time("onmessage time");
+            let graphData = e.data[0];
+            let graph = new ConcreteGraph().restoreFrom(graphData);
+            this.files[filename].graph = graph;
             this.files[filename].layout = e.data[1];
             this.files[filename].status = "done";
             this.files[filename].info = e.data[4];
             this.files[filename].worker = null;
+
+            this.files[filename].objective = graph.objective();
+            this.files[filename].originalObjective = this.files[
+                filename
+            ].originalGraph.objective();
 
             // TODO: Make sure the options are in sync with the ui
             currentTab().options = e.data[2];
@@ -646,6 +662,8 @@ class Tab {
             }
             addTable(currentTab());
             worker.terminate();
+
+            console.timeEnd("onmessage time");
         }.bind(this);
     }
     runBatch() {
@@ -669,25 +687,27 @@ class Tab {
     }
 }
 function loadFile(filename, data) {
-    /*
-        loadedTests = {
-            filename: {
-                graph: origianlGraph,
-                layout: layoutAlgUsed, // default is null
-                originalMetrics:{),
-                metrics:{}
-            }
-        }
-    */
     let parsedData = JSON.parse(data);
 
+    // TODO: do this in a web worker to avoid blocking the ui
+    console.time("loadFile createGraph time");
+    let graph = new ConcreteGraph(parsedData.graph);
+    console.timeEnd("loadFile createGraph time");
+    console.time("loadFile createCopy time");
+    let originalGraph = new ConcreteGraph().restoreFrom(graph);
+    console.timeEnd("loadFile createCopy time");
+
     currentTab().files[filename] = {
-        graph: parsedData.graph,
-        originalGraph: deepCopy(parsedData.graph),
+        graph: graph,
+        data: parsedData,
+        originalGraph: originalGraph,
         status: "-",
         info: null,
-        name: filename
+        name: filename,
+        objective: graph.objective(),
+        originalObjective: originalGraph.objective()
     };
+
     currentTab().status = tabStatus.LOADED;
     addTabContentEl(currentTab());
 }
@@ -733,7 +753,6 @@ tabList.addEventListener("click", event => {
     }
 });
 
-// end of tap stuff
 
 // Add headers to show/hide side menu
 // TODO: How will this interact with every table in every run?
@@ -879,9 +898,10 @@ function toolbarClickHandler(event) {
                 tab.runCount = 0;
                 for (const [filename, file] of Object.entries(tab.files)) {
                     file.status = "-";
-                    file.graph = deepCopy(file.originalGraph);
-                    file.metrics = deepCopy(file.originalMetrics);
-                    file.objective = file.originalObjective;
+
+                    file.graph.clear();
+                    file.graph.restoreFrom(file.originalGraph);
+
                     file.layout = null;
                     if (file.info) {
                         file.info.evaluatedSolutions = null;

@@ -619,14 +619,15 @@ function toolbarClickHandler(event) {
             updateLayoutAlg();
             setGraphCache();
             disableToolbar("runLayout");
+            console.log("GRAPH", GRAPH);
             worker.postMessage([
-                GRAPH.graph.toJSON(),
+                GRAPH.toJSON(),
                 selectedLayoutAlg,
                 layoutAlgOptions,
                 "run"
             ]);
             worker.onmessage = e => {
-                GRAPH.read(e.data[0]);
+                GRAPH.read(e.data[0].graph);
                 refreshScreen(sig, updateMetrics);
                 enableToolbar("runLayout");
                 updateLayoutInfo(e.data);
@@ -637,13 +638,13 @@ function toolbarClickHandler(event) {
             setGraphCache();
             disableToolbar("stepLayout");
             worker.postMessage([
-                GRAPH.graph.toJSON(),
+                GRAPH.toJSON(),
                 selectedLayoutAlg,
                 layoutAlgOptions,
                 "step"
             ]);
             worker.onmessage = e => {
-                GRAPH.read(e.data[0]);
+                GRAPH.read(e.data[0].graph);
                 refreshScreen(sig, updateMetrics);
                 enableToolbar("stepLayout");
             };

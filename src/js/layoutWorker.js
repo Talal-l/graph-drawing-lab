@@ -13,7 +13,7 @@ onmessage = function(e) {
     let graphParam = options.metricsParam;
     let layoutParam = options.layoutParam;
 
-    GRAPH.read(graph);
+    GRAPH.restoreFrom(graph);
     GRAPH.setMetricParam(graphParam);
     GRAPH.setWeights(options.weights);
 
@@ -36,5 +36,5 @@ onmessage = function(e) {
         evaluatedSolutions: layoutAlg.evaluatedSolutions
     }
 
-    postMessage([GRAPH.graph.toJSON(), layoutAlgName, options, command, info]);
+    postMessage([GRAPH.toJSON(), layoutAlgName, options, command, info]);
 };

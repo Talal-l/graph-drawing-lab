@@ -259,6 +259,7 @@ class ConcreteGraph {
         return this.normalMetrics;
     }
     setMetricParam(metricsParam) {
+        this.status = ConcreteGraph.status.DIRTY;
         this.metricsParam = metricsParam;
         recalculateMetrics.call(this);
     }
@@ -283,6 +284,7 @@ class ConcreteGraph {
     // effectBounds will determine whether moving outside the bounds will expand them
     // or return an error
     moveNode(nodeId, vec, effectBounds = false) {
+        this.status = ConcreteGraph.status.DIRTY;
         let node = this.graph.getNodeAttributes(nodeId);
         let oldPos = { x: node.x, y: node.y };
 
@@ -369,6 +371,7 @@ class ConcreteGraph {
     }
     // TODO: add option to provide id as parameter?
     addNode(node) {
+        this.status = ConcreteGraph.status.DIRTY;
         node.id = String(this.nextId);
         this.graph.addNode(String(this.nextId), node);
         if (this.sigGraph) {
@@ -380,6 +383,7 @@ class ConcreteGraph {
         recalculateMetrics.call(this);
     }
     removeNode(nodeId) {
+        this.status = ConcreteGraph.status.DIRTY;
         this.graph.dropNode(nodeId);
         if (this.sigGraph) this.sigGraph.dropNode(nodeId);
         updateBounds.call(this);
@@ -387,11 +391,13 @@ class ConcreteGraph {
     }
 
     addEdge(edge) {
+        this.status = ConcreteGraph.status.DIRTY;
         this.graph.addEdgeWithKey(edge.id, edge.source, edge.target, edge);
         if (this.sigGraph) this.sigGraph.addEdge(edge);
         recalculateMetrics.call(this);
     }
     removeEdge(edgeId) {
+        this.status = ConcreteGraph.status.DIRTY;
         this.graph.dropEdge(edgeId);
         if (this.sigGraph) this.sigGraph.dropEdge(edgeId);
         recalculateMetrics.call(this);
@@ -402,6 +408,7 @@ class ConcreteGraph {
     }
 
     clear() {
+        this.status = ConcreteGraph.status.DIRTY;
         this.graph.clear();
         if (this.sigGraph) this.sigGraph.clear();
         this.nextId = 0;
@@ -417,6 +424,7 @@ class ConcreteGraph {
     }
 
     read(obj) {
+        this.status = ConcreteGraph.status.DIRTY;
         this.clear();
         this.graph.import(obj);
 
@@ -456,10 +464,69 @@ class ConcreteGraph {
             this.graph.hasEdge(targetId, sourceId)
         );
     }
+    restoreFrom(concreteGraphObj) {
+        let cg = concreteGraphObj;
+        this.options = { ...cg.options };
+        this.bounds = { ...cg.bounds };
+        this.nextId = cg.nextId;
+        this.requireEdgeLengthPerc = cg.requireEdgeLengthPerc;
+        this.metricsParam = { ...cg.metricsParam };
+        this.weights = { ...cg.weights };
+        this.metricsCache = { ...cg.metricsCache };
+        this.normalMetrics = { ...cg.normalMetrics };
+        this.minDist = cg.minDist;
+        this.maxDist = cg.maxDist;
+        this.nodesWithAngles = cg.nodesWithAngles;
+
+        this.metricsPerNode = {};
+        // TODO: remove this from the code. It's just too big!
+        this.edgeCrossingCache = {};
+        for (let k in cg.metricsPerNode) {
+            this.metricsPerNode[k] = { ...cg.metricsPerNode[k] };
+        }
+        this.status = ConcreteGraph.status.COMPUTED;
+
+        this.graph.clear();
+        this.graph.import(concreteGraphObj.graph);
+        return this;
+    }
+    toJSON() {
+        let serialized = {};
+
+        for (const k in this) {
+            if (k !== "graph") {
+                serialized[k] = deepCopy(this[k]);
+            } else if (Object.keys(this[k]).length) {
+                serialized[k] = this[k].toJSON();
+            }
+        }
+        return serialized;
+    }
+
+    toSigGraph() {
+        let nodes = [];
+        let edges = [];
+        for (const nId of this.nodes()) {
+            let node = Object.assign({}, this.graph.getNodeAttributes(nId));
+            nodes.push(node);
+        }
+        for (const eId of this.edges()) {
+            let edge = Object.assign({}, this.graph.getEdgeAttributes(eId));
+            edges.push(edge);
+        }
+
+        return { nodes, edges };
+    }
 }
+ConcreteGraph.status = {
+    COMPUTED: 0, // metrics are up to data with the graph
+    DIRTY: 1 // metrics and graph are out of sync (require recomputing the metrics)
+};
 
 // internal methods that must be called with a ConcreteGraph object as the context
 function recalculateMetrics() {
+    console.trace("recalculateMetrics trace");
+    console.time("recalculateMetrics time");
     this.metricsPerNode = {};
     this.metricsCache = {
         nodeOcclusion: 0,
@@ -555,6 +622,9 @@ function recalculateMetrics() {
         for (let m in this.metricsCache)
             this.metricsCache[m] += this.metricsPerNode[nId][m];
     }
+
+    this.status = ConcreteGraph.status.COMPUTED;
+    console.timeEnd("recalculateMetrics time");
 }
 function updateMetrics(nodeId, oldPos) {
     this.metricsPerNode[nodeId].nodeOcclusion = 0;
@@ -662,6 +732,7 @@ function updateMetrics(nodeId, oldPos) {
             this.metricsCache.edgeCrossing++;
         }
     }
+    this.status = ConcreteGraph.status.COMPUTED;
 }
 
 function updateBounds() {

@@ -114,20 +114,10 @@ export class FileModal extends HTMLElement {
             }
         };
         let sig = new sigma(sigDefaults);
-        let graph = new ConcreteGraph(null, { sigGraph: sig.graph });
-        graph.read(file.graph);
+        let graph = new ConcreteGraph().restoreFrom(file.graph);
+        sig.graph.read(graph.toSigGraph());
         sig.refresh();
     }
 }
 
 customElements.define("file-modal", FileModal);
-
-/*
-function addFileModal(file){
-    el = document.createElement(file-modal);
-    el.file = file;
-
-    document.body.appendChild(el);
-}
-
-*/
