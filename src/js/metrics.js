@@ -10,7 +10,7 @@ import {
 } from "./util.js";
 
 export {
-    nodeNodeOcclusion,
+    nodeOcclusion,
     edgeNodeOcclusion,
     edgeLength,
     edgeCrossing,
@@ -24,7 +24,7 @@ export {
  * @param {number} min - Min distance
  * @returns {number} - Score
  */
-function nodeNodeOcclusion(graph, nodeId, min) {
+function nodeOcclusion(graph, nodeId, min) {
     let node = graph.getNodeAttributes(nodeId);
     let sum = 0;
     for (let id of graph.nodes()) {

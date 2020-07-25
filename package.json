@@ -6,7 +6,8 @@
   "scripts": {
     "start": "webpack && electron .",
     "watch": "webpack --watch --silent & electron .",
-    "test": "jest"
+    "test": "jest",
+    "layoutTest": "webpack --watch --silent & electron . layoutTest"
   },
   "jest": {
     "transform": {

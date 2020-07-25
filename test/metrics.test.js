@@ -1,5 +1,5 @@
 import {
-    nodeNodeOcclusion,
+    nodeOcclusion,
     edgeNodeOcclusion,
     edgeLength,
     edgeCrossing,
@@ -16,14 +16,14 @@ describe("node-node occlusion metric", () => {
     it.skip(`Should accept both string and int ids`, () => {
         let g = new Graph();
         g.addNode(0, { x: 0, y: 0 });
-        let rInt = nodeNodeOcclusion(g, 0, minDist);
-        let rStr = nodeNodeOcclusion(g, "0", minDist);
+        let rInt = nodeOcclusion(g, 0, minDist);
+        let rStr = nodeOcclusion(g, "0", minDist);
         expect(rInt).toBe(rStr);
     });
     it(`Should be 0 for graph with 1 node`, () => {
         let g = new Graph();
         g.addNode(0, { x: 0, y: 0 });
-        let r = nodeNodeOcclusion(g, "0", minDist);
+        let r = nodeOcclusion(g, "0", minDist);
         expect(r).toBe(0);
     });
 
@@ -33,28 +33,28 @@ describe("node-node occlusion metric", () => {
         let g = new Graph();
         g.addNode(0, { x: 0, y: 0 });
         g.addNode(1, { x: minDist, y: 0 });
-        let r = nodeNodeOcclusion(g, "0", minDist);
+        let r = nodeOcclusion(g, "0", minDist);
         expect(r).toBe(nocMax);
     });
     it(`Should be ${1 / 24 ** 2} if distance is ${24}`, () => {
         let g = new Graph();
         g.addNode(0, { x: 0, y: 0 });
         g.addNode(1, { x: 24, y: 0 });
-        let r = nodeNodeOcclusion(g, "0", minDist);
+        let r = nodeOcclusion(g, "0", minDist);
         expect(r).toBe(1 / 24 ** 2);
     });
     it(`Should be ${1 / largeDist ** 2} if distance is ${largeDist}`, () => {
         let g = new Graph();
         g.addNode(0, { x: 0, y: 0 });
         g.addNode(1, { x: largeDist, y: 0 });
-        let r = nodeNodeOcclusion(g, "0", minDist);
+        let r = nodeOcclusion(g, "0", minDist);
         expect(r).toBe(1 / largeDist ** 2);
     });
     it(`Should be ${nocMax} if it overlaps another node`, () => {
         let g = new Graph();
         g.addNode(0, { x: 0, y: 0 });
         g.addNode(1, { x: 0, y: 0 });
-        let r = nodeNodeOcclusion(g, "0", minDist);
+        let r = nodeOcclusion(g, "0", minDist);
         expect(r).toBe(nocMax);
     });
 });

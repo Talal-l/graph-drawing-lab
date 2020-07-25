@@ -1,31 +1,33 @@
-const Graph = require("graphology");
-
 import {
     distance,
     random,
     shuffle,
-    deepCopy,
-    getEdgeId,
     Vec,
-    minMaxNorm
 } from "./util.js";
-import * as evaluator from "./metrics.js";
 
-export { generateGraph, ConcreteGraph };
+import {
+    nodeOcclusionN,
+    nodeEdgeOcclusionN,
+    edgeLengthN,
+    edgeCrossingN,
+    angularResolutionN
+} from "./metrics2.js";
 
-//TODO: add options for size and color instead of hard coding them
+import {ZNormalization} from "./normalization.js";
+
+export { generateGraph, Graph };
+
 /**
- * Creates a random spanning tree for the given sigma graph.
+ * Creates a random spanning tree for the given graph.
  *
- * @param {object} G -  ConcreteGraph instance
+ * @param {object} G -  graph instance
  * @returns {undefined}
  *
  */
 function ranSpanningTree(G) {
     // TODO: Extract rendering details
-    const edgeSize = 1.5;
     // deep copy of the existing nodes
-    let outTree = Array.from(G.nodes());
+    let outTree = G.nodes();
     // select the root
     let inTree = [outTree.pop()];
 
@@ -35,14 +37,7 @@ function ranSpanningTree(G) {
         // pick a random node from the tree
         let target = inTree[random(0, inTree.length - 1)];
         // create an edge
-        let edge = {
-            id: getEdgeId(source, target),
-            size: edgeSize,
-            source: source,
-            target: target,
-            color: "#ccc"
-        };
-        G.addEdge(edge);
+        G.addEdge(target.id, source.id);
         // add node to tree
         inTree.push(source);
     }
@@ -55,29 +50,22 @@ function ranSpanningTree(G) {
  * @param {number} eMax  Maximum number of edges
  * @param {object} width Width of the HTML canvas element
  * @param {object} height Height of the HTML canvas element
- * @returns {object} a Sigma graph object
+ * @returns {object} a graph object
  */
 function generateGraph(nMin, nMax, eMin, eMax, width, height) {
-    // TODO: Extract rendering details
-    const edgeSize = 1.5;
-    const nodeSize = 10;
     const x = width;
     const y = height;
 
-    let G = new ConcreteGraph();
+    let G = new Graph();
     const N = random(nMin, nMax);
     const eLimit = (N * (N - 1)) / 2;
     let E = random(Math.min(eMin, eLimit), Math.min(eMax, eLimit));
 
     for (let i = 0; i < N; i++) {
-        let id = String(G.nextId);
         let n = {
-            label: id,
-            id: id,
+            id: i,
             x: (0.5 - Math.random()) * x,
-            y: (0.5 - Math.random()) * y,
-            size: nodeSize,
-            color: "#921"
+            y: (0.5 - Math.random()) * y
         };
         G.addNode(n);
     }
@@ -97,32 +85,36 @@ function generateGraph(nMin, nMax, eMin, eMax, width, height) {
         let nEdge = random(0, Math.min(E, N - 1));
         for (let j = 0; j < N && nEdge > 0; j++) {
             // pick a random node to connect to
-            let edges = G.edges();
-
-            if (j !== i && !G.hasEdge(nodes[j], nodes[i])) {
-                let edge = {
-                    id: getEdgeId(nodes[j], nodes[i]),
-                    size: edgeSize,
-                    source: nodes[i],
-                    target: nodes[j],
-                    color: "#ccc"
-                };
-                G.addEdge(edge);
+            if (j !== i && !G.hasEdge(j, i)) {
+                G.addEdge(j, i);
                 nEdge--;
                 // update total edge count
                 E--;
             }
         }
     }
-    return G.graph;
+    return G;
 }
 
-class ConcreteGraph {
+class Graph {
     constructor(graph, options) {
+        this._nodes = [];
+        this._adjList = [];
+        this._zn = new ZNormalization;
+
         options = options || {};
-        // HACK: Temp solution to keep things up to date with the sigma graph
-        // needed until the edge quad tree is ported to v2
-        this.sigGraph = options.sigGraph || null;
+        this.nodeSize = 10;
+        this.edgeSize = 1.5;
+        this.nodeColor = "#000";
+        this.edgeColor = "#000";
+        this._metrics = {
+            nodeOcclusion: null,
+            nodeEdgeOcclusion: null,
+            edgeLength: null,
+            edgeCrossing: null,
+            angularResolution: null
+        };
+
         this.bounds = {
             xMax: 1000,
             yMax: 1000,
@@ -130,34 +122,20 @@ class ConcreteGraph {
             yMin: -1000
         };
 
-        this.nextId = 0;
+        this._nextId = 0;
         this.requireEdgeLengthPerc = 0.5;
+        this.requireEdgeLength = 100;
         this.metricsParam = options.metricsParam || {
-            requiredEdgeLength: 0.5
+            requiredEdgeLength:100 
         };
         this.weights = options.weights || {
             nodeOcclusion: 1,
-            edgeNodeOcclusion: 1,
+            nodeEdgeOcclusion: 1,
             edgeLength: 1,
             edgeCrossing: 1,
             angularResolution: 1
         };
-        this.metricsCache = {
-            nodeOcclusion: 0,
-            edgeNodeOcclusion: 0,
-            edgeLength: 0,
-            edgeCrossing: 0,
-            angularResolution: 0
-        };
-        this.normalMetrics = {
-            nodeOcclusion: 0,
-            edgeNodeOcclusion: 0,
-            edgeLength: 0,
-            edgeCrossing: 0,
-            angularResolution: 0
-        };
-        this.metricsPerNode = {};
-        this.edgeCrossingCache = {};
+
         this.minDist = 10;
         this.maxDist = distance(
             { x: this.bounds.xMax, y: this.bounds.yMax },
@@ -166,127 +144,82 @@ class ConcreteGraph {
 
         // keep track of number of nodes with deg > 1
         // used to calculate the max value for angularResolution
-        this.nodesWithAngles = 0;
-
-        this.graph = new Graph({});
-        if (graph) this.read(graph);
+        this._nodesWithAngles = 0;
+    }
+    get nextId() {
+        return this._nextId++;
     }
 
-    setBounds(bounds) {
-        this.bounds = bounds;
+    nodes(copy = true) {
+        let clone = [];
+        if (copy) {
+            for (let n of this._nodes) {
+                clone.push({ ...n });
+            }
+        } else clone = this._nodes;
+        return clone;
+    }
+
+    addNode(node) {
+        this.status = Graph.status.DIRTY;
+        this._nodes.push(node);
+        this._adjList.push(new Array(0));
+        this._adjList[this._nodes.length - 1] = [];
         updateBounds.call(this);
     }
-    objective() {
-        let wSum = 0;
-        // normalize the metrics
-
-        let N = this.graph.nodes().length;
-        let E = this.graph.edges().length;
-
-        // node node nodeOcclusion
-        if (N > 1) {
-            let minSum = (N * (N - 1)) / this.maxDist ** 2;
-            let maxSum = (N * (N - 1)) / this.minDist ** 2;
-            this.normalMetrics.nodeOcclusion = minMaxNorm(
-                this.metricsCache.nodeOcclusion || minSum,
-                minSum,
-                maxSum
-            );
+    getNodePos(nodeId) {
+        return { x: this._nodes[nodeId].x, y: this._nodes[nodeId].y };
+    }
+    nodesIds() {
+        let ids = [];
+        for (let i = 0; i < this._nodes.length; i++) {
+            if (i !== null) {
+                ids.push(i);
+            }
         }
 
-        if (E > 0) {
-            // edge node occlusion
+        return ids;
+    }
+    removeNode(nodeId) {
+        this.status = Graph.status.DIRTY;
 
-            // number of connected nodes (part of an edge) and edge
-            let EE = 2 * E * (E - 1);
-            // number of disconnected nodes (not part of an edge) and edge
-            let NE = (N - 2 * E) * E;
-            let total = EE + NE;
+        this._nodes.copyWithin(nodeId, nodeId + 1);
+        this._nodes.length--;
+        this._adjList.copyWithin(nodeId, nodeId + 1);
+        this._adjList.length--;
 
-            let minSum = total / this.maxDist ** 2;
-            let maxSum = total / this.minDist ** 2;
-            this.normalMetrics.edgeNodeOcclusion = minMaxNorm(
-                this.metricsCache.edgeNodeOcclusion || minSum,
-                minSum,
-                maxSum
-            );
-
-            // edge length
-            let len = this.metricsParam.requiredEdgeLength * this.maxDist;
-            let max = (this.minDist - this.maxDist) ** 2;
-            this.normalMetrics.edgeLength = minMaxNorm(
-                this.metricsCache.edgeLength,
-                0,
-                E * max
-            );
+        for (let i = 0; i < this._nodes.length; i++) {
+            if (i !== this._nodes[i].id) {
+                this._nodes[i].id = i;
+            }
+            let index = -1;
+            for (let j = 0; j < this._adjList[i].length; j++) {
+                if (this._adjList[i][j] === nodeId) {
+                    index = j;
+                } else if (this._adjList[i][j] > nodeId) {
+                    this._adjList[i][j]--;
+                }
+            }
+            if (index !== -1) {
+                this._adjList[i].copyWithin(index, index + 1);
+                this._adjList[i].length--;
+            }
         }
 
-        // edge crossing
-        if (E > 1) {
-            this.normalMetrics.edgeCrossing = minMaxNorm(
-                this.metricsCache.edgeCrossing,
-                0,
-                (E * (E - 1)) / 2
-            );
-        }
-
-        // angular resolution
-        if (E > 1) {
-            // but if a vertex had E edges than the max angle would be 360/E
-            this.normalMetrics.angularResolution = minMaxNorm(
-                this.metricsCache.angularResolution,
-                0,
-                // largest value when all nodes have > 1 edge with 0 deg between them
-                this.nodesWithAngles * 360
-                //TODO: Are you sure this is correct?
-            );
-        }
-
-        for (let key in this.normalMetrics)
-            wSum += this.normalMetrics[key] * this.weights[key];
-        if (!Number.isFinite(wSum) || wSum < 0) {
-            throw `invalid weights or metrics\nmetrics:\n ${JSON.stringify(
-                this.normalMetrics
-            )}\nweights:\n ${JSON.stringify(this.weights)}`;
-        }
-        return wSum;
+        updateBounds.call(this);
     }
 
-    metrics() {
-        // to make sure the normalized metrics are up to date
-        this.objective();
-
-        return this.normalMetrics;
-    }
-    setMetricParam(metricsParam) {
-        this.status = ConcreteGraph.status.DIRTY;
-        this.metricsParam = metricsParam;
-        recalculateMetrics.call(this);
-    }
-    setWeights(weights) {
-        this.weights = weights;
-        // to ensure the caches of the metrics that were set to 0 are up to date
-        recalculateMetrics.call(this);
-    }
-    // returns the score generated by the move or null if out of bound
-    // it doesn't move the node
-    testMove(nodeId, vec) {
-        let newPos = this.moveNode(nodeId, vec);
-        // move is out of bound
-        if (!newPos) return null;
-
-        let objective = this.objective();
-
-        // reset the node movement
-        this.moveNode(nodeId, vec.scale(-1));
-        return objective;
-    }
     // effectBounds will determine whether moving outside the bounds will expand them
-    // or return an error
+    // or do nothing.
+    // returns the new position if withing bound or null if outside.
     moveNode(nodeId, vec, effectBounds = false) {
-        this.status = ConcreteGraph.status.DIRTY;
-        let node = this.graph.getNodeAttributes(nodeId);
-        let oldPos = { x: node.x, y: node.y };
+
+        if (this.status === Graph.status.DIRTY) {
+            this.calcMetrics();
+
+        }
+        let node = this._nodes[nodeId];
+
 
         let x = node.x + vec.x;
         let y = node.y + vec.y;
@@ -295,44 +228,198 @@ class ConcreteGraph {
             return null;
         }
 
-        if (this.sigGraph) {
-            let sigNode = this.sigGraph.nodes(nodeId);
-            sigNode.x = x;
-            sigNode.y = y;
-        }
-        this.graph.setNodeAttribute(nodeId, "x", x);
-        this.graph.setNodeAttribute(nodeId, "y", y);
+        let oldPosMetrics = this.calcNodeMetrics(nodeId);
 
-        updateMetrics.call(this, nodeId, oldPos);
-        // recalculate metrics that are hard to update
-        this.metricsCache.edgeNodeOcclusion = 0;
-        for (let e of this.graph.edges()) {
-            this.metricsCache.edgeNodeOcclusion += evaluator.edgeNodeOcclusion(
-                this.graph,
-                e,
-                this.minDist
-            );
-        }
+        node.x = x;
+        node.y = y;
+
+        let newPosMetrics = this.calcNodeMetrics(nodeId);
+
+        updateMetrics.call(this, oldPosMetrics, newPosMetrics);
         if (effectBounds) {
             updateBounds.call(this);
         }
+
+
+        this.status = Graph.status.COMPUTED;
         return { x: node.x, y: node.y };
     }
     // defaults to true since it's mostly used in the ui and we want to
     // always change the bounds there
     setNodePos(nodeId, newPos, effectBounds = true) {
-        let node = this.graph.getNodeAttributes(nodeId);
-        let a = new Vec(node);
-        let b = new Vec(newPos);
-        this.moveNode(nodeId, b.sub(a), effectBounds);
+        let node = this._nodes[nodeId];
+        let a = new Vec(node.x, node.y);
+        let b = new Vec(newPos.x, newPos.y);
+        return this.moveNode(nodeId, b.sub(a), effectBounds);
     }
-    getNodePos(nodeId) {
-        let attr = this.getNodeAttributes(nodeId);
-        return { x: attr.x, y: attr.y };
+    // returns the objective generated by the move or null if out of bound
+    // it doesn't move the node
+    testMove(nodeId, vec, effectBounds = false) {
+        if (this.status === Graph.status.DIRTY){
+            this.calcMetrics();
+
+        }
+        let oldMetrics = {...this._metrics};
+        let oldPosX = this._nodes[nodeId].x;
+        let oldPosY = this._nodes[nodeId].y;
+
+        let newPos = this.moveNode(nodeId, vec, effectBounds);
+        // move is out of bound
+        if (!newPos) return null;
+
+        let objective = this.objective();
+
+        // reset the node movement
+        this._nodes[nodeId].x = oldPosX;
+        this._nodes[nodeId].y = oldPosY;
+        this._metrics = oldMetrics;
+
+        this.status = Graph.status.COMPUTED;
+        return objective;
     }
 
+    adjList() {
+        return this._adjList;
+    }
+
+    edges() {
+        let nodes = this._nodes;
+        let adj = this._adjList;
+        let edges = [];
+        for (let i = 0; i < nodes.length; i++) {
+            for (let j = 0; j < adj[i].length; j++) {
+                if (adj[i][j]!= null ) edges.push(`${i}->${adj[i][j]}`);
+            }
+        }
+        return edges;
+    }
+    addEdge(n1Id, n2Id) {
+        if (n1Id == null || n2Id == null)
+            throw `invalid parameters ${n1Id} ${n2Id}`;
+        this.status = Graph.status.DIRTY;
+        if (!this.hasEdge(n1Id, n2Id)) {
+            this._adjList[n1Id].push(n2Id);
+            this._adjList[n2Id].push(n1Id);
+        }
+    }
+    removeEdge(source, target) {
+        this.status = Graph.status.DIRTY;
+        for (let i = 0; i < this._adjList[source].length; i++) {
+            if (this._adjList[source][i] === target) {
+                this._adjList[source].splice(i, 1);
+            }
+        }
+        for (let i = 0; i < this._adjList[target].length; i++) {
+            if (this._adjList[target][i] === source) {
+                this._adjList[target].splice(i, 1);
+            }
+        }
+    }
+
+    hasEdge(source, target) {
+        for (let a of this._adjList[source]) {
+            if (a === target) return true;
+        }
+        for (let a of this._adjList[target]) {
+            if (a === source) return true;
+        }
+        return false;
+    }
+
+    objective() {
+        let wSum = 0;
+        let normalMetrics = this.normalMetrics();
+
+        for (let key in normalMetrics){
+            wSum += normalMetrics[key] * this.weights[key];
+        }
+
+        if (!Number.isFinite(wSum) || wSum < 0) {
+            throw `invalid weights or metrics\nmetrics:\n ${JSON.stringify(
+                normalMetrics
+            )}\nweights:\n ${JSON.stringify(this.weights)}`;
+        }
+        return wSum;
+    }
+    normalMetrics() {
+        if (this.status === Graph.status.DIRTY) this.calcMetrics();
+        // normalize and update the history
+        return this._zn.normalizeAll(this._metrics);
+    }
+    calcMetrics() {
+        console.log("calcMetrics");
+        let metrics = {
+            nodeOcclusion: 0,
+            nodeEdgeOcclusion: 0,
+            edgeLength: 0,
+            edgeCrossing: 0,
+            angularResolution: 0
+        };
+        for (let i = 0; i < this._nodes.length; i++) {
+            metrics.nodeOcclusion += nodeOcclusionN(this, i);
+            metrics.nodeEdgeOcclusion += nodeEdgeOcclusionN(this, i);
+            metrics.edgeLength += edgeLengthN(this, this.metricsParam.requiredEdgeLength, i);
+            metrics.edgeCrossing += edgeCrossingN(this, i);
+            metrics.angularResolution += angularResolutionN(this, i);
+        }
+
+        this._metrics = metrics;
+        this.status = Graph.status.COMPUTED;
+        return this._metrics;
+
+    }
+    calcNodeMetrics(nodeId){
+        let metrics = {
+            nodeOcclusion: nodeOcclusionN(this, nodeId),
+            nodeEdgeOcclusion: nodeEdgeOcclusionN(this, nodeId),
+            edgeLength: edgeLengthN(
+                this,
+                this.metricsParam.requiredEdgeLength,
+                nodeId
+            ),
+            edgeCrossing: edgeCrossingN(this, nodeId),
+            angularResolution: angularResolutionN(this, nodeId)
+        };
+
+        return metrics;
+    }
+    setMetricParam(metricsParam) {
+        this.status = Graph.status.DIRTY;
+        this.metricsParam = metricsParam;
+    }
+    setWeights(weights) {
+        Object.assign(this.weights, weights);
+    }
+
+
+    density() {
+        let V = this._nodes.length;
+        let E = this.edges().length;
+        let D = (2 * E) / (V * (V - 1)) || 0;
+        return D;
+    }
+
+    clear() {
+        this.status = Graph.status.DIRTY;
+        this._nodes = [];
+        this._adjList = [];
+        this._nextId = -1;
+        this.bounds = {
+            xMax: 2000,
+            yMax: 2000,
+            xMin: -2000,
+            yMin: -2000
+        };
+        updateBounds.call(this);
+        return this;
+    }
+    setBounds(bounds) {
+        this.bounds = bounds;
+        updateBounds.call(this);
+    }
     withinBounds(x, y) {
         let { xMax, yMax, xMin, yMin } = this.bounds;
+        //return true;
         return x <= xMax && x >= xMin && y <= yMax && y >= yMin;
     }
     // returns the min bounding box
@@ -345,394 +432,154 @@ class ConcreteGraph {
             xMin: 0,
             yMin: 0
         };
-        for (let nId of this.graph.nodes()) {
-            let n = this.graph.getNodeAttributes(nId);
-            b.xMax = Math.max(b.xMax, n.x);
-            b.xMin = Math.min(b.xMin, n.x);
-            b.yMax = Math.max(b.yMax, n.y);
-            b.yMin = Math.min(b.yMin, n.y);
+        for (let n of this._nodes) {
+            if (n) {
+                b.xMax = Math.max(b.xMax, n.x);
+                b.xMin = Math.min(b.xMin, n.x);
+                b.yMax = Math.max(b.yMax, n.y);
+                b.yMin = Math.min(b.yMin, n.y);
+            }
         }
         return b;
     }
-
-    density() {
-        let V = this.graph.nodes().length;
-        let E = this.graph.edges().length;
-        let D = (2 * E) / (V * (V - 1)) || 0;
-        return D;
-    }
-
-    nodes() {
-        return this.graph.nodes.apply(this.graph, arguments);
-    }
-
-    getNodeAttributes() {
-        return this.graph.getNodeAttributes.apply(this.graph, arguments);
-    }
-    // TODO: add option to provide id as parameter?
-    addNode(node) {
-        this.status = ConcreteGraph.status.DIRTY;
-        node.id = String(this.nextId);
-        this.graph.addNode(String(this.nextId), node);
-        if (this.sigGraph) {
-            node.label = node.label + "";
-            this.sigGraph.addNode(node);
+    // only copies the nodes and edges
+    readGraph(graph) {
+        let gn = graph.nodes();
+        let gAdj = graph.adjList();
+        this._nodes = new Array(gn.length);
+        this._adjList = new Array(gn.length);
+        for (let i = 0; i < gn.length; i++) {
+            this._nodes[i] = { ...gn[i] };
+            this._adjList[i] = [...gAdj[i]];
         }
-        this.nextId++;
-        updateBounds.call(this);
-        recalculateMetrics.call(this);
-    }
-    removeNode(nodeId) {
-        this.status = ConcreteGraph.status.DIRTY;
-        this.graph.dropNode(nodeId);
-        if (this.sigGraph) this.sigGraph.dropNode(nodeId);
-        updateBounds.call(this);
-        recalculateMetrics.call(this);
-    }
 
-    addEdge(edge) {
-        this.status = ConcreteGraph.status.DIRTY;
-        this.graph.addEdgeWithKey(edge.id, edge.source, edge.target, edge);
-        if (this.sigGraph) this.sigGraph.addEdge(edge);
-        recalculateMetrics.call(this);
-    }
-    removeEdge(edgeId) {
-        this.status = ConcreteGraph.status.DIRTY;
-        this.graph.dropEdge(edgeId);
-        if (this.sigGraph) this.sigGraph.dropEdge(edgeId);
-        recalculateMetrics.call(this);
-    }
-
-    edges() {
-        return this.graph.edges.apply(this.graph, arguments);
-    }
-
-    clear() {
-        this.status = ConcreteGraph.status.DIRTY;
-        this.graph.clear();
-        if (this.sigGraph) this.sigGraph.clear();
-        this.nextId = 0;
-        this.bounds = {
-            xMax: 1000,
-            yMax: 1000,
-            xMin: -1000,
-            yMin: -1000
-        };
         updateBounds.call(this);
-        recalculateMetrics.call(this);
+    }
+    // copies a complete graph
+    restoreFrom(graph) {
+        let g = graph;
+        this.clear();
+        this.options = { ...g.options };
+        this.bounds = { ...g.bounds };
+        this._nextId = g._nextId;
+        this.requireEdgeLengthPerc = g.requireEdgeLengthPerc;
+        this.metricsParam = { ...g.metricsParam };
+        this.weights = { ...g.weights };
+        this._metrics = { ...g._metrics};
+        this.minDist = g.minDist;
+        this.maxDist = g.maxDist;
+        this._nodesWithAngles = g.nodesWithAngles;
+        this.readGraph(g);
+        this.status = g.status;
         return this;
     }
-
-    read(obj) {
-        this.status = ConcreteGraph.status.DIRTY;
+    fromGraphology(graph) {
+        this.status = Graph.status.DIRTY;
         this.clear();
-        this.graph.import(obj);
-
-        for (let nId of this.graph.nodes()) {
-            this.nextId = Math.max(this.nextId + 1, Number(nId));
-            if (this.sigGraph) {
-                let node = this.graph.getNodeAttributes(nId);
-                node.label = node.label + "";
-                this.sigGraph.addNode(node);
-            }
+        let idMap = new Map();
+        for (let i = 0; i < graph.nodes.length; i++) {
+            let n = graph.nodes[i];
+            if (n == null) continue;
+            let pos = {
+                x: n.attributes.x,
+                y: n.attributes.y,
+                id: Number(n.attributes.id)
+            };
+            idMap.set(n.key, i);
+            this._nodes.push(pos);
         }
-        if (this.sigGraph) {
-            for (let eId of this.graph.edges()) {
-                let [sourceId, targetId] = this.graph.extremities(eId);
-                let edge = this.graph.getEdgeAttributes(eId);
-                let sigEdge = {
-                    id: String(eId),
-                    source: String(sourceId),
-                    target: String(targetId),
-                    size: edge.size,
-                    color: edge.color
-                };
-                this.sigGraph.addEdge(sigEdge);
-            }
+        for (let i = 0; i < this._nodes.length; i++) {
+            this._adjList[i] = new Array();
         }
+        // assuming the ids are sequential
+        for (const e of graph.edges) {
+            let sourceIndex = Number(idMap.get(e.source));
+            let targetIndex = Number(idMap.get(e.target));
+            if (!this._adjList[sourceIndex].includes(targetIndex))
+                this._adjList[sourceIndex].push(targetIndex);
 
-        updateBounds.call(this);
-        recalculateMetrics.call(this);
-    }
-
-    neighbors() {
-        return this.graph.neighbors.apply(this.graph, arguments);
-    }
-    hasEdge(sourceId, targetId) {
-        return (
-            this.graph.hasEdge(sourceId, targetId) ||
-            this.graph.hasEdge(targetId, sourceId)
-        );
-    }
-    restoreFrom(concreteGraphObj) {
-        let cg = concreteGraphObj;
-        this.options = { ...cg.options };
-        this.bounds = { ...cg.bounds };
-        this.nextId = cg.nextId;
-        this.requireEdgeLengthPerc = cg.requireEdgeLengthPerc;
-        this.metricsParam = { ...cg.metricsParam };
-        this.weights = { ...cg.weights };
-        this.metricsCache = { ...cg.metricsCache };
-        this.normalMetrics = { ...cg.normalMetrics };
-        this.minDist = cg.minDist;
-        this.maxDist = cg.maxDist;
-        this.nodesWithAngles = cg.nodesWithAngles;
-
-        this.metricsPerNode = {};
-        // TODO: remove this from the code. It's just too big!
-        this.edgeCrossingCache = {};
-        for (let k in cg.metricsPerNode) {
-            this.metricsPerNode[k] = { ...cg.metricsPerNode[k] };
+            if (!this._adjList[targetIndex].includes(sourceIndex))
+                this._adjList[targetIndex].push(sourceIndex);
         }
-        this.status = ConcreteGraph.status.COMPUTED;
-
-        this.graph.clear();
-        this.graph.import(concreteGraphObj.graph);
         return this;
     }
     toJSON() {
-        let serialized = {};
+        let serialized = {
+            nodes: [...this._nodes],
+            adjList: [...this._adjList]
+        };
 
-        for (const k in this) {
-            if (k !== "graph") {
-                serialized[k] = deepCopy(this[k]);
-            } else if (Object.keys(this[k]).length) {
-                serialized[k] = this[k].toJSON();
-            }
-        }
         return serialized;
     }
+    serialize(string = true) {
+        if (string === true) return JSON.stringify({ graph: this });
+        else return { graph: this.toJSON() };
+    }
+    deserialize(data) {
+        this.status = Graph.status.DIRTY;
+        if (typeof data === "string") {
+            data = JSON.parse(data);
+        }
+        let nodeNum = data.graph.nodes.length;
+        this._nodes = new Array(nodeNum);
+        this._adjList= new Array(nodeNum);
 
+        for (let i = 0; i < nodeNum; i++){
+            this._nodes[i] = {... data.graph.nodes[i]};
+            this._adjList[i] = [... data.graph.adjList[i]];
+        }
+    
+        updateBounds.call(this);
+        return this;
+    }
     toSigGraph() {
-        let nodes = [];
-        let edges = [];
-        for (const nId of this.nodes()) {
-            let node = Object.assign({}, this.graph.getNodeAttributes(nId));
-            nodes.push(node);
-        }
-        for (const eId of this.edges()) {
-            let edge = Object.assign({}, this.graph.getEdgeAttributes(eId));
-            edges.push(edge);
-        }
+        let graph = { nodes: [], edges: [] };
+        let nodes = this._nodes;
+        let adj = this._adjList;
+        for (let i = 0; i < nodes.length; i++) {
+            let n = {
+                id: i,
+                label: i + "",
+                size: this.nodeSize,
+                color:this.nodeColor,
+                x: nodes[i].x,
+                y: nodes[i].y
+            };
 
-        return { nodes, edges };
+            graph.nodes.push(n);
+            for (let j = 0; j < adj[i].length; j++) {
+                graph.edges.push({
+                    source: i,
+                    target: adj[i][j],
+                    id: `${i}->${adj[i][j]}`,
+                    color:this.edgeColor,
+                    size: this.edgeSize
+                });
+            }
+        }
+        return graph;
+    }
+    resetZn(){
+        this._zn = new ZNormalization();
     }
 }
-ConcreteGraph.status = {
+Graph.status = {
     COMPUTED: 0, // metrics are up to data with the graph
     DIRTY: 1 // metrics and graph are out of sync (require recomputing the metrics)
 };
 
-// internal methods that must be called with a ConcreteGraph object as the context
-function recalculateMetrics() {
-    console.trace("recalculateMetrics trace");
-    console.time("recalculateMetrics time");
-    this.metricsPerNode = {};
-    this.metricsCache = {
-        nodeOcclusion: 0,
-        edgeNodeOcclusion: 0,
-        edgeLength: 0,
-        edgeCrossing: 0,
-        angularResolution: 0
-    };
-    this.normalMetrics = {
-        nodeOcclusion: 0,
-        edgeNodeOcclusion: 0,
-        edgeLength: 0,
-        edgeCrossing: 0,
-        angularResolution: 0
-    };
-    this.edgeCrossingCache = {};
-    this.nodesWithAngles = 0;
 
-    for (let nId of this.graph.nodes()) {
-        let nodeMetrics = {
-            nodeOcclusion: 0,
-            angularResolution: 0,
-            edgeNodeOcclusion: 0,
-            edgeLength: 0,
-            edgeCrossing: 0
-        };
-        // update indexes
-        this.nodesWithAngles += this.graph.neighbors(nId).length > 1 ? 1 : 0;
-
-        // recalculate nodeOcclusion
-        if (this.weights.nodeOcclusion > 0) {
-            nodeMetrics.nodeOcclusion = evaluator.nodeNodeOcclusion(
-                this.graph,
-                nId,
-                this.minDist
-            );
+function updateMetrics(oldMetrics, newMetrics) {
+    for (let key in this._metrics) {
+        if (!isFinite(this._metrics[key]) ){
+            throw ` ${key} = ${this._metrics[key]} `;
         }
-
-        // recalculate angularResolution
-        if (this.weights.angularResolution > 0) {
-            nodeMetrics.angularResolution += evaluator.angularResolution(
-                this.graph,
-                nId
-            );
-        }
-
-        // recalculate edge metrics
-        // outEdges is only really needed for edgeLength. TODO: find a better way
-        for (let eId of this.graph.outEdges(nId)) {
-            if (this.weights.edgeLength > 0) {
-                this.metricsCache.edgeLength += evaluator.edgeLength(
-                    this.graph,
-                    eId,
-                    this.metricsParam.requiredEdgeLength * this.maxDist,
-                    this.minDist
-                );
-            }
-
-            // recalculate edgeCrossing
-            if (this.weights.edgeCrossing > 0) {
-                // what edges does this edge cross?
-                let cross = evaluator.edgeCrossing(this.graph, eId);
-
-                for (let ecId in cross) {
-                    // first time we are tracking this edge?
-                    if (!this.edgeCrossingCache[eId])
-                        this.edgeCrossingCache[eId] = {};
-
-                    // did we account for this intersection before?
-                    if (!this.edgeCrossingCache[eId][ecId]) {
-                        // add to own entry
-                        this.edgeCrossingCache[eId][ecId] = 1;
-                        // let the other edge know that it has a new intersection
-                        if (!this.edgeCrossingCache[ecId])
-                            this.edgeCrossingCache[ecId] = {};
-
-                        this.edgeCrossingCache[ecId][eId] = 1;
-                        // update the total count
-                        this.metricsCache.edgeCrossing++;
-                    }
-                }
-            }
-            // recalculate edgeNodeOcclusion
-            if (this.weights.edgeNodeOcclusion > 0) {
-                this.metricsCache.edgeNodeOcclusion += evaluator.edgeNodeOcclusion(
-                    this.graph,
-                    eId,
-                    this.minDist
-                );
-            }
-        }
-        this.metricsPerNode[nId] = nodeMetrics;
-        for (let m in this.metricsCache)
-            this.metricsCache[m] += this.metricsPerNode[nId][m];
+        this._metrics[key] = this._metrics[key] -  oldMetrics[key] + newMetrics[key];
     }
 
-    this.status = ConcreteGraph.status.COMPUTED;
-    console.timeEnd("recalculateMetrics time");
-}
-function updateMetrics(nodeId, oldPos) {
-    this.metricsPerNode[nodeId].nodeOcclusion = 0;
-    this.metricsCache.nodeOcclusion = 0;
-    this.nodesWithAngles = 0;
-
-    let node = this.graph.getNodeAttributes(nodeId);
-
-    for (let nId of this.graph.nodes()) {
-        // update indexes
-        this.nodesWithAngles += this.graph.neighbors(nId).length > 1 ? 1 : 0;
-
-        if (nodeId !== nId) {
-            // remove old value from other node sum
-            let n = this.graph.getNodeAttributes(nId);
-            let oldD = distance(oldPos, n);
-            oldD = Math.max(oldD, this.minDist);
-            this.metricsPerNode[n.id].nodeOcclusion -= 1 / oldD ** 2;
-
-            // add the new distance
-            let newD = distance(node, n);
-            newD = Math.max(newD, this.minDist);
-            this.metricsPerNode[n.id].nodeOcclusion += 1 / newD ** 2;
-            // update the total sum for nodeOcclusion
-            this.metricsCache.nodeOcclusion += this.metricsPerNode[
-                n.id
-            ].nodeOcclusion;
-
-            // update it's own contribution
-            this.metricsPerNode[nodeId].nodeOcclusion += 1 / newD ** 2;
-        }
-    }
-    // update the total sum for nodeOcclusion
-    this.metricsCache.nodeOcclusion += this.metricsPerNode[
-        nodeId
-    ].nodeOcclusion;
-
-    let nodeMetrics = this.metricsPerNode[nodeId];
-    // update angular resolution for the current node
-
-    this.metricsCache.angularResolution -= this.metricsPerNode[
-        nodeId
-    ].angularResolution;
-    nodeMetrics.angularResolution = evaluator.angularResolution(
-        this.graph,
-        nodeId
-    );
-    this.metricsCache.angularResolution += this.metricsPerNode[
-        nodeId
-    ].angularResolution;
-
-    nodeMetrics.edgeCrossing = 0;
-    for (let eId of this.graph.edges(nodeId)) {
-        // make sure to update the edgelength of connected sources
-        let [sourceId, targetId] = this.graph.extremities(eId);
-        let distTo = this.graph.getNodeAttributes(
-            targetId === nodeId ? sourceId : targetId
-        );
-        this.metricsCache.edgeLength -=
-            (this.metricsParam.requiredEdgeLength * this.maxDist -
-                distance(oldPos, distTo)) **
-            2;
-
-        let d = distance(this.getNodeAttributes(nodeId), distTo);
-        Math.min(d, this.minDist);
-        this.metricsCache.edgeLength +=
-            (this.metricsParam.requiredEdgeLength * this.maxDist - d) ** 2;
-
-        // make sure to update the angular resolution of the connected nodes
-        let otherNodeId = this.graph.target(eId);
-        if (otherNodeId === nodeId) otherNodeId = this.graph.source(eId);
-
-        this.metricsCache.angularResolution -= this.metricsPerNode[
-            otherNodeId
-        ].angularResolution;
-        this.metricsPerNode[
-            otherNodeId
-        ].angularResolution = evaluator.angularResolution(
-            this.graph,
-            otherNodeId
-        );
-        this.metricsCache.angularResolution += this.metricsPerNode[
-            otherNodeId
-        ].angularResolution;
-
-        if (this.edgeCrossingCache[eId]) {
-            // remove the current edge from the total
-            this.metricsCache.edgeCrossing -= Object.keys(
-                this.edgeCrossingCache[eId]
-            ).length;
-
-            // remove current edge from the other crossed edges
-            // needed when those edges get modified
-            for (let ecId in this.edgeCrossingCache[eId]) {
-                delete this.edgeCrossingCache[ecId][eId];
-            }
-        }
-        // get new intersections and update other edges
-        this.edgeCrossingCache[eId] = evaluator.edgeCrossing(this.graph, eId);
-
-        for (let ecId in this.edgeCrossingCache[eId]) {
-            if (!this.edgeCrossingCache[ecId])
-                this.edgeCrossingCache[ecId] = {};
-            this.edgeCrossingCache[ecId][eId] = 1;
-            this.metricsCache.edgeCrossing++;
-        }
-    }
-    this.status = ConcreteGraph.status.COMPUTED;
+    // update history
+    this._zn.normalizeAll(this._metrics);
+    return { ...this._metrics };
 }
 
 function updateBounds() {
@@ -755,7 +602,4 @@ function updateBounds() {
     );
 }
 
-function toSigNode(node) {
-    let n = this.graph.getAttributes(node);
-    return n;
-}
+

@@ -1,4 +1,4 @@
-import { ConcreteGraph } from "../graph.js";
+import { Graph} from "../graph.js";
 
 // can't use shadow since sigma requires access to the container element.
 
@@ -114,7 +114,7 @@ export class FileModal extends HTMLElement {
             }
         };
         let sig = new sigma(sigDefaults);
-        let graph = new ConcreteGraph().restoreFrom(file.graph);
+        let graph = new Graph().restoreFrom(file.graph);
         sig.graph.read(graph.toSigGraph());
         sig.refresh();
     }

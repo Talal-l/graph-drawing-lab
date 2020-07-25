@@ -3,7 +3,7 @@
   ],
 
     "parserOptions": {
-        "ecmaVersion": 7,
+        "ecmaVersion": 10,
         "sourceType": "module"
         
     },

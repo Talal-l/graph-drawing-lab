@@ -1,6 +1,6 @@
 // sigam.js imports
 /*global sigma*/
-import { ConcreteGraph, generateGraph } from "./graph.js";
+import { Graph, generateGraph } from "./graph.js";
 import { refreshScreen, distance, getEdgeId } from "./util.js";
 
 let container = document.querySelector("#container");
@@ -37,7 +37,7 @@ let sigDefaults = {
 let sig = new sigma(sigDefaults);
 let cam = sig.cameras.cam1;
 // create the main graph instance
-let GRAPH = new ConcreteGraph(null, { sigGraph: sig.graph });
+let GRAPH = new Graph();
 
 let selectedLayoutAlg;
 let layoutAlgOptions;
@@ -62,7 +62,7 @@ let graphUiModes = (function() {
         if (node) {
             selectedNode.color = "#921";
             selectedNode = null;
-            refreshScreen(sig, updateMetrics);
+            refreshScreen(sig, updateMetrics, updateSigGraph);
         }
     }
 
@@ -117,7 +117,7 @@ let graphUiModes = (function() {
         };
 
         GRAPH.addNode(n);
-        refreshScreen(sig, updateMetrics);
+        refreshScreen(sig, updateMetrics, updateSigGraph);
     }
     function nodeSelectHandler(e) {
         let node = e.data.node;
@@ -125,14 +125,8 @@ let graphUiModes = (function() {
             selectNode(node);
         } else if (selectedNode.id !== node.id) {
             // create an edge if non existed between them
-            if (!GRAPH.neighbors(node.id)[selectedNode.id]) {
-                GRAPH.addEdge({
-                    id: getEdgeId(selectedNode.id, node.id),
-                    source: selectedNode.id,
-                    target: node.id,
-                    size: edgeSize,
-                    color: "#ccc"
-                });
+            if (!GRAPH.hasEdge(node.id, selectedNode.id)) {
+                GRAPH.addEdge(node.id, selectedNode.id);
 
                 deSelectNode(selectedNode);
             } else {
@@ -145,12 +139,13 @@ let graphUiModes = (function() {
     function nodeEraseHandler(e) {
         let clickedNode = e.data.node;
         GRAPH.removeNode(clickedNode.id);
-        refreshScreen(sig, updateMetrics);
+        refreshScreen(sig, updateMetrics, updateSigGraph);
     }
     function edgeEraseHandler(e) {
         let clickedEdge = e.data.edge;
-        GRAPH.removeEdge(clickedEdge.id);
-        refreshScreen(sig, updateMetrics);
+        console.log(clickedEdge);
+        GRAPH.removeEdge(clickedEdge.source, clickedEdge.target);
+        refreshScreen(sig, updateMetrics, updateSigGraph);
     }
 
     if (selectedEdge) GRAPH.removeEdge(selectedEdge.id);
@@ -205,7 +200,7 @@ let graphUiModes = (function() {
                 eraseItem.classList.remove("active");
                 sig.unbind("clickNode");
             }
-            refreshScreen(sig, updateMetrics);
+            refreshScreen(sig, updateMetrics, updateSigGraph);
         }
     };
 })(); // immediately execute the function to return the object
@@ -231,7 +226,7 @@ let beforeLayoutRun = true;
 
 function setGraphCache() {
     if (beforeLayoutRun) {
-        localStorage.setItem("graph", JSON.stringify(GRAPH.graph.toJSON()));
+        localStorage.setItem("graph", GRAPH.serialize());
         beforeLayoutRun = false;
     }
 }
@@ -314,8 +309,9 @@ genModal.addEventListener("click", event => {
             GRAPH.clear();
             clearGraphCache();
             // extract the nodes and edges from the created graph and update the current instance with it
-            GRAPH.read(G);
-            refreshScreen(sig, updateMetrics);
+            console.log(G);
+            GRAPH.readGraph(G);
+            refreshScreen(sig, updateMetrics, updateSigGraph);
             genModal.style.display = "none";
             break;
         case "dismiss":
@@ -331,13 +327,13 @@ warnModal.addEventListener("click", event => {
             warnModal.style.display = "none";
             saveCurrentGraph();
             GRAPH.clear();
-            refreshScreen(sig, updateMetrics);
+            refreshScreen(sig, updateMetrics, updateSigGraph);
             genModal.style.display = "flex";
             break;
         case "delete":
             warnModal.style.display = "none";
             GRAPH.clear();
-            refreshScreen(sig, updateMetrics);
+            refreshScreen(sig, updateMetrics, updateSigGraph);
             genModal.style.display = "flex";
             break;
     }
@@ -399,18 +395,18 @@ for (const e of toggleEl) {
 }
 
 function saveCurrentGraph() {
-    let obj = { graph: GRAPH.graph.toJSON() }; // eslint-disable-next-line no-undef
-    saveFileDialog(JSON.stringify(obj));
+    // eslint-disable-next-line no-undef
+    saveFileDialog(GRAPH.serialize());
 }
 
-refreshScreen(sig, updateMetrics);
+refreshScreen(sig, updateMetrics, updateSigGraph);
 
 function getWeights() {
     return {
         nodeOcclusion: parseFloat(
             document.querySelector("#node-occlusion-weight").value
         ),
-        edgeNodeOcclusion: parseFloat(
+        nodeEdgeOcclusion: parseFloat(
             document.querySelector("#edge-node-occlusion-weight").value
         ),
         edgeLength: parseFloat(
@@ -431,6 +427,10 @@ function updateObjective() {
     ).innerHTML = GRAPH.objective().toFixed(3);
 }
 
+function updateSigGraph() {
+    sig.graph.clear();
+    sig.graph.read(GRAPH.toSigGraph());
+}
 function updateMetrics() {
     // get the needed parameters for edge length
     let c = document.querySelector(".sigma-scene");
@@ -445,7 +445,7 @@ function updateMetrics() {
         requiredEdgeLength
     });
 
-    let metrics = GRAPH.metrics();
+    let metrics = GRAPH.normalMetrics();
 
     // update ui
     document.querySelector("#node-num").innerHTML = GRAPH.nodes().length;
@@ -456,7 +456,7 @@ function updateMetrics() {
     ).innerHTML = metrics.nodeOcclusion.toFixed(3);
     document.querySelector(
         "#edge-node-occlusion"
-    ).innerHTML = metrics.edgeNodeOcclusion.toFixed(3);
+    ).innerHTML = metrics.nodeEdgeOcclusion.toFixed(3);
 
     document.querySelector(
         "#edge-length"
@@ -590,29 +590,29 @@ function toolbarClickHandler(event) {
         case "loadGraph":
             // eslint-disable-next-line no-undef
             openFileDialog((filename, data) => {
-                GRAPH.clear();
-                GRAPH.read(JSON.parse(data).graph);
-                refreshScreen(sig, updateMetrics);
+                GRAPH.deserialize(data);
+                refreshScreen(sig, updateMetrics, updateSigGraph);
                 clearGraphCache();
             });
             break;
         case "deleteGraph":
             GRAPH.clear();
-            refreshScreen(sig, updateMetrics);
+            refreshScreen(sig, updateMetrics, updateSigGraph);
             clearGraphCache();
             break;
         case "randomLayout":
             setGraphCache();
             const x = container.offsetWidth;
             const y = container.offsetHeight;
-            for (let nId of GRAPH.nodes()) {
-                GRAPH.setNodePos(nId, {
+            for (let n of GRAPH.nodes()) {
+                GRAPH.setNodePos(n.id, {
                     x: (0.5 - Math.random()) * x,
                     y: (0.5 - Math.random()) * y
                 });
             }
 
-            refreshScreen(sig, updateMetrics);
+            sig.graph.clear();
+            refreshScreen(sig, updateMetrics, updateSigGraph);
 
             break;
         case "runLayout":
@@ -621,14 +621,14 @@ function toolbarClickHandler(event) {
             disableToolbar("runLayout");
             console.log("GRAPH", GRAPH);
             worker.postMessage([
-                GRAPH.toJSON(),
+                GRAPH.serialize(false),
                 selectedLayoutAlg,
                 layoutAlgOptions,
                 "run"
             ]);
             worker.onmessage = e => {
-                GRAPH.read(e.data[0].graph);
-                refreshScreen(sig, updateMetrics);
+                GRAPH.deserialize(e.data[0]);
+                refreshScreen(sig, updateMetrics, updateSigGraph);
                 enableToolbar("runLayout");
                 updateLayoutInfo(e.data);
             };
@@ -637,26 +637,26 @@ function toolbarClickHandler(event) {
             updateLayoutAlg();
             setGraphCache();
             disableToolbar("stepLayout");
+            console.log(GRAPH.serialize(false));
             worker.postMessage([
-                GRAPH.toJSON(),
+                GRAPH.serialize(false),
                 selectedLayoutAlg,
                 layoutAlgOptions,
                 "step"
             ]);
             worker.onmessage = e => {
-                GRAPH.read(e.data[0].graph);
-                refreshScreen(sig, updateMetrics);
+                GRAPH.deserialize(e.data[0]);
+                refreshScreen(sig, updateMetrics, updateSigGraph);
                 enableToolbar("stepLayout");
             };
             break;
         case "resetLayout":
             // restore old layout from local storage
             let originalGraph = localStorage.getItem("graph");
-            originalGraph = JSON.parse(originalGraph);
             if (originalGraph) {
                 GRAPH.clear();
-                GRAPH.read(originalGraph);
-                refreshScreen(sig, updateMetrics);
+                GRAPH.deserialize(originalGraph);
+                refreshScreen(sig, updateMetrics, updateSigGraph);
                 clearGraphCache();
             }
             break;

@@ -7,6 +7,7 @@ function equal(a, b) {
 export class HillClimbing {
     constructor(graph, params) {
         console.log("params", JSON.stringify(params));
+        if (!params) params = {};
         this.graph = graph;
         // distance to move the node
         this.squareSize = params.squareSize || 512;
@@ -14,9 +15,10 @@ export class HillClimbing {
         this.it = 0;
         this.maxIt = params.iterations || 500;
         this.done = false;
-        this.strategy = params.moveStrategy || "delayed";
+        this.strategy = params.moveStrategy || "immediate";
         this.evaluatedSolutions = 0;
         this.executionTime = 0; // in ms
+        this.effectBounds = true;
 
         /* 
             Assuming the following
@@ -32,87 +34,115 @@ export class HillClimbing {
 
     // single iteration of the layout algorithm
     step() {
-        let v = new Vec(this.squareSize, 0);
-        this.vectors = [v];
-        for (let a = 45; a < 315; a += 45) {
-            this.vectors.push(v.rotate(a));
-        }
         let lastObj = this.graph.objective();
         let bestMovePerNode = [];
-        for (let nId of this.graph.nodes()) {
+        
+        let vectors = offsets(this.squareSize);
+        for (let nId = 0; nId < this.graph._nodes.length; nId++) {
             // start with no move as the best move
 
             switch (this.strategy) {
                 case "immediate": {
-                    let bestMoveIndex = null;
-                    let bestObj = this.graph.objective();
+                    let bestMove = null;
+                    let bestObj = Infinity;
 
-                    for (let i = 0; i < this.vectors.length; i++) {
+                    for (let v of vectors) {
                         this.evaluatedSolutions++;
-                        let newObj = this.graph.testMove(nId, this.vectors[i]);
 
+                        let newObj = this.graph.testMove(
+                            nId,
+                            v,
+                            this.effectBounds
+                        );
                         if (newObj !== null && newObj < bestObj) {
                             bestObj = newObj;
-                            bestMoveIndex = i;
+                            bestMove = v;
                         }
                     }
-                    if (bestMoveIndex !== null) {
-                        this.graph.moveNode(nId, this.vectors[bestMoveIndex]);
+                    if (bestMove !== null) {
+                        this.graph.moveNode(
+                            nId,
+                            bestMove,
+                            this.effectBounds
+                        );
+
                     }
                     break;
                 }
 
                 case "delayed": {
-                    let bestMoveIndex = null;
+                    let bestMove = null;
                     let bestObj = this.graph.objective();
 
-                    for (let i = 0; i < this.vectors.length; i++) {
+                    for (let v of vectors) {
                         this.evaluatedSolutions++;
 
-                        const beforeTest = this.graph.objective();
-                        let newObj = this.graph.testMove(nId, this.vectors[i]);
-                        const afterTest = this.graph.objective();
+                        let newObj = this.graph.testMove(nId, v, this.effectBounds);
                         if (
                             newObj !== null &&
                             !equal(newObj, bestObj) &&
                             newObj < bestObj
                         ) {
                             bestObj = newObj;
-                            bestMoveIndex = i;
+                            bestMove = v;
                         }
                     }
-                    bestMovePerNode.push([nId, bestMoveIndex, bestObj]);
+                    bestMovePerNode.push([nId, bestMove, bestObj]);
                     break;
                 }
             }
         }
         for (const e of bestMovePerNode) {
-            let vec = this.vectors[e[1]];
+            let vec = e[1];
             let nodeId = e[0];
             if (
                 vec &&
-                this.graph.testMove(nodeId, vec) < this.graph.objective()
+                this.graph.testMove(nodeId, vec, this.effectBounds) < this.graph.objective()
             ) {
-                this.graph.moveNode(nodeId, vec);
+                this.graph.moveNode(nodeId, vec,this.effectBounds);
             }
         }
 
         let currentObj = this.graph.objective();
 
         if (equal(lastObj, currentObj) || currentObj > lastObj) {
+
             this.squareSize /= this.squareReduction;
         }
 
         this.it++;
+
+        return this.graph;
+
     }
 
     // run
     run() {
-        let start = new Date().getTime();
+        let start = performance.now();
         this.done = false;
+        this.graph.resetZn();
         while (this.it < this.maxIt && this.squareSize >= 1) {
+            let startStep = performance.now();
+
             this.step();
+
+            //console.log("stepTime: ", performance.now() - startStep, "cost: " + this.graph.objective());
         }
-        this.executionTime = new Date().getTime() - start;
+        this.executionTime = performance.now() - start;
     }
+}
+
+function offsets(squareSize) {
+    let s = squareSize;
+    let scaledOffsets = [
+        new Vec({x:s,y: 0}),
+        new Vec({x:s, y:-s}),
+        new Vec({x:0, y:-s}),
+        new Vec({x:-s,y: -s}),
+        new Vec({x:-s, y:0}),
+        new Vec({x: -s, y: s}),
+        new Vec({x: 0, y: s}),
+        new Vec({x:s, y:s}),
+    ];
+    return scaledOffsets;
 }

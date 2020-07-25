@@ -1,19 +1,19 @@
 import { CircularLayout } from "./circularLayout.js";
 import { Tabu} from "./tabu.js";
 import { HillClimbing } from "./hillClimbing.js";
-import { ConcreteGraph, generateGraph } from "./graph.js";
+import { Graph, generateGraph } from "./graph.js";
 
-let GRAPH = new ConcreteGraph();
+let GRAPH = new Graph();
 let layoutAlgList = { CircularLayout, HillClimbing };
 
 onmessage = function(e) {
-    console.log(e.data);
-    let [graph, layoutAlgName, options, command] = e.data;
+    console.log(JSON.stringify(e.data));
+    let [graphData, layoutAlgName, options, command] = e.data;
 
     let graphParam = options.metricsParam;
     let layoutParam = options.layoutParam;
 
-    GRAPH.restoreFrom(graph);
+    GRAPH.deserialize(graphData);
     GRAPH.setMetricParam(graphParam);
     GRAPH.setWeights(options.weights);
 
@@ -34,7 +34,7 @@ onmessage = function(e) {
     let info = {
         executionTime: layoutAlg.executionTime,
         evaluatedSolutions: layoutAlg.evaluatedSolutions
-    }
+    };
 
-    postMessage([GRAPH.toJSON(), layoutAlgName, options, command, info]);
+    postMessage([GRAPH.serialize(), layoutAlgName, options, command, info]);
 };

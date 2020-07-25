@@ -3,6 +3,7 @@ export {
     getEdgeNodes,
     shuffle,
     distance,
+    distanceSquared,
     pointSegDistance,
     random,
     Vec,
@@ -14,9 +15,11 @@ export {
     deepCopy,
     getEdgeId,
     dfs,
-    sortNeighborsByAngle
+    linesIntersect,
+    sortNeighborsByAngle,
+    pointEqual,
+    equal
 };
-const Graph = require("graphology");
 
 /**
  * A wrapper method to use to enable us to attach a callback function to the refresh method
@@ -24,8 +27,9 @@ const Graph = require("graphology");
  * @param {function} [onRefresh]  - A function to call after a refresh
  *
  */
-function refreshScreen(sig, onRefresh) {
+function refreshScreen(sig, onRefresh, beforeRefresh) {
     // eslint-disable-next-line no-undef
+    if (typeof beforeRefresh === "function") beforeRefresh();
     sig.refresh();
     if (typeof onRefresh === "function") onRefresh();
 }
@@ -58,7 +62,9 @@ function shuffle(array) {
 function distance(p1, p2) {
     return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
 }
-
+function distanceSquared(p1, p2) {
+    return Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2);
+}
 /**
  * Distance between a segment and a point
  * @param {object} p - A point object with x and y as properties
@@ -159,6 +165,9 @@ class Vec {
             this.x * sin + this.y * cos
         );
     }
+    equal(v) {
+        return equal(this.x, v.x) && equal(this.y, v.y);
+    }
 }
 
 /**
@@ -196,6 +205,48 @@ function intersection(seg1, seg2) {
     if (u >= 0 && u <= 1) {
         return p0.add(s0.scale(t));
     }
+}
+function relativeCCW(x1, y1, x2, y2, px, py) {
+    x2 -= x1;
+    y2 -= y1;
+    px -= x1;
+    py -= y1;
+    let ccw = px * y2 - py * x2;
+    if (ccw === 0.0) {
+        // The point is colinear, classify based on which side of
+        // the segment the point falls on.  We can calculate a
+        // relative value using the projection of px,py onto the
+        // segment - a negative value indicates the point projects
+        // outside of the segment in the direction of the particular
+        // endpoint used as the origin for the projection.
+        ccw = px * x2 + py * y2;
+        if (ccw > 0.0) {
+            // Reverse the projection to be relative to the original x2,y2
+            // x2 and y2 are simply negated.
+            // px and py need to have (x2 - x1) or (y2 - y1) subtracted
+            //    from them (based on the original values)
+            // Since we really want to get a positive answer when the
+            //    point is "beyond (x2,y2)", then we want to calculate
+            //    the inverse anyway - thus we leave x2 & y2 negated.
+            px -= x2;
+            py -= y2;
+            ccw = px * x2 + py * y2;
+            if (ccw < 0.0) {
+                ccw = 0.0;
+            }
+        }
+    }
+    return ccw < 0.0 ? -1 : ccw > 0.0 ? 1 : 0;
+}
+function linesIntersect(x1, y1, x2, y2, x3, y3, x4, y4) {
+    return (
+        relativeCCW(x1, y1, x2, y2, x3, y3) *
+            relativeCCW(x1, y1, x2, y2, x4, y4) <=
+            0 &&
+        relativeCCW(x3, y3, x4, y4, x1, y1) *
+            relativeCCW(x3, y3, x4, y4, x2, y2) <=
+            0
+    );
 }
 
 /**
@@ -317,4 +368,109 @@ export function cleanId(str) {
     // replace spaces with -
     let re = /\s/;
     return id.replace(/\s/, "-");
+}
+function equal(a, b) {
+    const EPS = 1e-10;
+    return Math.abs(a - b) < EPS;
+}
+function pointEqual(a, b) {
+    return equal(a.x, b.x) && equal(a.y, b.y);
+}
+
+// angle between p->p1 and p->p2 in rad
+export function segAngle(p, p1, p2) {
+    let x1 = p1.x - p.x;
+    let y1 = p1.y - p.y;
+    let x2 = p2.x - p.x;
+    let y2 = p2.y - p.y;
+
+    let t = x1 * x2 + y1 * y2;
+    let b = Math.sqrt(x1 * x1 + y1 * y1) * Math.sqrt(x2 * x2 + y2 * y2);
+    t = Math.round(t);
+    b = Math.round(b);
+
+    let angle = Math.acos(t / b);
+
+    return angle;
+}
+export function antiClockAngle({ x, y }) {
+    let a = Math.atan2(y, x);
+    if (a < 0) a = 2 * Math.PI + a;
+    return a;
+}
+
+// only get distance if the point projection is between the two end points
+export function ptSegDistSqIn(x1, y1, x2, y2, px, py) {
+    let pd2 = (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);
+
+    let x,
+        y = 0.0;
+    if (equal(pd2, 0.0)) {
+        // Points are coincident.
+        x = x1;
+        y = y2;
+    } else {
+        // u = <px-x1,py-y1> * <x2-x1,y2-y1> /||<x2-x1,y2-y1>
+        // u is the projection onto the segment
+        let u = ((px - x1) * (x2 - x1) + (py - y1) * (y2 - y1)) / pd2;
+
+        if (u >= 0 && u <= 1.0) {
+            // scale the projection and move the first point to land on it
+            // get the point of the projection and not just the magnituied
+            x = x1 + u * (x2 - x1);
+            y = y1 + u * (y2 - y1);
+            return (x - px) * (x - px) + (y - py) * (y - py);
+        }
+        return null;
+    }
+
+    // distance form enpoint or projection point
+}
+export function ptSegDistSq(x1, y1, x2, y2, px, py) {
+    let pd2 = (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);
+
+    let x,
+        y = 0.0;
+    if (equal(pd2, 0.0)) {
+        // Points are coincident.
+        x = x1;
+        y = y2;
+    } else {
+        // u = <px,py> * <x2-x1,y2-y1> /||<x2-x1,y2-y1>
+        // u is the projection onto the segment
+        let u = ((px - x1) * (x2 - x1) + (py - y1) * (y2 - y1)) / pd2;
+
+        if (u < 0) {
+            // "Off the end"
+            x = x1;
+            y = y1;
+        } else if (u > 1.0) {
+            x = x2;
+            y = y2;
+        } else {
+            // scale the projection and move the first point to land on it
+            // get the point of the projection and not just the magnituied
+            x = x1 + u * (x2 - x1);
+            y = y1 + u * (y2 - y1);
+        }
+    }
+
+    // distance form enpoint or projection point
+    return (x - px) * (x - px) + (y - py) * (y - py);
+}
+export function ptLineDistSq(x1, y1, x2, y2, px, py) {
+    let pd2 = (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);
+
+    let x, y;
+    if (pd2 === 0) {
+        // Points are coincident.
+        x = x1;
+        y = y2;
+    } else {
+        let u = ((px - x1) * (x2 - x1) + (py - y1) * (y2 - y1)) / pd2;
+        x = x1 + u * (x2 - x1);
+        y = y1 + u * (y2 - y1);
+    }
+
+    return (x - px) * (x - px) + (y - py) * (y - py);
 }

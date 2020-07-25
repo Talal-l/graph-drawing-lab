@@ -1,4 +1,4 @@
-import { ConcreteGraph, generateGraph } from "./graph.js";
+import { Graph, generateGraph } from "./graph.js";
 import {
     refreshScreen,
     distance,
@@ -22,7 +22,7 @@ const headers = [
     { id: "edges", title: "Edges", visible: true },
     { id: "density", title: "Density", visible: true },
     { id: "nodeOcclusion", title: "Node occlusion", visible: true },
-    { id: "edgeNodeOcclusion", title: "Edge-Node occlusion", visible: true },
+    { id: "nodeEdgeOcclusion", title: "Edge-Node occlusion", visible: true },
     { id: "edgeLength", title: "Edge length", visible: true },
     { id: "edgeCrossing", title: "Edge crossing", visible: true },
     { id: "angularResolution", title: "Angular Resolution", visible: true },
@@ -392,11 +392,11 @@ function addTable(tab) {
             executionTime: file.info ? file.info.executionTime : "-"
         };
 
-        let metrics = graph.metrics();
+        let metrics = graph.normalMetrics();
         let objective = graph.objective();
         let {
             nodeOcclusion,
-            edgeNodeOcclusion,
+            nodeEdgeOcclusion,
             edgeLength,
             edgeCrossing,
             angularResolution
@@ -437,8 +437,8 @@ function addTable(tab) {
                 value: nodeOcclusion.toFixed(digits),
                 type: "text"
             },
-            edgeNodeOcclusion: {
-                value: edgeNodeOcclusion.toFixed(digits),
+            nodeEdgeOcclusion: {
+                value: nodeEdgeOcclusion.toFixed(digits),
                 type: "text"
             },
             edgeLength: { value: edgeLength.toFixed(digits), type: "text" },
@@ -521,7 +521,7 @@ const metricsParam = {
 };
 const weights = {
     nodeOcclusion: 1,
-    edgeNodeOcclusion: 1,
+    nodeEdgeOcclusion: 1,
     edgeLength: 1,
     edgeCrossing: 1,
     angularResolution: 1
@@ -566,10 +566,8 @@ class Tab {
             // remove the computed graph from the current tab
             for (let [filename, file] of Object.entries(otherTab.files)) {
                 console.time("Tab-constructor-restoring-graph");
-                let graph = new ConcreteGraph().restoreFrom(file.originalGraph);
-                let originalGraph = new ConcreteGraph().restoreFrom(
-                    file.originalGraph
-                );
+                let graph = new Graph().restoreFrom(file.originalGraph);
+                let originalGraph = new Graph().restoreFrom(file.originalGraph);
                 console.timeEnd("Tab-constructor-restoring-graph");
                 this.files[filename] = {
                     graph: graph,
@@ -601,10 +599,8 @@ class Tab {
 
         let tab = this;
         for (const [filename, file] of Object.entries(tab.files)) {
-            file.graph = new ConcreteGraph().restoreFrom(file.graph);
-            file.originalGraph = new ConcreteGraph().restoreFrom(
-                file.originalGraph
-            );
+            file.graph = new Graph().deserialize(file);
+            file.originalGraph = new Graph().deserialize(file);
         }
 
         console.log(`restoring from save \n${saved}`, this);
@@ -627,7 +623,7 @@ class Tab {
                 options.layoutParam[p.name] = value;
             }
         }
-        let graphData = currentTab().files[filename].originalGraph.toJSON();
+        let graphData = currentTab().files[filename].originalGraph.serialize(false);
         console.log("graphData", graphData);
 
         let worker = new Worker("build/layoutWorker.js");
@@ -638,8 +634,7 @@ class Tab {
 
         worker.onmessage = function(e) {
             console.time("onmessage time");
-            let graphData = e.data[0];
-            let graph = new ConcreteGraph().restoreFrom(graphData);
+            let graph = new Graph().deserialize(e.data[0]);
             this.files[filename].graph = graph;
             this.files[filename].layout = e.data[1];
             this.files[filename].status = "done";
@@ -687,19 +682,17 @@ class Tab {
     }
 }
 function loadFile(filename, data) {
-    let parsedData = JSON.parse(data);
-
     // TODO: do this in a web worker to avoid blocking the ui
     console.time("loadFile createGraph time");
-    let graph = new ConcreteGraph(parsedData.graph);
+    let graph = new Graph().deserialize(data);
     console.timeEnd("loadFile createGraph time");
     console.time("loadFile createCopy time");
-    let originalGraph = new ConcreteGraph().restoreFrom(graph);
+    let originalGraph = new Graph().restoreFrom(graph);
     console.timeEnd("loadFile createCopy time");
 
     currentTab().files[filename] = {
         graph: graph,
-        data: parsedData,
+        data: data,
         originalGraph: originalGraph,
         status: "-",
         info: null,
@@ -753,7 +746,6 @@ tabList.addEventListener("click", event => {
     }
 });
 
-
 // Add headers to show/hide side menu
 // TODO: How will this interact with every table in every run?
 //
@@ -783,7 +775,7 @@ function createSideMenuMetricSec(tab) {
     const { weights, metricsParam } = tab;
     const {
         nodeOcclusion,
-        edgeNodeOcclusion,
+        nodeEdgeOcclusion,
         edgeLength,
         edgeCrossing,
         angularResolution
@@ -808,7 +800,7 @@ function createSideMenuMetricSec(tab) {
         </div>
         <div class="menu-item">
             <p>Weight</p>
-            <input type="number" class="weight-input" id="edge-node-occlusion-weight" value="${edgeNodeOcclusion}" step="0.01"
+            <input type="number" class="weight-input" id="edge-node-occlusion-weight" value="${nodeEdgeOcclusion}" step="0.01"
                 min="0" max="1" />
         </div>
 
@@ -965,7 +957,7 @@ function getWeights() {
         nodeOcclusion: parseFloat(
             document.querySelector("#node-occlusion-weight").value
         ),
-        edgeNodeOcclusion: parseFloat(
+        nodeEdgeOcclusion: parseFloat(
             document.querySelector("#edge-node-occlusion-weight").value
         ),
         edgeLength: parseFloat(

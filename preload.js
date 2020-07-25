@@ -2,6 +2,7 @@ const { dialog, BrowserWindow } = require("electron").remote;
 const fs = require("fs");
 const sep = require("path").sep;
 
+const dataDir = `${__dirname}/data`;
 // TODO: switch to async functions
 
 let win = BrowserWindow.getFocusedWindow();
@@ -74,6 +75,33 @@ window.openDirDialog = function(fn) {
             fn(filename, data);
         });
     }
+};
+
+window.loadFileSync = function(path) {
+    return fs.readFileSync(`${dataDir}/${path}`, "utf-8");
+};
+
+window.lsDir = function(path) {
+    let p = `${__dirname}/${path}`;
+    let files = fs
+        .readdirSync(p)
+        .filter(f => !/(^|\/|\\)\.[^\/\.]/g.test(f))
+        .filter(f => fs.lstatSync(`${p}/${f}`).isFile());
+    return files;
+};
+
+window.saveFileSync = function(path) {
+    return fs.readFileSync(`${dataDir}/${path}`, "utf-8");
+};
+
+window.loadFile = function(path, fn) {
+    fs.readFile(`${dataDir}/${path}`, "utf8", (err, data) => {
+        if (err) throw err;
+        let filename = path.split(sep);
+        filename = filename[filename.length - 1];
+        filename = filename.split(".")[0];
+        fn(filename, data);
+    });
 };
 
 function walkDir(path) {
