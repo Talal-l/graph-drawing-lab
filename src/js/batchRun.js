@@ -683,26 +683,27 @@ class Tab {
 }
 function loadFile(filename, data) {
     // TODO: do this in a web worker to avoid blocking the ui
-    console.time("loadFile createGraph time");
-    let graph = new Graph().import(data);
-    console.timeEnd("loadFile createGraph time");
-    console.time("loadFile createCopy time");
-    let originalGraph = new Graph().restoreFrom(graph);
-    console.timeEnd("loadFile createCopy time");
+    try{
+        let graph = new Graph().import(data);
+        let originalGraph = new Graph().restoreFrom(graph);
 
-    currentTab().files[filename] = {
-        graph: graph,
-        data: data,
-        originalGraph: originalGraph,
-        status: "-",
-        info: null,
-        name: filename,
-        objective: graph.objective(),
-        originalObjective: originalGraph.objective()
-    };
+        currentTab().files[filename] = {
+            graph: graph,
+            data: data,
+            originalGraph: originalGraph,
+            status: "-",
+            info: null,
+            name: filename,
+            objective: graph.objective(),
+            originalObjective: originalGraph.objective()
+        };
 
-    currentTab().status = tabStatus.LOADED;
-    addTabContentEl(currentTab());
+        currentTab().status = tabStatus.LOADED;
+        addTabContentEl(currentTab());
+
+    } catch (err) {
+        console.warn(`Can't parse ${filename}\n`, "file content:\n", data, "error: ", err);
+    }
 }
 // setup tab bar
 let savedTabs = JSON.parse(localStorage.getItem("runs"));
