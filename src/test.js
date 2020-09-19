@@ -94,14 +94,14 @@ async function loadGraph() {
             //var { performance } = await import("perf_hooks");
             graphData = await fs.promises.readFile(`../data/${file}`, "utf-8");
         }
-        let originalGraph = new Graph().deserialize(graphData);
+        let originalGraph = new Graph().import(graphData);
         log.og = originalGraph;
 
-        let graph = new Graph().deserialize(graphData);
+        let graph = new Graph().import(graphData);
         graphs.push(originalGraph,graph);
 
 
-        graph = new Graph().deserialize(graphData);
+        graph = new Graph().import(graphData);
         displayGraph(graph, i++)
 
         graph.weights.nodeOcclusion = 1;
@@ -118,7 +118,10 @@ async function loadGraph() {
 
 
         displayGraph(tsTest(g2), i++);
-        displayGraph(hillClimbingRelaxedTest(g1, true, "immediate"), i++);
+        serializeTest(graph);
+        //let hc1 = hillClimbingRelaxedTest(g1, true, "immediate");
+        //displayGraph(hc1, i++);
+        //console.log(graph._zn);
 
         //window.log.step = step("ts",new Graph().restoreFrom(graph));
 
@@ -309,6 +312,16 @@ function updateSigGraph(graph,container) {
     sig.graph.read(graph.toSigGraph());
     sig.refresh();
     return sig;
+}
+
+function serializeTest(graph){
+
+    // copy graph
+    let og =  graph;
+    let copy = new Graph().deserialize(og);
+    window.log.og = og;
+    window.log.copy = copy;
+
 }
 
 loadGraph();

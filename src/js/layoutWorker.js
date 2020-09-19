@@ -33,8 +33,8 @@ onmessage = function(e) {
 
     let info = {
         executionTime: layoutAlg.executionTime,
-        evaluatedSolutions: layoutAlg.evaluatedSolutions
+        evaluatedSolutions: layoutAlg.evaluatedSolutions,
     };
 
-    postMessage([GRAPH.serialize(), layoutAlgName, options, command, info]);
+    postMessage([GRAPH.serialize(false), layoutAlgName, options, command, info]);
 };

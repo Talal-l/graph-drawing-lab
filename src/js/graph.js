@@ -444,8 +444,8 @@ class Graph {
     }
     // only copies the nodes and edges
     readGraph(graph) {
-        let gn = graph.nodes();
-        let gAdj = graph.adjList();
+        let gn = graph._nodes;
+        let gAdj = graph._adjList;
         this._nodes = new Array(gn.length);
         this._adjList = new Array(gn.length);
         for (let i = 0; i < gn.length; i++) {
@@ -458,6 +458,8 @@ class Graph {
     // copies a complete graph
     restoreFrom(graph) {
         let g = graph;
+
+        this._zn = new ZNormalization().deserialize(graph._zn);
         this.clear();
         this.options = { ...g.options };
         this.bounds = { ...g.bounds };
@@ -504,18 +506,51 @@ class Graph {
         return this;
     }
     toJSON() {
+        let s = {};
+        s._nodes = [... this._nodes];
+        s._adjList = [... this._adjList];
+        s._zn = this._zn.serialize(false);
+        s.options = {... this.options};
+        s.nodeSize = this.nodeSize;
+        s.edgeSize = 1.5;
+        s.nodeColor = this.nodeColor;
+        s.edgeColor = this.edgeColor;
+        s._metrics = {... this._metrics};
+        s.bounds = {... this.bounds};
+        s._nextId = this._nextId ;
+        s.requireEdgeLength = this.requireEdgeLengthPerc ;
+        s.requiredEdgeLength = this.requireEdgeLength ;
+        s.metricsParam = {... this.metricsParam} ;
+        s.weights = {... this.weights};
+        s.minDist = this.minDist;
+        s.maxDist = this.maxDist;
+        s._nodesWithAngles = this._nodesWithAngles;
+
+        return s;
+    }
+    serialize(string = true) {
+        if (string === true) return JSON.stringify(this);
+        else return this.toJSON();
+    }
+    deserialize(data) {
+        if (typeof data === "string") data = JSON.parse(data);
+        return this.restoreFrom(data);
+    }
+
+    export(string = true) {
         let serialized = {
-            nodes: [...this._nodes],
-            adjList: [...this._adjList]
+            graph: {
+                nodes: [...this._nodes],
+                adjList: [...this._adjList]
+            }
         };
+
+        if (string === true) return JSON.stringify(serialized);
+        
 
         return serialized;
     }
-    serialize(string = true) {
-        if (string === true) return JSON.stringify({ graph: this });
-        else return { graph: this.toJSON() };
-    }
-    deserialize(data) {
+    import(data){
         this.status = Graph.status.DIRTY;
         if (typeof data === "string") {
             data = JSON.parse(data);
@@ -528,9 +563,10 @@ class Graph {
             this._nodes[i] = {... data.graph.nodes[i]};
             this._adjList[i] = [... data.graph.adjList[i]];
         }
-    
+
         updateBounds.call(this);
         return this;
+
     }
     toSigGraph() {
         let graph = { nodes: [], edges: [] };

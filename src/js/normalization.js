@@ -72,7 +72,9 @@ export class ZNormalization {
 
         this[metricName].history.push(m);
         let len = this[metricName].history.length;
-        if (len == 1 || len == 2) {
+
+        // update sd and mean
+        if (len < 2) {
             this[metricName].avg = m;
             newAvg = m;
             this[metricName].SD = 0;
@@ -89,20 +91,22 @@ export class ZNormalization {
             this[metricName].avg = newAvg;
             this[metricName].SD = newSD;
         }
-        // if no or one value only in the array of measure 1
-        if (len < 3) {
+
+        // update min and max
+        if (len < 2) {
             this[metricName].max = m;
             this[metricName].min = m;
         } else {
             if (m > this[metricName].max) this[metricName].max = m;
             if (m < this[metricName].min) this[metricName].min = m;
         }
+        // normalize using new values
         if (newSD == 0) mNorm = m;
         else {
-            let mNorm1 = (m - newAvg) / newSD; // value
+            let mZScore = (m - newAvg) / newSD; // value
             min = (this[metricName].min - newAvg) / newSD; // min
             max = (this[metricName].max - newAvg) / newSD; // max
-            mNorm = (mNorm1 - min) / (max - min); // normalized
+            mNorm = (mZScore - min) / (max - min); // normalized
         }
         if (!isFinite(mNorm)) throw `${metricName} = ${mNorm}`;
 
@@ -141,5 +145,47 @@ export class ZNormalization {
             debugger;
         }
         return norm;
+    }
+    toJSON() {
+        let  s = {
+            normalMetrics : {... this.normalMetrics},
+            nodeOcclusion: {... this.nodeOcclusion},
+            nodeEdgeOcclusion: {... this.nodeEdgeOcclusion},
+            edgeLength: {... this.edgeLength},
+            edgeCrossing: {... this.edgeCrossing},
+            angularResolution: {... this.angularResolution},
+
+        };
+        s.nodeOcclusion.history = [... this.nodeOcclusion.history];
+        s.nodeEdgeOcclusion.history = [... this.nodeEdgeOcclusion.history];
+        s.edgeLength.history = [... this.edgeLength.history];
+        s.edgeCrossing.history = [... this.edgeCrossing.history];
+        s.angularResolution.history = [... this.angularResolution.history];
+
+        return s;
+    }
+    serialize(string = true) {
+        if (string === true) return JSON.stringify(this);
+        else return this.toJSON();
+    }
+    deserialize(data) {
+        if (typeof data === "string") {
+            data = JSON.parse(data);
+        }
+
+        this.normalMetrics = {...data.normalMetrics};
+        this.nodeOcclusion = {...data.nodeOcclusion};
+        this.nodeEdgeOcclusion = {...data.nodeEdgeOcclusion};
+        this.edgeLength = {...data.edgeLength};
+        this.edgeCrossing = {...data.edgeCrossing};
+        this.angularResolution = {...data.angularResolution};
+
+        this.nodeOcclusion.history = [...data.nodeOcclusion.history];
+        this.nodeEdgeOcclusion.history = [...data.nodeEdgeOcclusion.history];
+        this.edgeLength.history = [...data.edgeLength.history];
+        this.edgeCrossing.history = [...data.edgeCrossing.history];
+        this.angularResolution.history = [...data.angularResolution.history];
+
+        return this;
     }
 }

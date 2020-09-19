@@ -226,7 +226,7 @@ let beforeLayoutRun = true;
 
 function setGraphCache() {
     if (beforeLayoutRun) {
-        localStorage.setItem("graph", GRAPH.serialize());
+        localStorage.setItem("graph", GRAPH.export());
         beforeLayoutRun = false;
     }
 }
@@ -396,7 +396,7 @@ for (const e of toggleEl) {
 
 function saveCurrentGraph() {
     // eslint-disable-next-line no-undef
-    saveFileDialog(GRAPH.serialize());
+    saveFileDialog(GRAPH.export());
 }
 
 refreshScreen(sig, updateMetrics, updateSigGraph);
@@ -590,7 +590,7 @@ function toolbarClickHandler(event) {
         case "loadGraph":
             // eslint-disable-next-line no-undef
             openFileDialog((filename, data) => {
-                GRAPH.deserialize(data);
+                GRAPH.import(data);
                 refreshScreen(sig, updateMetrics, updateSigGraph);
                 clearGraphCache();
             });
@@ -621,13 +621,13 @@ function toolbarClickHandler(event) {
             disableToolbar("runLayout");
             console.log("GRAPH", GRAPH);
             worker.postMessage([
-                GRAPH.serialize(false),
+                GRAPH.export(false),
                 selectedLayoutAlg,
                 layoutAlgOptions,
                 "run"
             ]);
             worker.onmessage = e => {
-                GRAPH.deserialize(e.data[0]);
+                GRAPH.export(e.data[0]);
                 refreshScreen(sig, updateMetrics, updateSigGraph);
                 enableToolbar("runLayout");
                 updateLayoutInfo(e.data);
@@ -637,15 +637,15 @@ function toolbarClickHandler(event) {
             updateLayoutAlg();
             setGraphCache();
             disableToolbar("stepLayout");
-            console.log(GRAPH.serialize(false));
+            console.log(GRAPH.export(false));
             worker.postMessage([
-                GRAPH.serialize(false),
+                GRAPH.export(false),
                 selectedLayoutAlg,
                 layoutAlgOptions,
                 "step"
             ]);
             worker.onmessage = e => {
-                GRAPH.deserialize(e.data[0]);
+                GRAPH.export(e.data[0]);
                 refreshScreen(sig, updateMetrics, updateSigGraph);
                 enableToolbar("stepLayout");
             };
@@ -655,7 +655,7 @@ function toolbarClickHandler(event) {
             let originalGraph = localStorage.getItem("graph");
             if (originalGraph) {
                 GRAPH.clear();
-                GRAPH.deserialize(originalGraph);
+                GRAPH.export(originalGraph);
                 refreshScreen(sig, updateMetrics, updateSigGraph);
                 clearGraphCache();
             }

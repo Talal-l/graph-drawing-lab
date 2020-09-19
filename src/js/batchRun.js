@@ -12,6 +12,7 @@ import { CircularLayout } from "./circularLayout.js";
 import { HillClimbing } from "./hillClimbing.js";
 import { Table } from "./table";
 import { FileModal } from "./components/fileModal.js";
+import {ZNormalization} from "./normalization.js";
 const headers = [
     { id: "filename", title: "Filename", visible: true },
     { id: "status", title: "Status", visible: true },
@@ -596,11 +597,10 @@ class Tab {
     restoreFrom(saved) {
         Object.assign(this, saved);
         // resote graph objects
-
         let tab = this;
         for (const [filename, file] of Object.entries(tab.files)) {
-            file.graph = new Graph().deserialize(file);
-            file.originalGraph = new Graph().deserialize(file);
+            file.graph = new Graph().restoreFrom(file.graph);
+            file.originalGraph = new Graph().restoreFrom(file.graph);
         }
 
         console.log(`restoring from save \n${saved}`, this);
@@ -668,7 +668,7 @@ class Tab {
             this.runCount++;
             this.runTest(filename);
         }
-        addTable(this);
+        //addTable(this);
     }
     clearBatch() {
         console.log(this.status);
@@ -684,7 +684,7 @@ class Tab {
 function loadFile(filename, data) {
     // TODO: do this in a web worker to avoid blocking the ui
     console.time("loadFile createGraph time");
-    let graph = new Graph().deserialize(data);
+    let graph = new Graph().import(data);
     console.timeEnd("loadFile createGraph time");
     console.time("loadFile createCopy time");
     let originalGraph = new Graph().restoreFrom(graph);
