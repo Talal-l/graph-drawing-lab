@@ -7,14 +7,14 @@ const dataDir = `${__dirname}/data`;
 
 let win = BrowserWindow.getFocusedWindow();
 
-window.saveFileDialog = function(data) {
+window.saveFileDialog = function(data,extension="json") {
     let d = new Date();
     let date = `${d.getFullYear()}${d.getDate()}${d.getDate()}${d.getHours()}${d.getMinutes()}${d.getSeconds()}${Math.round(
         Math.random() * 100
     )}`;
     let dialogOptions = {
         buttonLabel: "Save",
-        defaultPath: `${__dirname}/data/${date}.json`
+        defaultPath: `${__dirname}/data/${date}.${extension}`
     };
 
     let filePath = dialog.showSaveDialogSync(win, dialogOptions);

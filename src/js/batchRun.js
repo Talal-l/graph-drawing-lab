@@ -926,8 +926,6 @@ function toolbarClickHandler(event) {
             }
             break;
         case "summary":
-            // don't switch if we have no data
-
             let completeBatch = true;
             for (const tab of tabs) {
                 if (tab.status !== tabStatus.DONE) {
@@ -951,7 +949,13 @@ function toolbarClickHandler(event) {
             break;
         default:
             break;
+        case "save":
+            exportBatchToCSV(tabs);
+
+
+            break;
     }
+
 }
 function getWeights() {
     return {
@@ -1146,6 +1150,36 @@ function genTest(testNum, nMin, nMax, eMin, eMax, width, height) {
         // eslint-disable-next-line no-undef
         saveFile(json);
     }
+}
+
+function exportBatchToCSV(tabs){
+    // batch will contain tabs will files and there results
+
+    console.log(tabs);
+    let csv = "filename,execution time,evaluated solution,layout,nodes,edges,density,node occlusion,edge-node occlusion,edge length,edge crossing,angular resolution,node occlusion weight,edge-node occlusion weight,edge length weight,edge crossing weight,angular resolution weight,required edge length,objective\n";
+
+    for (let tab of tabs) {
+        for (let key of Object.keys(tab.files)) {
+            let file = tab.files[key];
+            let graph = file.graph;
+            let metrics = graph.normalMetrics();
+            let info = file.info;
+            let executionTime, evaluatedSolutions;
+            let w = graph.weights;
+            if (info != null) {
+                executionTime = info.executionTime; evaluatedSolutions = info.evaluatedSolutions;
+            }
+
+            let row = `${key},${executionTime},${evaluatedSolutions},${file.layout},${graph.nodes().length},${graph.edges().length},${graph.density()},${metrics.nodeOcclusion},${metrics.nodeEdgeOcclusion},${metrics.edgeLength},${metrics.edgeCrossing},${metrics.angularResolution},${w.nodeOcclusion},${w.nodeEdgeOcclusion},${w.edgeLength},${w.edgeCrossing},${w.angularResolution},${graph.requiredEdgeLength},${graph.objective()}\n`;
+
+            csv += row;
+
+        }
+    }
+
+    saveFileDialog(csv,"csv");
+
+
 }
 
 window.tabs = tabs;

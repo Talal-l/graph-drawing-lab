@@ -123,8 +123,8 @@ class Graph {
         };
 
         this._nextId = 0;
-        this.requireEdgeLengthPerc = 0.5;
-        this.requireEdgeLength = 100;
+        this.requiredEdgeLengthPerc = 0.5;
+        this.requiredEdgeLength = 100;
         this.metricsParam = options.metricsParam || {
             requiredEdgeLength:100 
         };
@@ -464,7 +464,7 @@ class Graph {
         this.options = { ...g.options };
         this.bounds = { ...g.bounds };
         this._nextId = g._nextId;
-        this.requireEdgeLengthPerc = g.requireEdgeLengthPerc;
+        this.requiredEdgeLengthPerc = g.requiredEdgeLengthPerc;
         this.metricsParam = { ...g.metricsParam };
         this.weights = { ...g.weights };
         this._metrics = { ...g._metrics};
@@ -518,8 +518,8 @@ class Graph {
         s._metrics = {... this._metrics};
         s.bounds = {... this.bounds};
         s._nextId = this._nextId ;
-        s.requireEdgeLength = this.requireEdgeLengthPerc ;
-        s.requiredEdgeLength = this.requireEdgeLength ;
+        s.requiredEdgeLength = this.requiredEdgeLengthPerc ;
+        s.requiredEdgeLength = this.requiredEdgeLength ;
         s.metricsParam = {... this.metricsParam} ;
         s.weights = {... this.weights};
         s.minDist = this.minDist;
