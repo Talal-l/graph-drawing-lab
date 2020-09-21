@@ -77,34 +77,54 @@ export class FileModal extends HTMLElement {
         if (tab === null) throw `No Tab object!`;
 
         this.style = `
-        background-color: white;position: absolute;width: 500px;height: 500px;left: ${700 +
+        background-color: white;position: absolute;width: 900px;height: 600px;left: ${700 +
             this._initOffset}px;top: ${150 +
             this._initOffset}px;border: solid;padding: 8px;z-index: 1; display
         `;
         this.innerHTML = `
+            <style>
+                .file-modal-preview{
+                    width:100%;
+                    height:73%;
+                    display:flex;
+                }
+                .file-modal-preview .sigma-scene{
+                    border: solid;
+                }
+                .file-modal-label-container{
+                    display:flex;
+                }
+                .file-modal-label-container h2{
+                    width:100%;
+                    text-align:center;
+                }
+            </style>
+
             <div class="file-modal-control" style="width:100%;display:flex">
                 <span class="file-modal-drag fas fa-arrows-alt fa-2x" style="margin-right:auto;cursor:pointer"></span>
                 <span class="file-modal-close fas fa-times" style="cursor:pointer"></span>
             </div>
             <h2 class="file-modal-title">${file.name}</h2> 
             <h3 class="file-modal-title">${tab.title}</h3> 
-            <div class="file-modal-preview" id="file-modal-container-${file.name}-${tab.id}">
-            <style>
-                .file-modal-preview{
-                    width:100%;
-                    height:50%;
-                }
-                .file-modal-preview .sigma-scene{
-                    border: solid;
-                }
-            </style>
+            <div class="file-modal-label-container">
+                <h2>Before</h2> 
+                <h2>After</h2> 
+            </div> 
+
+            <div class="file-modal-preview">
+                <div class="file-modal-preview" id="file-modal-before-${file.name}-${tab.id}">
+                </div>
+                <div class="file-modal-preview" id="file-modal-after-${file.name}-${tab.id}">
+                </div>
             </div>
+
+
         `;
 
         // create graph and render it in the modal
         let webglRenderer = {
             type: "webgl",
-            container: `file-modal-container-${file.name}-${tab.id}`
+            container: `file-modal-before-${file.name}-${tab.id}`
         };
         let sigDefaults = {
             renderer: webglRenderer,
@@ -113,11 +133,23 @@ export class FileModal extends HTMLElement {
                 autoRescale: true
             }
         };
+
+        // draw graph before run
         let sig = new sigma(sigDefaults);
-        let graph = new Graph().restoreFrom(file.graph);
+        let graph = new Graph().restoreFrom(file.originalGraph);
         sig.graph.read(graph.toSigGraph());
         sig.refresh();
+
+        // draw graph after the run
+        webglRenderer.container  = `file-modal-after-${file.name}-${tab.id}`;
+        sig = new sigma(sigDefaults);
+        graph = new Graph().restoreFrom(file.graph);
+        sig.graph.read(graph.toSigGraph());
+        sig.refresh();
+
+
     }
+
 }
 
 customElements.define("file-modal", FileModal);

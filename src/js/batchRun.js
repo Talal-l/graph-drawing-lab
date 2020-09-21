@@ -600,7 +600,7 @@ class Tab {
         let tab = this;
         for (const [filename, file] of Object.entries(tab.files)) {
             file.graph = new Graph().restoreFrom(file.graph);
-            file.originalGraph = new Graph().restoreFrom(file.graph);
+            file.originalGraph = new Graph().restoreFrom(file.originalGraph);
         }
 
         console.log(`restoring from save \n${saved}`, this);
