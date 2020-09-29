@@ -623,7 +623,8 @@ class Tab {
                 options.layoutParam[p.name] = value;
             }
         }
-        let graphData = currentTab().files[filename].originalGraph.serialize(false);
+        let graph = currentTab().files[filename].originalGraph;
+        let graphData = graph.serialize(false);
         console.log("graphData", graphData);
 
         let worker = new Worker("build/layoutWorker.js");

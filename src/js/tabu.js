@@ -1,5 +1,5 @@
-import { Vec, distance, equal } from "./util.js";
-import { Graph} from "./graph.js";
+import {Vec, distance, equal} from "./util.js";
+import {Graph} from "./graph.js";
 
 // Util methods
 function bestObjective(refSet) {
@@ -139,14 +139,14 @@ function shortestDist(srcPos, dstPos, pathSquareSize) {
 function offsets(squareSize) {
     let s = squareSize;
     let scaledOffsets = [
-        new Vec({x:s,y: 0}),
-        new Vec({x:s, y:-s}),
-        new Vec({x:0, y:-s}),
-        new Vec({x:-s,y: -s}),
-        new Vec({x:-s, y:0}),
+        new Vec({x: s, y: 0}),
+        new Vec({x: s, y: -s}),
+        new Vec({x: 0, y: -s}),
+        new Vec({x: -s, y: -s}),
+        new Vec({x: -s, y: 0}),
         new Vec({x: -s, y: s}),
         new Vec({x: 0, y: s}),
-        new Vec({x:s, y:s}),
+        new Vec({x: s, y: s}),
     ];
     return scaledOffsets;
 }
@@ -158,7 +158,6 @@ export class Tabu {
         this.params = params;
         // distance to move the node
         this.squareSize = params.squareSize || 512;
-        this.initSquareSize = this.squareSize;
         this.squareReduction = params.squareReduction || 4;
         this.maxIt = params.iterations || 40;
         this.intensifyIt = params.intensifyIt || 5;
@@ -209,13 +208,13 @@ export class Tabu {
                     dst.getNodePos(nId),
                     this.PRparam.pathSquareSize
                 );
-                let move = { nodeId: nId, pos: position, it: this.it };
+                let move = {nodeId: nId, pos: position, it: this.it};
                 if (!inTabuSet(this.tabuSet, move)) {
                     if (srcClone.objective() < best.objective()) {
                         //console.log(
-                            //"found a better layout",
-                            //srcClone.objective(),
-                            //src.objective()
+                        //"found a better layout",
+                        //srcClone.objective(),
+                        //src.objective()
                         //);
                         best = new Graph().restoreFrom(srcClone);
                     }
@@ -247,7 +246,7 @@ export class Tabu {
             }
             bestCandidateClone = new Graph().restoreFrom(bestCandidate);
 
-            let entry = { layout: bestCandidateClone, it: this.it };
+            let entry = {layout: bestCandidateClone, it: this.it};
 
             // update refSet
             if (!inRefSet(this.refSet, entry.layout)) {
@@ -301,7 +300,7 @@ export class Tabu {
                         chosenSol = candidateSol;
                     }
                 }
-                else{
+                else {
                     //console.log("inTabuSet", str(candidateSol));
                 }
             }
@@ -322,7 +321,7 @@ export class Tabu {
             console.log("using PR");
             let layoutClone = new Graph(layout.graph);
             //console.log("adding to refSet layoutClone", layoutClone.test);
-            let entry = { layout: layoutClone, it: this.it };
+            let entry = {layout: layoutClone, it: this.it};
             if (this.refSet.length < this.PRparam.refSetSize) {
                 //console.log("add to refSet");
                 this.refSet.push(entry);
@@ -367,4 +366,61 @@ export class Tabu {
         //console.log("ts objective: ", this.graph.objective());
         return this.graph;
     }
+
+
+    serialize(string = true) {
+        let s = {};
+        if (string === true) return JSON.stringify(this);
+        s.graph = this.graph.serialize();
+        // distance to move the node
+        s.params = {... this.params};
+        s.squareSize = this.squareSize;
+        s.squareReduction = this.squareReduction;
+        s.it = this.it;
+        s.intensifyIt = this.intensifyIt;
+        s.cutoff = this.cutoff;
+        s.initCutoff = this.initCutoff;
+        s.duration = this.duration;
+        s.maxIt = this.maxIt;
+        s.done = this.done;
+        s.strategy = this.strategy;
+        s.evaluatedSolutions = this.evaluatedSolutions;
+        s.executionTime = this.executionTime; // in ms
+        s.effectBounds = this.effectBounds;
+        s.PRparam = {...this.PRparam};
+        s.tabuSet = [... this.tabuSet];
+        s.refSet = [... this.refSet];
+        s.usePR = this.usePR;
+
+        return s;
+
+
+    }
+    deserialize(data) {
+        if (typeof data === "string") data = JSON.parse(data);
+        this.graph = new Graph().deserialize(data.graph);
+        // distance to move the node
+        this.squareSize = data.squareSize;
+        this.squareReduction = data.squareReduction;
+        this.it = data.it;
+        this.maxIt = data.maxIt;
+        this.done = data.done;
+        this.strategy = data.strategy;
+        this.evaluatedSolutions = data.evaluatedSolutions;
+        this.executionTime = data.executionTime; // in ms
+        this.effectBounds = data.effectBounds;
+
+        this.params = data.params;
+        this.intensifyIt = data.intensifyIt;
+        this.initCutoff = data.initCutoff;
+        this.duration = data.duration;
+        this.PRparam = {...data.PRparam};
+        this.tabuSet = [...data.tabuSet];
+        this.refSet = [... this.refSet];
+        this.usePR = data.usePR;
+
+        return this;
+    }
+
+
 }

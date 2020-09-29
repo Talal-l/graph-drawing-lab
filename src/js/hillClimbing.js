@@ -1,4 +1,5 @@
 import { Vec } from "./util.js";
+import {Graph} from "./graph";
 
 function equal(a, b) {
     const EPS = 1e-10;
@@ -120,7 +121,7 @@ export class HillClimbing {
     run() {
         let start = performance.now();
         this.done = false;
-        this.graph.resetZn();
+        //this.graph.resetZn();
         while (this.it < this.maxIt && this.squareSize >= 1) {
             let startStep = performance.now();
 
@@ -129,6 +130,41 @@ export class HillClimbing {
             //console.log("stepTime: ", performance.now() - startStep, "cost: " + this.graph.objective());
         }
         this.executionTime = performance.now() - start;
+    }
+
+    serialize(string = true) {
+        let s = {};
+        if (string === true) return JSON.stringify(this);
+        s.graph = this.graph.serialize();
+        // distance to move the node
+        s.squareSize  = this.squareSize;
+        s.squareReduction = this.squareReduction;
+        s.it = this.it;
+        s.maxIt = this.maxIt;
+        s.done = this.done;
+        s.strategy = this.strategy;
+        s.evaluatedSolutions = this.evaluatedSolutions;
+        s.executionTime = this.executionTime; // in ms
+        s.effectBounds = this.effectBounds;
+
+        return s;
+
+
+    }
+    deserialize(data) {
+        if (typeof data === "string") data = JSON.parse(data);
+        this.graph = new Graph().deserialize(data.graph);
+        // distance to move the node
+        this.squareSize  = data.squareSize;
+        this.squareReduction = data.squareReduction;
+        this.it = data.it;
+        this.maxIt = data.maxIt;
+        this.done = data.done;
+        this.strategy = data.strategy;
+        this.evaluatedSolutions = data.evaluatedSolutions;
+        this.executionTime = data.executionTime; // in ms
+        this.effectBounds = data.effectBounds;
+        return this;
     }
 }
 

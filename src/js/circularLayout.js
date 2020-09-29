@@ -1,4 +1,5 @@
 import { Vec } from "./util.js";
+import { Graph} from "./graph.js";
 
 export class CircularLayout {
     constructor(graph, params) {
@@ -37,4 +38,29 @@ export class CircularLayout {
 
         this.iterationCount++;
     }
+
+    serialize(string = true) {
+        let s = {};
+        if (string === true) return JSON.stringify(this);
+        s.graph = this.graph.serialize();
+        s.iterationCount = this.iterationCount;
+        s.maxIteration = this.maxIteration;
+        s.radius = this.radius;
+        s.executionTime = this.executionTime;
+
+        return s;
+
+
+    }
+    deserialize(data) {
+        if (typeof data === "string") data = JSON.parse(data);
+        this.graph = new Graph().deserialize(data.graph);
+        this.iterationCount = data.iterationCount;
+        this.maxIteration = data.maxIteration;
+        this.radius = data.radius;
+        this.executionTime = data.executionTime;
+        return this;
+    }
+
+
 }

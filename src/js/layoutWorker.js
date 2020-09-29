@@ -1,40 +1,22 @@
-import { CircularLayout } from "./circularLayout.js";
-import { Tabu} from "./tabu.js";
-import { HillClimbing } from "./hillClimbing.js";
-import { Graph, generateGraph } from "./graph.js";
+import {CircularLayout} from "./circularLayout.js";
+import {Tabu} from "./tabu.js";
+import {HillClimbing} from "./hillClimbing.js";
 
-let GRAPH = new Graph();
-let layoutAlgList = { CircularLayout, HillClimbing };
-
-onmessage = function(e) {
-    console.log(JSON.stringify(e.data));
-    let [graphData, layoutAlgName, options, command] = e.data;
-
-    let graphParam = options.metricsParam;
-    let layoutParam = options.layoutParam;
-
-    GRAPH.deserialize(graphData);
-    GRAPH.setMetricParam(graphParam);
-    GRAPH.setWeights(options.weights);
-
+onmessage = function (e) {
+    console.log("in worker: ", e);
     let layoutAlg = null;
-    switch (layoutAlgName) {
+    switch (e.data.layoutAlgName) {
         case "hillClimbing":
-            layoutAlg = new HillClimbing(GRAPH, layoutParam);
+            layoutAlg = new HillClimbing().deserialize(e.data.layoutAlg);
             break;
         case "circular":
-            layoutAlg = new CircularLayout(GRAPH, layoutParam);
+            layoutAlg = new CircularLayout().deserialize(e.data.layoutAlg);
             break;
         case "tabu":
-            layoutAlg = new Tabu(GRAPH, layoutParam);
+            layoutAlg = new Tabu().deserialize(e.data.layoutAlg);
             break;
     }
-    layoutAlg[command]();
+    layoutAlg[e.data.command]();
 
-    let info = {
-        executionTime: layoutAlg.executionTime,
-        evaluatedSolutions: layoutAlg.evaluatedSolutions,
-    };
-
-    postMessage([GRAPH.serialize(false), layoutAlgName, options, command, info]);
+    postMessage({layoutAlg: layoutAlg, layoutAlgName: e.data.layoutAlgName, command: e.data.command});
 };

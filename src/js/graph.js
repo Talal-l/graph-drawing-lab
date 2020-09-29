@@ -411,6 +411,7 @@ class Graph {
             yMin: -2000
         };
         updateBounds.call(this);
+        this._zn = new ZNormalization;
         return this;
     }
     setBounds(bounds) {
@@ -458,9 +459,9 @@ class Graph {
     // copies a complete graph
     restoreFrom(graph) {
         let g = graph;
+        this.clear();
 
         this._zn = new ZNormalization().deserialize(graph._zn);
-        this.clear();
         this.options = { ...g.options };
         this.bounds = { ...g.bounds };
         this._nextId = g._nextId;

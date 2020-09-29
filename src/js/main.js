@@ -2,7 +2,9 @@
 /*global sigma*/
 import { Graph, generateGraph } from "./graph.js";
 import { refreshScreen, distance, getEdgeId } from "./util.js";
-
+import { CircularLayout } from "./circularLayout.js";
+import { HillClimbing } from "./hillClimbing.js";
+import { Tabu} from "./tabu.js";
 let container = document.querySelector("#container");
 
 let canvasRenderer = {
@@ -38,10 +40,11 @@ let sig = new sigma(sigDefaults);
 let cam = sig.cameras.cam1;
 // create the main graph instance
 let GRAPH = new Graph();
+// 
+let CURRENT_LAYOUT_ALG = null;
+let CURRENT_LAYOUT_ALG_NAME = null;
 
-let selectedLayoutAlg;
 let layoutAlgOptions;
-updateLayoutAlg();
 
 // create an object to use to track select and drag operations
 // using constructor function so we can selectively expose methods
@@ -305,7 +308,7 @@ genModal.addEventListener("click", event => {
                 container.offsetWidth,
                 container.offsetHeight
             );
-
+            cleanup();
             GRAPH.clear();
             clearGraphCache();
             // extract the nodes and edges from the created graph and update the current instance with it
@@ -331,6 +334,7 @@ warnModal.addEventListener("click", event => {
             genModal.style.display = "flex";
             break;
         case "delete":
+            cleanup();
             warnModal.style.display = "none";
             GRAPH.clear();
             refreshScreen(sig, updateMetrics, updateSigGraph);
@@ -471,43 +475,43 @@ function updateMetrics() {
     updateObjective();
 }
 
-function updateLayoutAlg() {
+function getLayoutAlg() {
     let list = document.querySelector("#layoutAlgList");
 
     let requiredEdgeLength = parseFloat(
         document.querySelector("#edge-length-required").value
     );
-    layoutAlgOptions = {
-        metricsParam: { requiredEdgeLength },
-        layoutParam: {},
-        weights: getWeights()
-    };
+    let layoutAlgName = list.value;
+    let layoutAlg;
+    // TODO: add this when it's added to the UI
+    let layoutParam = {};
 
-    switch (list.value) {
+    switch (layoutAlgName) {
         case "hillClimbing":
-            selectedLayoutAlg = "hillClimbing";
-            break;
-
-        case "tabu":
-            selectedLayoutAlg = "tabu";
+            layoutAlg = new HillClimbing(GRAPH, layoutParam);
             break;
         case "circular":
-            selectedLayoutAlg = "circular";
+            layoutAlg = new CircularLayout(GRAPH, layoutParam);
+            break;
+        case "tabu":
+            layoutAlg = new Tabu(GRAPH, layoutParam);
             break;
     }
+    CURRENT_LAYOUT_ALG_NAME = layoutAlgName;
+
+    return layoutAlg;
 }
 function updateLayoutInfo(data) {
-    let info = data[4];
-    let layout = data[1];
+    let layout = data.layoutAlgName;
 
     let layoutInfoSec = document.querySelector("#menu-sec-layout-info");
     layoutInfoSec.querySelector("#layout").innerHTML = layout;
     layoutInfoSec.querySelector(
         "#execution-time"
-    ).innerHTML = `${info.executionTime} ms`;
+    ).innerHTML = `${data.layoutAlg.executionTime} ms`;
     layoutInfoSec.querySelector(
         "#evaluated-solutions"
-    ).innerHTML = info.evaluatedSolutions ? info.evaluatedSolutions : "-";
+    ).innerHTML = data.layoutAlg.evaluatedSolutions ? data.layoutAlg.evaluatedSolutions : "-";
 }
 
 function disableToolbar(init) {
@@ -551,9 +555,6 @@ function enableToolbar(init) {
     setTimeout(() => {
         toolbar.addEventListener("click", toolbarClickHandler);
     }, 0);
-
-    worker.terminate();
-    worker = new Worker("build/layoutWorker.js");
 }
 
 function toolbarClickHandler(event) {
@@ -597,15 +598,19 @@ function toolbarClickHandler(event) {
                     console.warn(`Can't parse ${filename}\n`, "file content:\n", data, "error: ", err);
                 }
                 refreshScreen(sig, updateMetrics, updateSigGraph);
+                cleanup();
                 clearGraphCache();
             });
             break;
         case "deleteGraph":
+            cleanup();
             GRAPH.clear();
             refreshScreen(sig, updateMetrics, updateSigGraph);
             clearGraphCache();
+
             break;
         case "randomLayout":
+            cleanup();
             setGraphCache();
             const x = container.offsetWidth;
             const y = container.offsetHeight;
@@ -621,41 +626,51 @@ function toolbarClickHandler(event) {
 
             break;
         case "runLayout":
-            updateLayoutAlg();
             setGraphCache();
             disableToolbar("runLayout");
             console.log("GRAPH", GRAPH);
-            worker.postMessage([
-                GRAPH.serialize(false),
-                selectedLayoutAlg,
-                layoutAlgOptions,
-                "run"
-            ]);
+            CURRENT_LAYOUT_ALG = getLayoutAlg();
+            worker.postMessage({
+                layoutAlgName:CURRENT_LAYOUT_ALG_NAME,
+                layoutAlg: CURRENT_LAYOUT_ALG,
+                command: "run"
+            });
+
             worker.onmessage = e => {
-                GRAPH.deserialize(e.data[0]);
+                console.log("onmessage: ", e);
+                GRAPH.deserialize(e.data.layoutAlg.graph);
                 refreshScreen(sig, updateMetrics, updateSigGraph);
                 enableToolbar("runLayout");
                 updateLayoutInfo(e.data);
+                cleanup();
             };
             break;
         case "stepLayout":
-            updateLayoutAlg();
             setGraphCache();
             disableToolbar("stepLayout");
-            console.log(GRAPH.serialize(false));
-            worker.postMessage([
-                GRAPH.serialize(false),
-                selectedLayoutAlg,
-                layoutAlgOptions,
-                "step"
-            ]);
+            if (CURRENT_LAYOUT_ALG === null){
+                CURRENT_LAYOUT_ALG = getLayoutAlg();
+                console.log("first step from main: ", CURRENT_LAYOUT_ALG);
+            }
+            worker.postMessage({
+                layoutAlgName:CURRENT_LAYOUT_ALG_NAME,
+                layoutAlg: CURRENT_LAYOUT_ALG,
+                command: "step"
+            });
+
             worker.onmessage = e => {
-                GRAPH.deserialize(e.data[0]);
+                GRAPH.deserialize(e.data.layoutAlg.graph);
+
+                // no need to restore the layoutAlg methods here
+                CURRENT_LAYOUT_ALG = e.data.layoutAlg;
+                CURRENT_LAYOUT_ALG_NAME = e.data.layoutAlgName;
+
                 refreshScreen(sig, updateMetrics, updateSigGraph);
                 enableToolbar("stepLayout");
             };
             break;
         case "resetLayout":
+            cleanup();
             // restore old layout from local storage
             let originalGraph = localStorage.getItem("graph");
             if (originalGraph) {
@@ -673,6 +688,14 @@ function toolbarClickHandler(event) {
         default:
             break;
     }
+}
+
+// make sure to clean global state when resetting or deleting a graph
+function cleanup(){
+    console.log("cleanup");
+    CURRENT_LAYOUT_ALG = null;
+    CURRENT_LAYOUT_ALG_NAME = null;
+
 }
 
 window.graph = GRAPH;
