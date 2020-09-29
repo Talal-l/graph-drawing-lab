@@ -1143,12 +1143,9 @@ function genTest(testNum, nMin, nMax, eMin, eMax, width, height) {
 
     while (testNum--) {
         let G = generateGraph(nMin, nMax, eMin, eMax, height, width);
-        let obj = {
-            graph: G.toJSON()
-        };
-        let json = JSON.stringify(obj);
+
         // eslint-disable-next-line no-undef
-        saveFile(json);
+        saveFile(G.export());
     }
 }
 

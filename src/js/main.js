@@ -449,7 +449,7 @@ function updateMetrics() {
 
     // update ui
     document.querySelector("#node-num").innerHTML = GRAPH.nodes().length;
-    document.querySelector("#edge-num").innerHTML = GRAPH.edges().length;
+    document.querySelector("#edge-num").innerHTML = GRAPH.edges().length/2;
     document.querySelector("#density").innerHTML = GRAPH.density().toFixed(3);
     document.querySelector(
         "#node-occlusion"
