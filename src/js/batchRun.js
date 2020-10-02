@@ -635,11 +635,13 @@ class Tab {
 
         worker.onmessage = function(e) {
             console.time("onmessage time");
-            let graph = new Graph().deserialize(e.data[0]);
+            console.log("e: ", e);
+            let graph = new Graph().deserialize(e.data.layoutAlg.graph);
             this.files[filename].graph = graph;
-            this.files[filename].layout = e.data[1];
+            this.files[filename].layout = e.layoutAlg;
             this.files[filename].status = "done";
-            this.files[filename].info = e.data[4];
+            this.files[filename].info = {executionTime: e.data.layoutAlg.executionTime, 
+                evaluatedSolutions: e.data.layoutAlg.evaluatedSolutions};
             this.files[filename].worker = null;
 
             this.files[filename].objective = graph.objective();
