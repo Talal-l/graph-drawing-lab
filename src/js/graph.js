@@ -108,11 +108,11 @@ class Graph {
         this.nodeColor = "#000";
         this.edgeColor = "#000";
         this._metrics = {
-            nodeOcclusion: null,
-            nodeEdgeOcclusion: null,
-            edgeLength: null,
-            edgeCrossing: null,
-            angularResolution: null
+            nodeOcclusion: 0,
+            nodeEdgeOcclusion: 0,
+            edgeLength: 0,
+            edgeCrossing: 0,
+            angularResolution: 0 
         };
 
         this.bounds = {
@@ -342,7 +342,9 @@ class Graph {
         return wSum;
     }
     normalMetrics() {
-        if (this.status === Graph.status.DIRTY) this.calcMetrics();
+        if (this.status === Graph.status.DIRTY) {
+            this.calcMetrics();
+        }
         // normalize and update the history
         return this._zn.normalizeAll(this._metrics);
     }
@@ -384,8 +386,19 @@ class Graph {
         return metrics;
     }
     setMetricParam(metricsParam) {
-        this.status = Graph.status.DIRTY;
-        this.metricsParam = metricsParam;
+        let diff = false;
+        for (let key of Object.keys(metricsParam)) {
+            if (this.metricsParam[key] !== metricsParam[key]) {
+                diff = true;
+                break;
+            }
+        }
+
+        diff = true;
+        if (diff) {
+            this.status = Graph.status.DIRTY;
+            this.metricsParam = metricsParam;
+        }
     }
     setWeights(weights) {
         Object.assign(this.weights, weights);
@@ -552,6 +565,8 @@ class Graph {
         return serialized;
     }
     import(data){
+        // TODO: remove this if the normalization was part of the imported data
+        this.resetZn();
         this.status = Graph.status.DIRTY;
         if (typeof data === "string") {
             data = JSON.parse(data);

@@ -444,6 +444,7 @@ function updateMetrics() {
         document.querySelector("#edge-length-required").value
     );
 
+    debugger;
     GRAPH.setMetricParam({
         maxEdgeLength,
         requiredEdgeLength
@@ -476,8 +477,10 @@ function updateMetrics() {
 }
 
 function getLayoutAlg() {
-    let list = document.querySelector("#layoutAlgList");
 
+    GRAPH.resetZn();
+    console.log("reset graph zn");
+    let list = document.querySelector("#layoutAlgList");
     let requiredEdgeLength = parseFloat(
         document.querySelector("#edge-length-required").value
     );
@@ -508,7 +511,7 @@ function updateLayoutInfo(data) {
     layoutInfoSec.querySelector("#layout").innerHTML = layout;
     layoutInfoSec.querySelector(
         "#execution-time"
-    ).innerHTML = `${data.layoutAlg.executionTime} ms`;
+    ).innerHTML = `${data.layoutAlg.executionTime.toFixed(3)} ms`;
     layoutInfoSec.querySelector(
         "#evaluated-solutions"
     ).innerHTML = data.layoutAlg.evaluatedSolutions ? data.layoutAlg.evaluatedSolutions : "-";
@@ -650,7 +653,6 @@ function toolbarClickHandler(event) {
             disableToolbar("stepLayout");
             if (CURRENT_LAYOUT_ALG === null){
                 CURRENT_LAYOUT_ALG = getLayoutAlg();
-                console.log("first step from main: ", CURRENT_LAYOUT_ALG);
             }
             worker.postMessage({
                 layoutAlgName:CURRENT_LAYOUT_ALG_NAME,

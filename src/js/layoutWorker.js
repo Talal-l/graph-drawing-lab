@@ -3,7 +3,7 @@ import {Tabu} from "./tabu.js";
 import {HillClimbing} from "./hillClimbing.js";
 
 onmessage = function (e) {
-    console.log("in worker: ", e);
+    console.log("in worker: ", JSON.stringify(e.data));
     let layoutAlg = null;
     switch (e.data.layoutAlgName) {
         case "hillClimbing":

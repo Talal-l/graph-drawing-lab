@@ -13,6 +13,7 @@ import { HillClimbing } from "./hillClimbing.js";
 import { Table } from "./table";
 import { FileModal } from "./components/fileModal.js";
 import {ZNormalization} from "./normalization.js";
+import {Tabu} from "./tabu.js";
 const headers = [
     { id: "filename", title: "Filename", visible: true },
     { id: "status", title: "Status", visible: true },
@@ -615,6 +616,8 @@ class Tab {
             metricsParam: this.metricsParam,
             layoutParam: {}
         };
+        // copy the UI layout param into options.layoutParam
+        // TODO: turn this into a function
         for (let p of this.layoutParam) {
             if (p.type === "number") {
                 options.layoutParam[p.name] = p.value;
@@ -624,12 +627,12 @@ class Tab {
             }
         }
         let graph = currentTab().files[filename].originalGraph;
-        let graphData = graph.serialize(false);
-        console.log("graphData", graphData);
+        let layout  = currentTab().layout;
+        let layoutParam  = options.layoutParam;
+        let layoutAlg = getLayoutAlg(graph,layout,null);
 
         let worker = new Worker("build/layoutWorker.js");
-        worker.postMessage([graphData, currentTab().layout, options, "run"]);
-
+        worker.postMessage({layoutAlg: layoutAlg, layoutAlgName: layout, command: "run"});
         currentTab().files[filename].status = "running";
         currentTab().files[filename].worker = worker;
 
@@ -637,6 +640,7 @@ class Tab {
             console.time("onmessage time");
             console.log("e: ", e);
             let graph = new Graph().deserialize(e.data.layoutAlg.graph);
+
             this.files[filename].graph = graph;
             this.files[filename].layout = e.layoutAlg;
             this.files[filename].status = "done";
@@ -650,7 +654,6 @@ class Tab {
             ].originalGraph.objective();
 
             // TODO: Make sure the options are in sync with the ui
-            currentTab().options = e.data[2];
 
             this.runCount--;
 
@@ -1181,5 +1184,23 @@ function exportBatchToCSV(tabs){
 
 
 }
+// TODO: refactor this to be shared between main and batchrun
+function getLayoutAlg(graph,layoutAlgName, layoutParam){
+    graph.resetZn();
+    let layoutAlg = null;
+    switch (layoutAlgName) {
+        case "hillClimbing":
+            layoutAlg = new HillClimbing(graph,layoutParam);
+            break;
+        case "circular":
+            layoutAlg = new CircularLayout(graph,layoutParam);
+            break;
+        case "tabu":
+            layoutAlg = new Tabu(graph, layoutParam);
+            break;
+    }
+    return layoutAlg;
+}
+
 
 window.tabs = tabs;
