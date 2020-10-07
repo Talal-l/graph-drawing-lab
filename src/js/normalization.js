@@ -1,3 +1,5 @@
+import {equal} from "./util.js";
+
 export class ZNormalization {
     constructor() {
         this.normalMetrics = {
@@ -101,12 +103,14 @@ export class ZNormalization {
             if (m < this[metricName].min) this[metricName].min = m;
         }
         // normalize using new values
-        if (newSD == 0) mNorm = m;
+        if (equal(newSD, 0)) mNorm = m;
         else {
             let mZScore = (m - newAvg) / newSD; // value
             min = (this[metricName].min - newAvg) / newSD; // min
             max = (this[metricName].max - newAvg) / newSD; // max
             mNorm = (mZScore - min) / (max - min); // normalized
+            //if (metricName == "edgeCrossing")
+                //console.log("metric: ", metricName,"min: ", min, "max: ", max, "zScore: ", mZScore, "SD: ", newSD, "avg: ", newAvg, "Norm: ", mNorm);
         }
         if (!isFinite(mNorm)) throw `${metricName} = ${mNorm}`;
 

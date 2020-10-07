@@ -368,7 +368,6 @@ class Graph {
         this._metrics = metrics;
         this.status = Graph.status.COMPUTED;
         return this._metrics;
-
     }
     calcNodeMetrics(nodeId){
         let metrics = {
@@ -394,7 +393,6 @@ class Graph {
             }
         }
 
-        diff = true;
         if (diff) {
             this.status = Graph.status.DIRTY;
             this.metricsParam = metricsParam;

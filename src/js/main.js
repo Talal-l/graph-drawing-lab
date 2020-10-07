@@ -444,11 +444,11 @@ function updateMetrics() {
         document.querySelector("#edge-length-required").value
     );
 
-    debugger;
-    GRAPH.setMetricParam({
-        maxEdgeLength,
-        requiredEdgeLength
-    });
+    // TODO: enable this after fixing the normalization bug 
+    //GRAPH.setMetricParam({
+        //maxEdgeLength,
+        //requiredEdgeLength
+    //});
 
     let metrics = GRAPH.normalMetrics();
 

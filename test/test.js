@@ -1,6 +1,6 @@
 window.log = {};
 
-import { Graph } from "./js/graph.js";
+import { Graph } from "/src/js/graph.js";
 import {
     nodeOcclusion,
     nodeEdgeOcclusion,
@@ -13,10 +13,10 @@ import {
     edgeLengthN,
     edgeCrossingN,
     angularResolutionN
-} from "./js/metrics2.js";
-import { deepCopy } from "./js/util.js";
-import { HillClimbing } from "./js/hillClimbing.js";
-import {Tabu} from "./js/tabu.js";
+} from "/src/js/metrics2.js";
+import { deepCopy } from "/src/js/util.js";
+import { HillClimbing } from "/src/js/hillClimbing.js";
+import {Tabu} from "/src/js/tabu.js";
 
 let container = document.querySelector("#container");
 
@@ -63,7 +63,7 @@ let filesToLoad = [
     //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case8.json",
     //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case9.json",
      //"test2-1.json",
-     "test1-2.json",
+     "202029291443371.json"
     //"dataSet/TS_SA_HC/Category II/n100_dens0115_20cases_case0.json",
     //"dataSet/TS_SA_HC/Category I/n150_dens0150_20Cases_case0.json",
     //"dataSet/TS_SA_HC/Category II/n200_dens0100_20cases_case0.json",
@@ -102,7 +102,7 @@ async function loadGraph() {
 
 
         graph = new Graph().import(graphData);
-        displayGraph(graph, i++)
+        log.ogSig = displayGraph(graph, i++)
 
         graph.weights.nodeOcclusion = 1;
         graph.weights.nodeEdgeOcclusion = 1;
@@ -111,19 +111,16 @@ async function loadGraph() {
         graph.weights.angularResolution = 1;
 
         let g1 = new Graph().restoreFrom(graph);
-        let g2 = new Graph().restoreFrom(graph);
 
 
 
 
 
-        displayGraph(tsTest(g2), i++);
-        serializeTest(graph);
-        //let hc1 = hillClimbingRelaxedTest(g1, true, "immediate");
-        //displayGraph(hc1, i++);
-        //console.log(graph._zn);
+        let hc1 = hillClimbingRelaxedTest(g1, true, "immediate");
+        log.hc1 = hc1;
+        displayGraph(hc1, i++);
 
-        //window.log.step = step("ts",new Graph().restoreFrom(graph));
+        window.log.step = step("hc",new Graph().restoreFrom(graph));
 
 
 
@@ -217,7 +214,7 @@ function testEdgesMethod(graph){
 
 function hillClimbingRelaxedTest(graph,effectBounds,strategy="immediate") {
     graph.metricsParam.requiredLength = 100;
-    graph.objective();
+    graph.resetZn();
     log.metricsBefore = { ...graph._metrics };
     let hc = new HillClimbing(graph);
     hc.strategy = strategy;
@@ -251,16 +248,22 @@ function tsTest(graph){
 }
 function* step(alg,graph){
     let i = 100;
+    let hc = new HillClimbing(graph);
+    let ts = new Tabu(graph);
     while (i++) {
+        let worker = getWorker();
         graph.metricsParam.requiredLength = 100;
         let tsTimeStart = performance.now();
         if (alg === "ts") {
-            let ts = new Tabu(graph);
             ts.usePR = false;
             ts.step();
         } else {
-            let hc = new hillClimbing(graph);
-            hc.step();
+            workerPost(worker, {layoutAlg: hc, layoutAlgName: "hillClimbing", command: "step"}).then(e => {
+                hc = new HillClimbing().deserialize(e.data.layoutAlg);
+                graph = new Graph().deserialize(hc.graph);
+
+            });
+            //hc.step();
 
         }
 
@@ -272,9 +275,12 @@ function* step(alg,graph){
 }
 
 function displayGraph(graph, desc){
+    let id = `graph-${desc}`;
+    if (document.querySelector(`#${id}`) != null) {
+        return updateSigGraph(graph, id);
+    }
     let box = document.querySelector(".box")
     let graphContainer = document.createElement("div");
-    let id = `graph-${desc}`;
 
     let wrapper = document.createElement("div");
     wrapper.setAttribute("class", "wrapper");
@@ -290,7 +296,7 @@ function displayGraph(graph, desc){
 
 
     box.appendChild(wrapper);
-    updateSigGraph(graph, id);
+    return updateSigGraph(graph, id);
 
     }
 function updateSigGraph(graph,container) {
@@ -323,5 +329,23 @@ function serializeTest(graph){
     window.log.copy = copy;
 
 }
-
+log.displayGraph = displayGraph;
 loadGraph();
+
+
+
+// turn worker into promises stuff 
+
+// computeLayout(data).then(doStuff with result)
+function getWorker(){
+    return  new Worker("./src/js/layoutWorker.js", { type: "module" });
+
+}
+function workerPost(worker, msg) {
+    return new Promise((resolve, rejects) => {
+        worker.postMessage(msg);
+        worker.onmessage = e => {
+            resolve(e);
+        };
+    });
+}

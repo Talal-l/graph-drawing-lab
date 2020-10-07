@@ -1,5 +1,5 @@
 import { Vec } from "./util.js";
-import {Graph} from "./graph";
+import {Graph} from "./graph.js";
 
 function equal(a, b) {
     const EPS = 1e-10;
