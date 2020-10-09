@@ -4,7 +4,7 @@ import {HillClimbing} from "./hillClimbing.js";
 
 onmessage = function (e) {
     let {layoutAlgName, layoutAlg, command} = e.data;
-    console.log("in worker: ", JSON.stringify(e.data));
+    //console.log("in worker: ", JSON.stringify(e.data));
     switch (layoutAlgName) {
         case "hillClimbing":
             layoutAlg = new HillClimbing().deserialize(layoutAlg);

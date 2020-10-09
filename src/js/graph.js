@@ -42,7 +42,7 @@ function ranSpanningTree(G) {
         inTree.push(source);
     }
 }
-/**
+/*
  *
  * @param {number} nMin  Minimum number of nodes
  * @param {number} nMax  Maximum number of nodes
@@ -100,7 +100,11 @@ class Graph {
     constructor(graph, options) {
         this._nodes = [];
         this._adjList = [];
+
+        this.status = Graph.status.DIRTY;
+        // init normalization objects
         this._zn = new ZNormalization;
+
 
         options = options || {};
         this.nodeSize = 10;
@@ -343,11 +347,34 @@ class Graph {
     }
     normalMetrics() {
         if (this.status === Graph.status.DIRTY) {
+            this._zn = new ZNormalization();
             this.calcMetrics();
+
+
         }
         // normalize and update the history
-        return this._zn.normalizeAll(this._metrics);
+        return this.normalizeAll(this._metrics);
     }
+    normalizeAll(){
+        // use zScore normalization except for edge crossing
+        let E = 0;
+        for (let i = 0; i < this._adjList.length; i++) E += this._adjList[i].length;
+        E = E / 2;
+        let edgeCrossingNorm = E > 1 ? this._metrics.edgeCrossing / ((E * (E - 1)) / 2) : 0;
+        //console.log(`edgeCrossing: ${this._metrics.edgeCrossing}, edgeCrossingNorm: ${edgeCrossingNorm}, max: ${((E * (E - 1)) / 2)}`);
+        let normalMetrics = {
+            nodeOcclusion: this._zn.normalize("nodeOcclusion", this._metrics.nodeOcclusion),
+            nodeEdgeOcclusion: this._zn.normalize("nodeEdgeOcclusion", this._metrics.nodeEdgeOcclusion),
+            edgeLength: this._zn.normalize("edgeLength", this._metrics.edgeLength),
+            angularResolution: this._zn.normalize("angularResolution", this._metrics.angularResolution),
+            edgeCrossing: edgeCrossingNorm
+        };
+
+        return normalMetrics;
+
+
+    }
+
     calcMetrics() {
         console.log("calcMetrics");
         let metrics = {
@@ -361,7 +388,7 @@ class Graph {
             metrics.nodeOcclusion += nodeOcclusionN(this, i);
             metrics.nodeEdgeOcclusion += nodeEdgeOcclusionN(this, i);
             metrics.edgeLength += edgeLengthN(this, this.metricsParam.requiredEdgeLength, i);
-            metrics.edgeCrossing += edgeCrossingN(this, i);
+            metrics.edgeCrossing += edgeCrossingN(this, i) / 4;
             metrics.angularResolution += angularResolutionN(this, i);
         }
 
@@ -562,9 +589,8 @@ class Graph {
 
         return serialized;
     }
+
     import(data){
-        // TODO: remove this if the normalization was part of the imported data
-        this.resetZn();
         this.status = Graph.status.DIRTY;
         if (typeof data === "string") {
             data = JSON.parse(data);
@@ -628,7 +654,7 @@ function updateMetrics(oldMetrics, newMetrics) {
     }
 
     // update history
-    this._zn.normalizeAll(this._metrics);
+    this.normalizeAll(this._metrics);
     return { ...this._metrics };
 }
 

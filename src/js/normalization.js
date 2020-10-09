@@ -69,7 +69,7 @@ export class ZNormalization {
 
     // normalize the value of m by subtracting the current average (mean) of all the current values and divide them by their standard deviation
     // then the normalized value subtracts the minimum value and divided by the difference between max and min values to get a value between 0 and 1
-    normalize(m, metricName) {
+    normalize(metricName, m) {
         let max, min, mNorm, newAvg, newSD;
 
         this[metricName].history.push(m);
@@ -115,40 +115,6 @@ export class ZNormalization {
         if (!isFinite(mNorm)) throw `${metricName} = ${mNorm}`;
 
         return mNorm;
-    }
-
-    // This method makes all measures of the same value where each measure becomes of the value (m1*m2*m3*m4*m5)/(m1*m2*m3*m4*m5)+1
-    normalizeAll(metrics) {
-        this.normalMetrics = {
-            nodeOcclusion: this.normalize(
-                metrics.nodeOcclusion,
-                "nodeOcclusion"
-            ),
-            nodeEdgeOcclusion: this.normalize(
-                metrics.nodeEdgeOcclusion,
-                "nodeEdgeOcclusion"
-            ),
-            edgeLength: this.normalize(metrics.edgeLength, "edgeLength"),
-            edgeCrossing: this.normalize(metrics.edgeCrossing, "edgeCrossing"),
-            angularResolution: this.normalize(
-                metrics.angularResolution,
-                "angularResolution"
-            )
-        };
-
-        return this.normalMetrics;
-    }
-    normalizeEdgeCrossing(m, graph) {
-        let E = 0;
-        let adjList = graph.adjList();
-        for (let i = 0; i < adjList.length; i++) E += adjList[i].length;
-        E = E / 2;
-        let norm = E ? m / ((E * (E - 1)) / 2) : 0;
-        if (norm < 0) {
-            console.log(E);
-            debugger;
-        }
-        return norm;
     }
     toJSON() {
         let  s = {

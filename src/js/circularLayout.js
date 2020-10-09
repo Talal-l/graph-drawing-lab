@@ -3,6 +3,7 @@ import { Graph} from "./graph.js";
 
 export class CircularLayout {
     constructor(graph, params) {
+        if (!params) params = {};
         this.graph = graph;
         this.iterationCount = 0;
         this.maxIteration = params.maxIteration || 1000;

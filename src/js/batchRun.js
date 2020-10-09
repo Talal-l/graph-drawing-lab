@@ -428,7 +428,7 @@ function addTable(tab) {
                 type: "text"
             },
             nodes: { value: graph.nodes().length, type: "text" },
-            edges: { value: graph.edges().length, type: "text" },
+            edges: { value: graph.edges().length/2, type: "text" },
             executionTime: { value: info.executionTime, type: "text" },
             evaluatedSolutions: {
                 value: info.evaluatedSolutions,

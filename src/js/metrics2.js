@@ -350,13 +350,21 @@ export function edgeCrossingN(graph, nId) {
             }
         }
     }
-    // an intersection between (1->2) and (3->4) will be counted as follows
-    // (1->2) Intersects (3->4, 4->3)
-    // (3->4) Intersects (1->2, 2->1) = 4 intersections
-    // to get the actual count we need to divide by 4
-    // must divide by 2 when used as part of a sum that counts all intersections.
-    //return sum / duplicateCount;
-    return sum;
+
+    /*
+         An intersection between (1->2) and (3->4) will be counted as follows
+         (1->2) Intersects (3->4, 4->3) so we need to divide by 2 to get the correct results.
+
+         Note that if this function was used to get all intersections then you also will get
+         (1->2) Intersects (3->4, 4->3)
+         (2->1) Intersects (3->4, 4->3)
+         (3->4) Intersects (1->2, 2->1)
+         (4->3) Intersects (1->2, 2->1)
+         each is divided by 2 so the total intersections = 4 and we would need 
+         to divide by 4 to get the correct number
+    */
+
+    return sum/2;
 }
 
 export function edgeLengthN(graph, requiredLength, nId) {
