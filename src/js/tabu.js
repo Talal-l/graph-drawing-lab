@@ -196,6 +196,11 @@ export class Tabu {
 
         */
     }
+    onNodeMove(nodeId, layoutAlg) {
+
+    }
+    onStep(layoutAlg) {
+    }
     moveAlongPath(src, dst) {
         let length = 0;
         let nodes = src.nodes();
@@ -307,6 +312,7 @@ export class Tabu {
 
             if (chosenSol !== null) {
                 layout.setNodePos(chosenSol.nodeId, chosenSol.pos, this.effectBounds);
+                this.onNodeMove(chosenSol.nodeId,this);
 
                 let currentSol = {
                     nodeId: nId,
@@ -361,6 +367,7 @@ export class Tabu {
         this.graph.objective();
         while (this.it < this.maxIt && this.squareSize >= 1) {
             this.step();
+            this.onStep(this);
         }
         this.executionTime = new Date().getTime() - start;
         //console.log("ts objective: ", this.graph.objective());

@@ -477,7 +477,6 @@ function updateMetrics() {
 }
 
 function getLayoutAlg() {
-
     GRAPH.resetZn();
     console.log("reset graph zn");
     let list = document.querySelector("#layoutAlgList");
@@ -633,6 +632,8 @@ function toolbarClickHandler(event) {
             disableToolbar("runLayout");
             console.log("GRAPH", GRAPH);
             CURRENT_LAYOUT_ALG = getLayoutAlg();
+            let runStart = performance.now();
+
             worker.postMessage({
                 layoutAlgName:CURRENT_LAYOUT_ALG_NAME,
                 layoutAlg: CURRENT_LAYOUT_ALG,
@@ -640,12 +641,45 @@ function toolbarClickHandler(event) {
             });
 
             worker.onmessage = e => {
+
+                let runEnd = performance.now();
+                console.log("normal run time: ", runEnd-runStart);
                 console.log("onmessage: ", e);
                 GRAPH.deserialize(e.data.layoutAlg.graph);
                 refreshScreen(sig, updateMetrics, updateSigGraph);
                 enableToolbar("runLayout");
                 updateLayoutInfo(e.data);
                 cleanup();
+            };
+            break;
+
+        case "runLayoutAnim":
+            setGraphCache();
+            disableToolbar("runLayout");
+            console.log("GRAPH", GRAPH);
+            CURRENT_LAYOUT_ALG = getLayoutAlg();
+
+            let runStart2 = performance.now();
+            worker.postMessage({
+                layoutAlgName:CURRENT_LAYOUT_ALG_NAME,
+                layoutAlg: CURRENT_LAYOUT_ALG,
+                command: "run",
+                emitOnMove: true,
+                //emitOnStep: true,
+            });
+
+            worker.onmessage = e => {
+                //console.log("onmessage: ", e);
+                GRAPH.deserialize(e.data.layoutAlg.graph);
+                refreshScreen(sig, updateMetrics, updateSigGraph);
+                if (e.data.type === "run"){
+                    enableToolbar("runLayout");
+                    let runEnd2 = performance.now();
+                    console.log("animated run time: ", runEnd2-runStart2);
+                    cleanup();
+                }
+
+                updateLayoutInfo(e.data);
             };
             break;
         case "stepLayout":
@@ -694,7 +728,9 @@ function toolbarClickHandler(event) {
 
 // make sure to clean global state when resetting or deleting a graph
 function cleanup(){
-    console.log("cleanup");
+    // restart the worker
+    worker.terminate();
+    worker = new Worker("build/layoutWorker.js");
     CURRENT_LAYOUT_ALG = null;
     CURRENT_LAYOUT_ALG_NAME = null;
 

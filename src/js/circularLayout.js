@@ -6,9 +6,16 @@ export class CircularLayout {
         if (!params) params = {};
         this.graph = graph;
         this.iterationCount = 0;
-        this.maxIteration = params.maxIteration || 1000;
+        this.maxIteration = params.maxIteration || 100;
         this.radius = params.radius || 450;
         this.executionTime = 0;
+        this.evaluatedSolutions = 0;
+    }
+    onNodeMove(nodeId, layoutAlg) {
+
+    }
+    onStep(layoutAlg) {
+
     }
 
     run() {
@@ -25,7 +32,7 @@ export class CircularLayout {
      */
     step() {
         let nodes = this.graph.nodes();
-        let step = 30;
+        let step = this.maxIteration - this.iterationCount;
         let N = nodes.length;
 
         for (let i = 0; i < N; i++) {
@@ -34,9 +41,14 @@ export class CircularLayout {
             let y = this.radius * Math.sin((2 * Math.PI * i) / N);
 
             let v = new Vec((x - n.x) / step, (y - n.y) / step);
-            this.graph.moveNode(i, v, true);
+            this.graph._nodes[i].x += v.x;
+            this.graph._nodes[i].y += v.y;
+            this.evaluatedSolutions++;
+
+            this.onNodeMove(i,this);
         }
 
+        this.onStep(this);
         this.iterationCount++;
     }
 

@@ -32,6 +32,13 @@ export class HillClimbing {
 
         */
     }
+    onNodeMove(nodeId, layoutAlg) {
+
+    }
+    onStep(layoutAlg) {
+
+    }
+
 
     // single iteration of the layout algorithm
     step() {
@@ -61,11 +68,14 @@ export class HillClimbing {
                         }
                     }
                     if (bestMove !== null) {
+                        // triggeres an event
                         this.graph.moveNode(
                             nId,
                             bestMove,
                             this.effectBounds
                         );
+
+                        this.onNodeMove(nId, this);
 
                     }
                     break;
@@ -100,7 +110,9 @@ export class HillClimbing {
                 vec &&
                 this.graph.testMove(nodeId, vec, this.effectBounds) < this.graph.objective()
             ) {
-                this.graph.moveNode(nodeId, vec,this.effectBounds);
+                this.graph.moveNode(nodeId, vec, this.effectBounds);
+
+                this.onNodeMove(nodeId, this);
             }
         }
 
@@ -114,7 +126,6 @@ export class HillClimbing {
         this.it++;
 
         return this.graph;
-
     }
 
     // run
@@ -126,7 +137,7 @@ export class HillClimbing {
             let startStep = performance.now();
 
             this.step();
-
+            this.onStep(this);
             //console.log("stepTime: ", performance.now() - startStep, "cost: " + this.graph.objective());
         }
         this.executionTime = performance.now() - start;
@@ -137,7 +148,7 @@ export class HillClimbing {
         if (string === true) return JSON.stringify(this);
         s.graph = this.graph.serialize();
         // distance to move the node
-        s.squareSize  = this.squareSize;
+        s.squareSize = this.squareSize;
         s.squareReduction = this.squareReduction;
         s.it = this.it;
         s.maxIt = this.maxIt;
@@ -155,7 +166,7 @@ export class HillClimbing {
         if (typeof data === "string") data = JSON.parse(data);
         this.graph = new Graph().deserialize(data.graph);
         // distance to move the node
-        this.squareSize  = data.squareSize;
+        this.squareSize = data.squareSize;
         this.squareReduction = data.squareReduction;
         this.it = data.it;
         this.maxIt = data.maxIt;
@@ -171,14 +182,14 @@ export class HillClimbing {
 function offsets(squareSize) {
     let s = squareSize;
     let scaledOffsets = [
-        new Vec({x:s,y: 0}),
-        new Vec({x:s, y:-s}),
-        new Vec({x:0, y:-s}),
-        new Vec({x:-s,y: -s}),
-        new Vec({x:-s, y:0}),
+        new Vec({x: s, y: 0}),
+        new Vec({x: s, y: -s}),
+        new Vec({x: 0, y: -s}),
+        new Vec({x: -s, y: -s}),
+        new Vec({x: -s, y: 0}),
         new Vec({x: -s, y: s}),
         new Vec({x: 0, y: s}),
-        new Vec({x:s, y:s}),
+        new Vec({x: s, y: s}),
     ];
     return scaledOffsets;
 }
