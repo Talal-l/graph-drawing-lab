@@ -85,12 +85,17 @@ function generateGraph(nMin, nMax, eMin, eMax, width, height) {
         let nEdge = random(0, Math.min(E, N - 1));
         for (let j = 0; j < N && nEdge > 0; j++) {
             // pick a random node to connect to
-            if (j !== i && !G.hasEdge(j, i)) {
-                G.addEdge(j, i);
+            let n1 = nodes[random(0, N - 1)].id;
+            let n2 = nodes[random(0, N - 1)].id;
+            if (n1 !== n2 && !G.hasEdge(n1, n2)) {
+                G.addEdge(n1, n2);
                 nEdge--;
                 // update total edge count
                 E--;
+
+
             }
+
         }
     }
     return G;
