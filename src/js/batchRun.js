@@ -32,7 +32,7 @@ const headers = [
     { id: "action", title: "Action", visible: true }
 ];
 let modalOffset = 0;
-const digits = 3;
+const DIGITS = 7;
 let lastTabNum = 1;
 const layouts = {
     hillClimbing: {
@@ -434,23 +434,23 @@ function addTable(tab) {
                 value: info.evaluatedSolutions,
                 type: "text"
             },
-            density: { value: graph.density().toFixed(digits), type: "text" },
+            density: { value: graph.density().toFixed(DIGITS), type: "text" },
             nodeOcclusion: {
-                value: nodeOcclusion.toFixed(digits),
+                value: nodeOcclusion.toFixed(DIGITS),
                 type: "text"
             },
             nodeEdgeOcclusion: {
-                value: nodeEdgeOcclusion.toFixed(digits),
+                value: nodeEdgeOcclusion.toFixed(DIGITS),
                 type: "text"
             },
-            edgeLength: { value: edgeLength.toFixed(digits), type: "text" },
-            edgeCrossing: { value: edgeCrossing.toFixed(digits), type: "text" },
+            edgeLength: { value: edgeLength.toFixed(DIGITS), type: "text" },
+            edgeCrossing: { value: edgeCrossing.toFixed(DIGITS), type: "text" },
             angularResolution: {
-                value: angularResolution.toFixed(digits),
+                value: angularResolution.toFixed(DIGITS),
                 type: "text"
             },
             objective: {
-                value: graph.objective().toFixed(digits),
+                value: graph.objective().toFixed(DIGITS),
                 type: "text"
             },
             action: {

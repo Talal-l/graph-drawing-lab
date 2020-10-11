@@ -6,6 +6,7 @@ import { CircularLayout } from "./circularLayout.js";
 import { HillClimbing } from "./hillClimbing.js";
 import { Tabu} from "./tabu.js";
 let container = document.querySelector("#container");
+const DIGITS = 7;
 
 let canvasRenderer = {
     container: "container",
@@ -428,7 +429,7 @@ function updateObjective() {
     GRAPH.setWeights(getWeights());
     document.querySelector(
         "#objective-function"
-    ).innerHTML = GRAPH.objective().toFixed(3);
+    ).innerHTML = GRAPH.objective().toFixed(DIGITS);
 }
 
 function updateSigGraph() {
@@ -455,23 +456,23 @@ function updateMetrics() {
     // update ui
     document.querySelector("#node-num").innerHTML = GRAPH.nodes().length;
     document.querySelector("#edge-num").innerHTML = GRAPH.edges().length/2;
-    document.querySelector("#density").innerHTML = GRAPH.density().toFixed(3);
+    document.querySelector("#density").innerHTML = GRAPH.density().toFixed(DIGITS);
     document.querySelector(
         "#node-occlusion"
-    ).innerHTML = metrics.nodeOcclusion.toFixed(3);
+    ).innerHTML = metrics.nodeOcclusion.toFixed(DIGITS);
     document.querySelector(
         "#edge-node-occlusion"
-    ).innerHTML = metrics.nodeEdgeOcclusion.toFixed(3);
+    ).innerHTML = metrics.nodeEdgeOcclusion.toFixed(DIGITS);
 
     document.querySelector(
         "#edge-length"
-    ).innerHTML = metrics.edgeLength.toFixed(3);
+    ).innerHTML = metrics.edgeLength.toFixed(DIGITS);
     document.querySelector(
         "#edge-cross"
-    ).innerHTML = metrics.edgeCrossing.toFixed(3);
+    ).innerHTML = metrics.edgeCrossing.toFixed(DIGITS);
     document.querySelector(
         "#angular-resolution"
-    ).innerHTML = metrics.angularResolution.toFixed(3);
+    ).innerHTML = metrics.angularResolution.toFixed(DIGITS);
 
     updateObjective();
 }
