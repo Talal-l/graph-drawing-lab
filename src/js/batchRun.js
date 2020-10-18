@@ -344,8 +344,9 @@ function addTabContentEl(tab) {
     }
 
     addTable(tab);
-    addSideMenuColSec(tab);
-    addSideMenuMetricSec(tab);
+
+    // construct side menu
+    createSideMenu(tab);
     addLayoutParam(tab.layoutParam);
 
     // add event listener to layout algorithm list to update parameters on change
@@ -521,6 +522,8 @@ let tabs = [];
 const metricsParam = {
     requiredEdgeLength: 0.5
 };
+// eslint-disable-next-line no-undef
+const sig = new sigma();
 const weights = {
     nodeOcclusion: 1,
     nodeEdgeOcclusion: 1,
@@ -757,112 +760,116 @@ tabList.addEventListener("click", event => {
 // TODO: How will this interact with every table in every run?
 //
 
-function addSideMenuColSec(tab) {
-    let menuColSecFrag = document.createDocumentFragment();
-    for (const h of tab.headers) {
-        let item = document.createElement("div");
-        item.classList.add("menu-item-checkbox");
-        let checkbox = document.createElement("input");
-        checkbox.setAttribute("type", "checkbox");
-        checkbox.checked = h.visible;
-        checkbox.setAttribute("data-col", h.id);
-        let label = document.createElement("p");
-        label.innerHTML = h.title;
+function createSideMenu(tab){
+    function addSideMenuColSec(tab) {
+        let menuColSecFrag = document.createDocumentFragment();
+        for (const h of tab.headers) {
+            let item = document.createElement("div");
+            item.classList.add("menu-item-checkbox");
+            let checkbox = document.createElement("input");
+            checkbox.setAttribute("type", "checkbox");
+            checkbox.checked = h.visible;
+            checkbox.setAttribute("data-col", h.id);
+            let label = document.createElement("p");
+            label.innerHTML = h.title;
 
-        item.appendChild(checkbox);
-        item.appendChild(label);
-        menuColSecFrag.appendChild(item);
+            item.appendChild(checkbox);
+            item.appendChild(label);
+            menuColSecFrag.appendChild(item);
+        }
+        let el = document.querySelector("#menu-sec-columns");
+        el.innerHTML = "";
+        el.appendChild(menuColSecFrag);
     }
-    let el = document.querySelector("#menu-sec-columns");
-    el.innerHTML = "";
-    el.appendChild(menuColSecFrag);
-}
 
-function createSideMenuMetricSec(tab) {
-    const { weights, metricsParam } = tab;
-    const {
-        nodeOcclusion,
-        nodeEdgeOcclusion,
-        edgeLength,
-        edgeCrossing,
-        angularResolution
-    } = tab.weights;
-    const { requiredEdgeLength } = tab.metricsParam;
-    let html = `
-    <div class="menu-item-group">
-        <div class="menu-item">
-            <p>Node occlusion</p>
-        </div>
+    function createSideMenuMetricSec(tab) {
+        const {weights, metricsParam} = tab;
+        const {
+            nodeOcclusion,
+            nodeEdgeOcclusion,
+            edgeLength,
+            edgeCrossing,
+            angularResolution
+        } = tab.weights;
+        const {requiredEdgeLength} = tab.metricsParam;
+        let html = `
+        <div class="menu-item-group">
+            <div class="menu-item">
+                <p>Node occlusion</p>
+            </div>
 
-        <div class="menu-item">
-            <p>Weight</p>
-            <input type="number" class="weight-input" id="node-occlusion-weight" value="${nodeOcclusion}" step="0.01"
-                min="0" max="1" />
+            <div class="menu-item">
+                <p>Weight</p>
+                <input type="number" class="weight-input" id="node-occlusion-weight" value="${nodeOcclusion}" step="0.01"
+                    min="0" max="1" />
+            </div>
+
         </div>
 
-    </div>
-    <div class="menu-item-group">
-        <div class="menu-item">
-            <p>Edge node occlusion:</p>
+        <div class="menu-item-group">
+            <div class="menu-item">
+                <p>Edge node occlusion:</p>
+            </div>
+            <div class="menu-item">
+                <p>Weight</p>
+                <input type="number" class="weight-input" id="edge-node-occlusion-weight" value="${nodeEdgeOcclusion}" step="0.01"
+                    min="0" max="1" />
+            </div>
+
         </div>
-        <div class="menu-item">
-            <p>Weight</p>
-            <input type="number" class="weight-input" id="edge-node-occlusion-weight" value="${nodeEdgeOcclusion}" step="0.01"
-                min="0" max="1" />
+        <div class="menu-item-group">
+            <div class="menu-item">
+                <p>Edge length</p>
+            </div>
+
+            <div class="menu-item">
+                <p>Weight</p>
+                <input type="number" class="weight-input" id="edge-length-weight" value="${edgeLength}" step="0.01" min="0"
+                    max="1" />
+            </div>
+
+            <div class="menu-item">
+                <p>Required length</p>
+                <input type="number" id="edge-length-required" value="${requiredEdgeLength}" step="0.01" min="0" max="1" />
+            </div>
+
         </div>
 
-    </div>
-    <div class="menu-item-group">
-        <div class="menu-item">
-            <p>Edge length</p>
-        </div>
+        <div class="menu-item-group">
+            <div class="menu-item">
+                <p>Edge crossing</p>
+            </div>
+            <div class="menu-item">
+                <p>Weight</p>
+                <input type="number" class="weight-input" id="edge-crossing-weight" value="${edgeCrossing}" step="0.01"
+                    min="0" max="1" />
+            </div>
 
-        <div class="menu-item">
-            <p>Weight</p>
-            <input type="number" class="weight-input" id="edge-length-weight" value="${edgeLength}" step="0.01" min="0"
-                max="1" />
         </div>
-
-        <div class="menu-item">
-            <p>Required length</p>
-            <input type="number" id="edge-length-required" value="${requiredEdgeLength}" step="0.01" min="0" max="1" />
+        <div class="menu-item-group">
+            <div class="menu-item">
+                <p>Angular resolution</p>
+            </div>
+            <div class="menu-item">
+                <p>Weight</p>
+                <input type="number" class="weight-input" id="angular-resolution-weight" value="${angularResolution}" step="0.01"
+                    min="0" max="1" />
+            </div>
         </div>
-
-    </div>
-
-    <div class="menu-item-group">
-        <div class="menu-item">
-            <p>Edge crossing</p>
-        </div>
-        <div class="menu-item">
-            <p>Weight</p>
-            <input type="number" class="weight-input" id="edge-crossing-weight" value="${edgeCrossing}" step="0.01"
-                min="0" max="1" />
-        </div>
-
-    </div>
-    <div class="menu-item-group">
-        <div class="menu-item">
-            <p>Angular resolution</p>
-        </div>
-        <div class="menu-item">
-            <p>Weight</p>
-            <input type="number" class="weight-input" id="angular-resolution-weight" value="${angularResolution}" step="0.01"
-                min="0" max="1" />
-        </div>
-    </div>
     `;
-    return html;
+        return html;
+    }
+
+    function addSideMenuMetricSec(tab) {
+        let el = document.querySelector("#menu-sec-metrics");
+        el.innerHTML = "";
+        el.insertAdjacentHTML("beforeend", createSideMenuMetricSec(tab));
+    }
+
+    addSideMenuColSec(tab);
+    addSideMenuMetricSec(tab);
 }
 
-function addSideMenuMetricSec(tab) {
-    let el = document.querySelector("#menu-sec-metrics");
-    el.innerHTML = "";
-    el.insertAdjacentHTML("beforeend", createSideMenuMetricSec(tab));
-}
-
-// eslint-disable-next-line no-undef
-const sig = new sigma();
 
 // tool bar
 const toolbar = document.querySelector(".toolbar-container"),

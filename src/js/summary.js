@@ -32,16 +32,13 @@ let aveObjectiveTable = new Table("average-objective-table");
     { title: "Run name", id: "runName" },
     { title: "Layout Algorithm", id: "layoutAlgorithm" },
     { title: "Objective", id: "objective" },
-    { title: "Objective after run", id: "objectiveAfterRun" },
-    { title: "Diff", id: "diff" },
-    { title: "median after run", id: "median" }
+    { title: "median", id: "median" }
 ].forEach(header => aveObjectiveTable.addHeader(header));
 
 aveObjectiveTable.refresh();
 
 // extract needed info
 for (const run of runs) {
-    run.originalObjectives = [];
     run.objectives = [];
     run.executionTimeList = [];
     run.evaluatedSolutionsList = [];
@@ -49,7 +46,6 @@ for (const run of runs) {
 
     for (const key in run.files) {
         let file = run.files[key];
-        run.originalObjectives.push(file.originalObjective);
         run.objectives.push(file.objective);
 
         run.executionTimeList.push(file.info.executionTime);
@@ -58,12 +54,9 @@ for (const run of runs) {
 
     let objAverage =
         run.objectives.reduce((a, e) => (a += e), 0) / run.objectives.length;
-    let oldObjAverage =
-        run.originalObjectives.reduce((a, e) => (a += e), 0) /
-        run.originalObjectives.length;
+
 
     run.objAvg = objAverage;
-    run.oldObjAvg = oldObjAverage;
 
     run.median = d3.median(run.objectives);
 
@@ -71,9 +64,7 @@ for (const run of runs) {
     let row = {
         layoutAlgorithm: { value: run.layout, type: "text" },
         runName: { value: run.title, type: "text" },
-        objective: { value: oldObjAverage, type: "text" },
-        objectiveAfterRun: { value: objAverage, type: "text" },
-        diff: { value: Math.abs(oldObjAverage - objAverage), type: "text" },
+        objective: { value: objAverage , type: "text" },
         median: { value: run.median, type: "text" }
     };
     aveObjectiveTable.addRow(row);

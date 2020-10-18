@@ -161,11 +161,12 @@ export class Tabu {
         this.squareReduction = params.squareReduction || 4;
         this.maxIt = params.iterations || 40;
         this.intensifyIt = params.intensifyIt || 5;
-        this.cutoff = params.cutoff || 1;
+        this.cutoff = params.cutoff || 4;
         this.initCutoff = this.cutoff;
         this.cutoffReduction = params.cutoffReduction || 0.005;
         this.duration = params.duration || 5;
         this.effectBounds = true;
+        this.layoutAlgName = "tabu";
 
         // PR parametrs
         this.PRparam = params.PRparam || {
@@ -282,8 +283,6 @@ export class Tabu {
             let chosenSol = null;
             let chosenSolObj = Infinity;
 
-            // generate the 8 vectors around the square
-
             for (let offset of allOffsets) {
 
                 let candidateSol = {
@@ -298,9 +297,10 @@ export class Tabu {
                     let candidateSolObj = layout.testMove(nId, offset, this.effectBounds);
                     let ratio = candidateSolObj / currentObj;
 
+                    // if currentObj == 0 then we can't select the move since we have the best move possible
                     if (!isFinite(ratio) || ratio > this.cutoff) {
                         this.tabuSet.push(candidateSol);
-                    } else if (candidateSolObj < chosenSolObj) {
+                    } if (candidateSolObj < chosenSolObj) {
                         chosenSolObj = candidateSolObj;
                         chosenSol = candidateSol;
                     }
@@ -361,15 +361,15 @@ export class Tabu {
 
     // run
     run() {
-        let start = new Date().getTime();
+        let start = performance.now();
         this.done = false;
-        this.graph.resetZn();
+        //this.graph.resetZn();
         this.graph.objective();
         while (this.it < this.maxIt && this.squareSize >= 1) {
             this.step();
             this.onStep(this);
         }
-        this.executionTime = new Date().getTime() - start;
+        this.executionTime = performance.now() - start;
         //console.log("ts objective: ", this.graph.objective());
         return this.graph;
     }
@@ -398,6 +398,7 @@ export class Tabu {
         s.tabuSet = [... this.tabuSet];
         s.refSet = [... this.refSet];
         s.usePR = this.usePR;
+        s.layoutAlgName = this.layoutAlgName;
 
         return s;
 
@@ -416,6 +417,7 @@ export class Tabu {
         this.evaluatedSolutions = data.evaluatedSolutions;
         this.executionTime = data.executionTime; // in ms
         this.effectBounds = data.effectBounds;
+        this.layoutAlgName = data.layoutAlgName;
 
         this.params = data.params;
         this.intensifyIt = data.intensifyIt;

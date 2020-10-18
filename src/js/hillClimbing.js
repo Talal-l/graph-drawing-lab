@@ -20,6 +20,7 @@ export class HillClimbing {
         this.evaluatedSolutions = 0;
         this.executionTime = 0; // in ms
         this.effectBounds = true;
+        this.layoutAlgName = "hillClimbing";
 
         /* 
             Assuming the following
@@ -157,6 +158,7 @@ export class HillClimbing {
         s.evaluatedSolutions = this.evaluatedSolutions;
         s.executionTime = this.executionTime; // in ms
         s.effectBounds = this.effectBounds;
+        s.layoutAlgName = this.layoutAlgName;
 
         return s;
 
@@ -175,6 +177,7 @@ export class HillClimbing {
         this.evaluatedSolutions = data.evaluatedSolutions;
         this.executionTime = data.executionTime; // in ms
         this.effectBounds = data.effectBounds;
+        this.layoutAlgName = data.layoutAlgName;
         return this;
     }
 }

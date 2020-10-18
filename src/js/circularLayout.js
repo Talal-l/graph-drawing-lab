@@ -10,6 +10,7 @@ export class CircularLayout {
         this.radius = params.radius || 450;
         this.executionTime = 0;
         this.evaluatedSolutions = 0;
+        this.layoutAlgName = "circular"
     }
     onNodeMove(nodeId, layoutAlg) {
 
@@ -60,6 +61,7 @@ export class CircularLayout {
         s.maxIteration = this.maxIteration;
         s.radius = this.radius;
         s.executionTime = this.executionTime;
+        s.layoutAlgName = this.layoutAlgName;
 
         return s;
 
@@ -72,6 +74,7 @@ export class CircularLayout {
         this.maxIteration = data.maxIteration;
         this.radius = data.radius;
         this.executionTime = data.executionTime;
+        this.layoutAlgName = data.layoutAlgName;
         return this;
     }
 

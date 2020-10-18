@@ -42,6 +42,8 @@ let webglRenderer = {
 const edgeSize = 1.5;
 const nodeSize = 10;
 
+let graphId = 0;
+
 // create the main sigma instance
 // load n50 graph
 let filesToLoad = [
@@ -58,19 +60,21 @@ let filesToLoad = [
     //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case19.json",
     //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case1.json",
     //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case2.json",
-    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case3.json",
-    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case4.json",
-    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case5.json",
-    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case6.json",
-    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case7.json",
-    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case8.json",
-    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case9.json",
+    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case3.json",
+    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case4.json",
+    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case5.json",
+    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case6.json",
+    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case7.json",
+    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case8.json",
+    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case9.json",
      //"test2-1.json",
      //"202029291443371.json",
-     "666-2.json",
-    //"dataSet/TS_SA_HC/Category II/n100_dens0115_20cases_case0.json",
-    //"dataSet/TS_SA_HC/Category I/n150_dens0150_20Cases_case0.json",
-    //"dataSet/TS_SA_HC/Category II/n200_dens0100_20cases_case0.json",
+     //"666-2.json",
+     //"150anim.json",
+    "dataSet/TS_SA_HC/Category II/n100_dens0115_20cases_case0.json",
+    "dataSet/TS_SA_HC/Category I/n150_dens0150_20Cases_case0.json",
+    "dataSet/TS_SA_HC/Category II/n200_dens0100_20cases_case0.json",
+    "dataSet/Scalability/largeGraphs_case0.json",
 ];
 let graphs = [];
 let nodeOcclusionTime = [];
@@ -83,7 +87,7 @@ function average(arr) {
     let avg = sum / arr.length;
     return avg;
 }
-
+log.importTimes = [];
 async function loadGraph() {
     let i = 0;
     for (const file of filesToLoad) {
@@ -105,8 +109,10 @@ async function loadGraph() {
         graphs.push(originalGraph,graph);
 
 
+        let importStatrTime = performance.now();
         graph = new Graph().import(graphData);
-        //log.ogSig = displayGraph(graph, i++)
+        let importTime = performance.now() - importStatrTime;
+        log.importTimes.push(importTime)
 
         graph.weights.nodeOcclusion = 1;
         graph.weights.nodeEdgeOcclusion = 1;
@@ -117,63 +123,17 @@ async function loadGraph() {
 
 
 
+        //let g1 = new Graph().restoreFrom(graph);
+        //g1.id = drawCount++;
+        //let g2 = new Graph().restoreFrom(graph);
+        //g2.id = drawCount++;
 
-        //let hc1 = hillClimbingRelaxedTest(g1, true, "immediate");
-        //log.hc1 = hc1;
-        //displayGraph(hc1, i++);
+        //let ogLayout = new HillClimbing(new Graph().deserialize(graph));
+        //ogLayout.layoutAlgName = "None";
+        //displayGraph(ogLayout,graphId++);
 
-        //let gs = new Graph().restoreFrom(graph);
-        //window.log.step = step("hc",gs);
-        //window.log.gs = gs;
-
-
-
-
-         //metricsTimeTest(graph);
-        //testEdgesMethod(graph);
-        let g1 = new Graph().restoreFrom(graph);
-        g1.id = drawCount++;
-        let g2 = new Graph().restoreFrom(graph);
-        g2.id = drawCount++;
-
-        log.g = g1;
-        let stepers = [step("cl",g1)];
-
-
-        //normTest(g2);
-
-        // animation stuff
-        let run = true;
-        document.body.onkeydown = (e) => {
-            console.log(e);
-            switch (e.key) {
-                case "s":
-                    if (run) {
-                        run = false;
-                    } else {
-                        run = true;
-                        window.requestAnimationFrame(loop);
-                    }
-                    break;
-                case "r":
-                    run = true;
-                    window.requestAnimationFrame(loop);
-
-            }
-        }
-
-        let loop = async () => {
-            if (!run) return;
-            for (let s of stepers){
-                await s.next();
-            }
-            window.requestAnimationFrame(loop);
-        };
-
-        window.requestAnimationFrame(loop);
-
-
-
+        //runLayoutAnim(g1,"hillClimbing");
+        //runLayoutAnim(g2,"tabu");
 
     }
 }
@@ -293,47 +253,9 @@ function tsTest(graph){
 
     return graph;
 }
-async function* step(alg,graph){
-    let i = 1;
-    let hc = new HillClimbing(graph);
-    let ts = new Tabu(graph);
-    let cl = new CircularLayout(graph);
-    ts.usePR = false;
-    let worker = getWorker();
-    while (i++) {
-        graph.metricsParam.requiredLength = 100;
-        let tsTimeStart = performance.now();
-        if (alg === "ts") {
-            let e = await workerPost(worker, {layoutAlg: ts, layoutAlgName: "tabu", command: "step"});
-            ts = new Tabu().deserialize(e.data.layoutAlg);
-            graph.deserialize(ts.graph);
-            displayGraph(graph, graph.id,{step:i});
 
-
-
-        } else if (alg === "hc"){
-            let e = await workerPost(worker, {layoutAlg: hc, layoutAlgName: "hillClimbing", command: "step"});
-            hc = new HillClimbing().deserialize(e.data.layoutAlg);
-            graph.deserialize(hc.graph);
-            displayGraph(graph, graph.id,{step:i});
-
-        } else if (alg === "cl") {
-            let e = await workerPost(worker, {layoutAlg: cl, layoutAlgName: "circular", command: "step"});
-            cl = new CircularLayout().deserialize(e.data.layoutAlg);
-            graph.deserialize(cl.graph);
-            displayGraph(graph, graph.id,{step:i});
-
-
-        }
-
-
-        window.scrollTo(0,document.body.scrollHeight);
-        yield i;
-    }
-}
-
-function displayGraph(graph, desc,info){
-    let id = `graph-${desc}`;
+function displayGraph(layoutAlg,gId){
+    let id = `graph-${gId}`;
     let box = document.querySelector(".box")
     let wrapper;
     let details;
@@ -353,10 +275,10 @@ function displayGraph(graph, desc,info){
         let parentNode = (graphContainer.parentNode);
         details = parentNode.querySelector("h3");
     }
-        details.innerText = `Objective: ${graph.objective()}, step: ${info.step}`;
+        details.innerText = `Alog: ${layoutAlg.layoutAlgName},\n Objective: ${layoutAlg.graph.objective()},\n it: ${layoutAlg.it},\n execution: ${layoutAlg.executionTime}`;
 
 
-    return updateSigGraph(graph, id);
+    return updateSigGraph(layoutAlg.graph, id);
 
     }
 function updateSigGraph(graph,container) {
@@ -390,38 +312,54 @@ function serializeTest(graph){
     window.log.copy = copy;
 
 }
+
+
 log.displayGraph = displayGraph;
 loadGraph();
 
 
 
-// turn worker into promises stuff 
+function runLayoutAnim(graph, layoutAlgName) {
+    let currentGraphId = graphId++;
+    let runStart2 = performance.now();
+    let worker = getWorker();
+    worker.postMessage({
+        layoutAlgName: layoutAlgName,
+        layoutAlg: getLayoutAlg(layoutAlgName,graph),
+        command: "run",
+        //emitOnMove: true,
+        emitOnStep: true,
+    });
 
-// computeLayout(data).then(doStuff with result)
+    worker.onmessage = e => {
+        let layoutAlg = getLayoutAlg(layoutAlgName, new Graph()).deserialize(e.data.layoutAlg);
+
+        if (e.data.type === "run") {
+            let runEnd2 = performance.now();
+            console.log("animated run time: ", runEnd2 - runStart2);
+        }
+
+        displayGraph(layoutAlg,currentGraphId);
+    };
+}
+
+function getLayoutAlg(layoutAlgName, graph,layoutParam = {}) {
+    let layoutAlg = null;
+
+    switch (layoutAlgName) {
+        case "hillClimbing":
+            layoutAlg = new HillClimbing(graph, layoutParam);
+            break;
+        case "circular":
+            layoutAlg = new CircularLayout(graph, layoutParam);
+            break;
+        case "tabu":
+            layoutAlg = new Tabu(graph, layoutParam);
+            break;
+    }
+    return layoutAlg;
+}
 function getWorker(){
     return  new Worker("./src/js/layoutWorker.js", { type: "module" });
-
+ 
 }
-function workerPost(worker, msg) {
-    return new Promise((resolve, rejects) => {
-        worker.postMessage(msg);
-        worker.onmessage = e => {
-            resolve(e);
-        };
-    });
-}
-
-
-async function normTest(graph){
-    let g = graph;
-    let og = new Graph().deserialize(graph);
-    let  s = step("ts",g);
-
-    let metricsH = {nodeOcclusion: [], nodeEdgeOcclusion: [], edgeLength: [], edgeCrossing: [], angularResolution: []};
-
-}
-
-
-
-
-
