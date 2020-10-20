@@ -1,0 +1,320 @@
+    <div class="toolbar-container">
+      <div class="toolbar-start">
+        <div class="icon fas fa-bars" id="menu"></div>
+
+        <!-- graph options-->
+        <div class="icon fas fa-project-diagram" id="genGraph">
+          <span class="tooltip">Generate graph</span>
+        </div>
+
+        <div class="icon fas fa-save " id="saveGraph">
+          <span class="tooltip">Save graph</span>
+        </div>
+
+        <div class="icon fas fa-upload" id="loadGraph">
+          <span class="tooltip">Upload graph</span>
+        </div>
+
+        <div class="icon fas fa-trash" id="deleteGraph">
+          <span class="tooltip">Delete graph</span>
+        </div>
+      </div>
+
+      <!-- modes-->
+      <div class="toolbar-center">
+        <div class="icon fas fa-mitten group-start" id="moveNode">
+          <span class="tooltip">Move node</span>
+        </div>
+
+        <div class="icon fas fa-plus-circle " id="addNode">
+          <span class="tooltip">Add node</span>
+        </div>
+
+        <div class="icon fas fa-bezier-curve" id="addEdge">
+          <span class="tooltip">Add edge</span>
+        </div>
+
+        <div class="icon fas fa-eraser" id="erase">
+          <span class="tooltip">Delete node/edge</span>
+        </div>
+      </div>
+
+      <!-- layout options -->
+      <div class="toolbar-end">
+        <div class="" id="layoutAlg">
+          <select name="layoutAlg" id="layoutAlgList">
+            <option value="hillClimbing">Hill Climbing</option>
+            <option value="tabu"> Tabu</option>
+            <option value="circular"> Circular</option>
+          </select>
+        </div>
+
+
+        <div class="icon fas fa-angle-double-right" id="runLayoutAnim">
+          <span class="tooltip">Run layout With animation</span>
+        </div>
+        <div class="icon fas fa-play" id="runLayout">
+          <span class="tooltip">Run layout</span>
+        </div>
+        <div class="icon fas fa-step-forward" id="stepLayout">
+          <span class="tooltip">Run step</span>
+        </div>
+        <div class="icon fas fa-power-off" id="resetLayout">
+          <span class="tooltip">Reset layout</span>
+        </div>
+        <div class="icon fas fa-random group-start" id="randomLayout">
+          <span class="tooltip">Randomize layout</span>
+        </div>
+
+        <div class="icon fas fa-flask" id="batchRunPage">
+          <span class="tooltip">Batch run</span>
+        </div>
+      </div>
+    </div>
+
+    <!--side menu -->
+    <div class="wrapper">
+      <div class="side-menu" id="side-menu">
+        <div class="menu-section-label" data-section="menu-sec-graph-info">
+          <h3>Graph info</h3>
+          <div class="menu-section-toggle arrow-down"></div>
+        </div>
+        <div class="menu-section" id="menu-sec-graph-info">
+          <div class="menu-item">
+            <p>Number of nodes</p>
+            <p id="node-num">0</p>
+          </div>
+          <div class="menu-item">
+            <p>Number of edges</p>
+            <p id="edge-num">0</p>
+          </div>
+          <div class="menu-item">
+            <p>Graph density</p>
+            <p id="density">0</p>
+          </div>
+          <div class="menu-item">
+            <p>Objective function</p>
+            <p id="objective-function">0</p>
+          </div>
+        </div>
+        <div class="menu-section-label" data-section="menu-sec-layout-info">
+          <h3>Layout info</h3>
+          <div class="menu-section-toggle arrow-down"></div>
+        </div>
+        <div class="menu-section" id="menu-sec-layout-info">
+          <div class="menu-item">
+            <p>Layout</p>
+            <p id="layout">Hill Climbing</p>
+          </div>
+          <div class="menu-item">
+            <p>Execution time</p>
+            <p id="execution-time">-</p>
+          </div>
+          <div class="menu-item">
+            <p>Evaluated Solutions</p>
+            <p id="evaluated-solutions">-</p>
+          </div>
+        </div>
+        <div class="menu-section-label" data-section="menu-sec-metrics">
+          <h3>Metrics</h3>
+          <div class="menu-section-toggle arrow-down"></div>
+        </div>
+        <div class="menu-section" id="menu-sec-metrics">
+          <div class="menu-item-group">
+            <div class="menu-item">
+              <p>Node occlusion</p>
+              <p id="node-occlusion">0</p>
+            </div>
+
+            <div class="menu-item">
+              <p>Weight</p>
+              <input
+                type="number"
+                id="node-occlusion-weight"
+                value="1"
+                step="0.01"
+                min="0"
+                max="1"
+              />
+            </div>
+          </div>
+          <div class="menu-item-group">
+            <div class="menu-item">
+              <p>Edge node occlusion:</p>
+              <p id="edge-node-occlusion">0</p>
+            </div>
+            <div class="menu-item">
+              <p>Weight</p>
+              <input
+                type="number"
+                id="edge-node-occlusion-weight"
+                value="1"
+                step="0.01"
+                min="0"
+                max="1"
+              />
+            </div>
+          </div>
+          <div class="menu-item-group">
+            <div class="menu-item">
+              <p>Edge length</p>
+              <p id="edge-length">0</p>
+            </div>
+
+            <div class="menu-item">
+              <p>Weight</p>
+              <input
+                type="number"
+                id="edge-length-weight"
+                value="1"
+                step="0.01"
+                min="0"
+                max="1"
+              />
+            </div>
+
+            <div class="menu-item">
+              <p>Required length</p>
+              <input
+                type="number"
+                id="edge-length-required"
+                value="100"
+                step="1"
+                min="0"
+              />
+            </div>
+          </div>
+
+          <div class="menu-item-group">
+            <div class="menu-item">
+              <p>Edge crossing</p>
+              <p id="edge-cross">0</p>
+            </div>
+            <div class="menu-item">
+              <p>Weight</p>
+              <input
+                type="number"
+                id="edge-crossing-weight"
+                value="1"
+                step="0.01"
+                min="0"
+                max="1"
+              />
+            </div>
+          </div>
+          <div class="menu-item-group">
+            <div class="menu-item">
+              <p>Angular resolution</p>
+              <p id="angular-resolution">0</p>
+            </div>
+            <div class="menu-item">
+              <p>Weight</p>
+              <input
+                type="number"
+                id="angular-resolution-weight"
+                value="1"
+                step="0.01"
+                min="0"
+                max="1"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!--side menu -->
+
+      <main>
+        <input
+          type="file"
+          id="fileSelector"
+          multiple
+          accept="text/*"
+          style="display:none"
+        />
+        <a href="" id="saveGraphLink" download style="display: none"
+          >save graph</a
+        >
+
+        <div id="container">
+          <div
+            id="annotation"
+            style="position: relative;"
+            width="0"
+            height="0"
+          ></div>
+        </div>
+
+        <div id="gen-modal" class="modal-container">
+          <div class="modal">
+            <div class="input-group-wrapper">
+              <div class="input-group">
+                <label for="gen-mode">Generation mode</label>
+                <select id="gen-mode">
+                  <option value="exact">Exact</option>
+                  <option value="range">Range</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label for="node-num">Number of nodes</label>
+                <input
+                  type="number"
+                  name="node-num-min"
+                  placeholder="min nodes"
+                  id="node-num-min"
+                  min="0"
+                  max="100000"
+                />
+                <input
+                  type="number"
+                  name="node-num-max"
+                  placeholder="max nodes"
+                  id="node-num-max"
+                  min="0"
+                  max="100000"
+                />
+                <label for="node-num" id="node-error" class="error"
+                  >Error msg</label
+                >
+              </div>
+              <div class="input-group">
+                <label for="edge-num">Number of edges</label>
+                <input
+                  type="number"
+                  name="edge-num-min"
+                  placeholder="min edges"
+                  id="edge-num-min"
+                  min="0"
+                  max="1000000"
+                />
+                <input
+                  type="number"
+                  name="edge-num-max"
+                  placeholder="max edges"
+                  id="edge-num-max"
+                  min="0"
+                  max="1000000"
+                />
+                <label for="edge-num" id="edge-error" class="error"
+                  >Error msg</label
+                >
+              </div>
+              <div class="btns">
+                <button id="generate" class="primary">Generate</button>
+                <button id="dismiss" class="danger">Dismiss</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="warn-modal" class="modal-container">
+          <div class="modal">
+            <h2>A graph already exist!</h2>
+            <div class="btns">
+              <button id="save" class="primary">Save</button>
+              <button id="delete" class="danger">Delete</button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+

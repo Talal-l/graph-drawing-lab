@@ -18,7 +18,8 @@ export {
     linesIntersect,
     sortNeighborsByAngle,
     pointEqual,
-    equal
+    equal,
+    loadPage 
 };
 
 /**
@@ -473,4 +474,28 @@ export function ptLineDistSq(x1, y1, x2, y2, px, py) {
     }
 
     return (x - px) * (x - px) + (y - py) * (y - py);
+}
+
+async function loadPage(pageName, dom) {
+  let page = dom.querySelector(`#${pageName}`);
+  if (page != null) {
+    page.remove();
+  }
+    let pagePath = `./${pageName}.html`;
+    let response = await fetch(pagePath);
+    let html = await response.text();
+    page = dom.createElement("div");
+    page.setAttribute("id", pageName);
+    page.innerHTML = html;
+    dom.querySelector("body").innerHTML = "";
+    dom.querySelector("body").appendChild(page);
+
+  // turn other pages off 
+  let activePage = dom.querySelector(".page.active");
+  if (activePage != null) {
+    activePage.classList.remove("active");
+  }
+
+  page.classList.add("page", "active");
+  return page;
 }

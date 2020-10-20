@@ -401,8 +401,6 @@ export class Tabu {
         s.layoutAlgName = this.layoutAlgName;
 
         return s;
-
-
     }
     deserialize(data) {
         if (typeof data === "string") data = JSON.parse(data);
