@@ -80,8 +80,8 @@ export async function BatchRunPage() {
                     name: "moveStrategy",
                     displayName: "Move Strategy",
                     options: [
-                        {name: "delayed", displayName: "Delayed"},
                         {name: "immediate", displayName: "Immediate"},
+                        {name: "delayed", displayName: "Delayed"},
                     ],
                     selectedOptionIndex: 0,
                 },
@@ -411,6 +411,7 @@ export async function BatchRunPage() {
             table.addHeader(h);
             if (h.visible === false) table.hideHeader(h.id);
         }
+        
 
         for (const [filename, file] of Object.entries(tab.files)) {
             // TODO: make sure the weights are up to date when we reach this step
@@ -553,7 +554,7 @@ export async function BatchRunPage() {
     let tabs = [];
 
     const metricsParam = {
-        requiredEdgeLength: 0.5,
+        requiredEdgeLength: 100,
     };
     // eslint-disable-next-line no-undef
     const sig = new sigma();
@@ -588,7 +589,7 @@ export async function BatchRunPage() {
             let d = new Date();
             let date = `${d.getFullYear()}${d.getDate()}${d.getDate()}${d.getHours()}${d.getMinutes()}${d.getSeconds()}`;
             this.creationDate = date;
-            this.table = null; // mainly used to control the sort
+            this.table = new Table().deserialize(otherTab ? otherTab.table : null);
             this.id = `${date + Math.floor(Math.random() * 1000)}`;
             this.headers = deepCopy(otherTab ? otherTab.headers : headers);
             this.sortHeader = otherTab ? otherTab.sortHeader : null;
@@ -1011,8 +1012,8 @@ export async function BatchRunPage() {
             default:
                 break;
             case "save":
+                debugger;
                 exportBatchToCSV(tabs);
-
                 break;
         }
     }
@@ -1234,7 +1235,7 @@ export async function BatchRunPage() {
                 }
 
                 let row = `${key},${executionTime},${evaluatedSolutions},${
-                    file.layout
+                    tab.layout
                     },${graph.nodes().length},${
                     graph.edges().length
                     },${graph.density()},${metrics.nodeOcclusion},${

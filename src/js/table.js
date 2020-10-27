@@ -1,10 +1,11 @@
+import {deepCopy} from "./util.js";
+
 export function cleanId(str) {
-    if (str === undefined) return null;
+    if (str == null) return null;
 
     // TODO: remove newline if any
     let id = String(str);
     // replace spaces with -
-    let re = /\s/;
     return id.replace(/\s/, "-");
 }
 function swap(arr, a, b) {
@@ -23,18 +24,24 @@ export class Table {
      * @param {object} [table] - Table object used to populate the table
      */
     constructor(tableElId, table) {
-        tableElId = cleanId(tableElId);
-        if (!tableElId || !document.querySelector(`#${tableElId}`)) {
-            throw `${tableElId} is not a valid id`;
+        this.sortClass = "sort-neutral";
+        this.sortHeader = null;
+        this.id = cleanId(tableElId);
+
+        if (this.id != null) {
+            this.tableEl = document.querySelector(`#${this.id}`);
+            if (!this.tableEl) {
+                throw `${this.id} is not a valid id`;
+            }
         }
+
 
         // in memory representation of the table
         // array of row objects and array of header objects
         // each row object contain a pointer to its header
         if (table) {
             // TODO: validate table object
-            // TODO: create a deepCopy
-            this.table = table;
+            this.table = deepCopy(table);
         } else {
             this.table = {
                 rows: [],
@@ -42,15 +49,23 @@ export class Table {
             };
         }
 
-        this.sortClass = "sort-neutral";
-        this.sortHeader = null;
-        this.tableEl = document.querySelector(`#${tableElId}`);
     }
 
+    attachToHtml(tableElId){
+        this.id = cleanId(tableElId);
+        this.tableEl = document.querySelector(`#${tableElId}`);
+        if (this.tableEl == null) {
+            throw `${this.id} is not a valid id`;
+        }
+    }
     /*
      * Update the HTML table to match the internal object
      */
     refresh() {
+        if (this.tableEl == null){
+            throw `Table not attached to html`;
+        }
+
         this.tableEl.innerHTML = "";
         let frag = document.createDocumentFragment();
 
@@ -371,5 +386,28 @@ export class Table {
             }
         }
         return -1;
+    }
+    serialize(string = true){
+        if (string === true) return JSON.stringify(this);
+
+        // TODO: is this fine?
+        return JSON.parse(JSON.stringify(this));
+
+
+
+
+    }
+    deserialize(data){
+        if (typeof data === "string") data = JSON.parse(data);
+        // TODO: is this fine?
+        data = JSON.parse(JSON.stringify(data));
+
+        Object.assign(this, data);
+        return this;
+
+
+
+
+
     }
 }
