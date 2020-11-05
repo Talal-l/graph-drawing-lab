@@ -26,13 +26,10 @@ window.saveFileDialog = function(data,extension="json") {
     });
 };
 
-window.saveFile = function(data) {
-    let d = new Date();
-    let date = `${d.getFullYear()}${d.getDate()}${d.getDate()}${d.getHours()}${d.getMinutes()}${d.getSeconds()}${Math.round(
-        Math.random() * 100
-    )}`;
+window.saveFile = function(data,filename) {
 
-    let filePath = `${__dirname}/data/${date}.json`;
+
+    let filePath = `${__dirname}/data/${filename}.json`;
     fs.writeFileSync(filePath, data);
 };
 

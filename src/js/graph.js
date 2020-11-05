@@ -438,7 +438,7 @@ class Graph {
     density() {
         let V = this._nodes.length;
         let E = this.edges().length;
-        let D = (2 * E) / (V * (V - 1)) || 0;
+        let D = (E) / (V * (V - 1)) || 0;
         return D;
     }
 
@@ -553,6 +553,7 @@ class Graph {
         let s = {};
         s._nodes = [... this._nodes];
         s._adjList = [... this._adjList];
+        s.status = this.status;
         s._zn = this._zn.serialize(false);
         s.options = {... this.options};
         s.nodeSize = this.nodeSize;

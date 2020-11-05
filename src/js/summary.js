@@ -46,7 +46,7 @@ export async function SummaryPage(tabs) {
             let file = run.files[key];
             run.objectives.push(file.objective);
 
-            run.executionTimeList.push(file.info.executionTime);
+            run.executionTimeList.push(file.info.executionTime/1000);
             run.evaluatedSolutionsList.push(file.info.evaluatedSolutions);
         }
 
@@ -183,8 +183,8 @@ export async function SummaryPage(tabs) {
     [
         { title: "Run name", id: "runName" },
         { title: "Layout Algorithm", id: "layoutAlgorithm" },
-        { title: "Average execution time", id: "avgExecution" },
-        { title: "median execution time ", id: "medianExecution" },
+        { title: "Average execution time (seconds)", id: "avgExecution" },
+        { title: "median execution time (seconds)", id: "medianExecution" },
     ].forEach((header) => avgExecutionTable.addHeader(header));
 
     for (let run of runs) {
@@ -207,7 +207,7 @@ export async function SummaryPage(tabs) {
     barChart(
         "execution-chart",
         "run",
-        "Average execution time",
+        "Average execution time (seconds)",
         runs.map((s) => ({ x: s.title, y: d3.mean(s.executionTimeList) }))
     );
 

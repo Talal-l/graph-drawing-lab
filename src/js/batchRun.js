@@ -24,8 +24,34 @@ export async function BatchRunPage() {
     const PAGE = await loadPage("batchRun", document);
     sessionStorage.setItem("lastPage", "BatchRunPage");
 
+    let tabs = [];
+    let ACTIVE_TAB_ID = null;
+
+    const metricsParam = {
+        requiredEdgeLength: 100,
+    };
+    // eslint-disable-next-line no-undef
+    const sig = new sigma();
+    const weights = {
+        nodeOcclusion: 1,
+        nodeEdgeOcclusion: 1,
+        edgeLength: 1,
+        edgeCrossing: 1,
+        angularResolution: 1,
+    };
+
+    const fileStatus = {
+        LOADED: 0,
+        RUNNING: 1,
+        COMPUTED: 2,
+        DIRTY: 3,
+    };
+
     const headers = [
         {id: "filename", title: "Filename", visible: true},
+        {id: "nodes", title: "Nodes", visible: true},
+        {id: "edges", title: "Edges", visible: true},
+        {id: "density", title: "Density", visible: true},
         {id: "status", title: "Status", visible: true},
         {id: "executionTime", title: "execution time", visible: true},
         {
@@ -34,9 +60,6 @@ export async function BatchRunPage() {
             visible: true,
         },
         {id: "layout", title: "Layout", visible: true},
-        {id: "nodes", title: "Nodes", visible: true},
-        {id: "edges", title: "Edges", visible: true},
-        {id: "density", title: "Density", visible: true},
         {id: "nodeOcclusion", title: "Node occlusion", visible: true},
         {
             id: "nodeEdgeOcclusion",
@@ -170,132 +193,6 @@ export async function BatchRunPage() {
         },
     };
 
-    function createLayoutList(selectedLayout) {
-        let htmlOptions = "";
-        for (const [name, {displayName}] of Object.entries(layouts)) {
-            htmlOptions += `<option value="${name}" ${
-                name === selectedLayout ? "selected" : ""
-                }>${displayName}</option>`;
-        }
-        let selectHtml = `
-          <select name="layoutAlg" id="layoutAlgList">
-          ${htmlOptions}
-          </select>
-      `;
-        return selectHtml;
-    }
-    function createLayoutParam(params) {
-        function createItemWrapper(item) {
-            return `<div class="menu-item-group">
-              <div class="menu-item">
-                  ${item}
-              </div>
-          </div>`;
-        }
-
-        function createInputParam({name, displayName, value}) {
-            let inputHtml = `<div class=param-input-label>${displayName}</div>
-              <input type="number" name="${name}" class="param-input" id="${name}" value="${value}" </input>
-              `;
-            return inputHtml;
-        }
-        function createSelectParam({
-            name,
-            displayName,
-            selectedOptionIndex,
-            options,
-        }) {
-            let htmlOptions = "";
-            for (let i = 0; i < options.length; i++) {
-                const {name, displayName} = options[i];
-                htmlOptions += `<option value="${name}" ${
-                    selectedOptionIndex === i ? "selected" : ""
-                    }>${displayName}</option>`;
-            }
-
-            let selectHtml = `<div class=param-input-label>${displayName}</div>
-              <select name="${name}">${htmlOptions}</select>
-
-              `;
-
-            return selectHtml;
-        }
-
-        let html = "";
-        for (const param of params) {
-            let paramHtml = "";
-            if (param.type === "number") paramHtml = createInputParam(param);
-            else if (param.type === "list")
-                paramHtml = createSelectParam(param);
-            html += createItemWrapper(paramHtml);
-        }
-        return html;
-    }
-
-    function createTabEl(title, tabId) {
-        let html = `
-              <div class="tab-item" id="tab-${tabId}">
-                  <div class="tab-title">
-                      ${title}
-                  </div>
-
-                  <div class="tab-control">
-                      ${createSpinner()}
-                      ${
-            // prevent the default tab from being deleted
-            tabId !== tabs[0].id
-                ? `<span class="fas fa-times tab-close-icon"></span>`
-                : ``
-            }
-
-                  </div> 
-               </div> 
-              `;
-        return html;
-    }
-
-    function createTabContent({id, layout}) {
-        let html = `
-              <div class="tab-content" id="tab-content-${id}">
-                  <div class="param-container">
-                      <div class="dropdown" id="layoutAlg">
-                          <span>Layout Algorithm: </span>
-                          ${createLayoutList(layout)}
-
-                      </div>
-
-                      <div class="param-list">
-                      </div>
-                      <div class="file-number">
-                      
-                      <span>Number of files: </span>
-                      ${
-            Object.keys(tabs.find((e) => e.id === id).files).length
-            }</div>
-                  </div>
-
-              <div class="h-divider">
-
-              </div>
-                  <div class="table-container">
-                      <table class="run-table" id="table-${id}"><thead><tr></tr></thead><tbody></tbody></table>
-                  </div>
-              </div>
-     `;
-        return html;
-    }
-
-    function createSpinner() {
-        console.log("create spinner");
-        return `
-         <div class="lds-ring tab-spinner">
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-         </div>
-  `;
-    }
 
     function showTabSpinner(tab) {
         let tabEl = PAGE.querySelector(`#tab-${tab.id}`);
@@ -313,8 +210,6 @@ export async function BatchRunPage() {
         return id.split("-").pop();
     }
 
-    function layoutParamHandler({target}) {}
-
     function addLayoutParam(layoutParam) {
         let layoutParamSec = PAGE.querySelector("#menu-sec-layout-param");
         layoutParamSec.innerHTML = "";
@@ -322,39 +217,32 @@ export async function BatchRunPage() {
             "beforeend",
             createLayoutParam(layoutParam)
         );
-        function onSelectChange({target}) {
-            let name = target.getAttribute("name");
-            let type = target.nodeName;
-            if (type === "INPUT") {
-                let tab = currentTab();
-                let options = tab.layoutParam[name].options;
-                let index = options.find((e) => e.name === name);
-                tab.layoutParam[name].selectedOptionIndex = index;
-            }
+    }
+
+    function renderTabs() {
+        PAGE.querySelector("#tab-list").innerHTML = "";
+        console.log("render tabs", tabs.map(e => e.status));
+        for (let tab of tabs) {
+            let tabListEl = PAGE.querySelector("#tab-list");
+            tabListEl.insertAdjacentHTML(
+                "beforeend",
+                createTabEl(tab.title, tab.id)
+            );
+            if (tab.runCount > 0)
+                showTabSpinner(tab);
+            else
+                hideTabSpinner(tab);
+
         }
 
-        // add param layout event listener
-        // layoutParamSec.addEventListener("change", onSelectChange);
-    }
+        let activeTab = tabs.find(t => t.id === ACTIVE_TAB_ID);
+        if (activeTab == null) activeTab = tabs[0];
 
-    function addNewTab(tabList, tab) {
-        console.log("adding new tab", tab);
-        // add the tab to the list of tabs
-        tabList.push(tab);
-        // add it to html tab list
-        addTabEl(tab);
-        // add html content
-        addTabContentEl(tab);
-    }
+        let tabEl = PAGE.querySelector(`#tab-${activeTab.id}`);
+        if (!tabEl) throw `no tab with id tab-${activeTab.id}`;
+        tabEl.classList.add("tab-active");
+        addTabContentEl(activeTab);
 
-    // add new tab element and add it's tab before the new tab icon
-    // TODO: find a better name. This name conflicts with addNewTab
-    function addTabEl(tab) {
-        let newTab = PAGE.querySelector("#new-tab");
-        newTab.insertAdjacentHTML(
-            "beforebegin",
-            createTabEl(tab.title, tab.id)
-        );
     }
 
     function addTabContentEl(tab) {
@@ -365,45 +253,9 @@ export async function BatchRunPage() {
         const contentEl = PAGE.querySelector(`#tab-content-${tab.id}`);
 
         if (Object.keys(tab.files).length === 0) {
-            tab.status = tabStatus.FRESH;
+            tab.status = Tab.status.FRESH;
         }
 
-        addTable(tab);
-
-        // construct side menu
-        createSideMenu(tab);
-        addLayoutParam(tab.layoutParam);
-
-        // add event listener to layout algorithm list to update parameters on change
-        let layoutAlgList = contentEl.querySelector("#layoutAlgList");
-        layoutAlgList.onchange = ({target}) => {
-            currentTab().status = tabStatus.DIRTY;
-            tab.layout = target.value;
-            tab.layoutParam = deepCopy(layouts[tab.layout].params);
-            addLayoutParam(currentTab().layoutParam);
-        };
-
-        // add event listener for the table
-        tabContainer.querySelector("table").onclick = ({target}) => {
-            let btn = null;
-            let h = null;
-            if (target.nodeName === "TH") {
-                btn = target.querySelector("button");
-                h = target.id;
-            } else if (target.nodeName === "BUTTON") {
-                btn = target;
-                h = target.parentNode.id;
-            }
-            if (tab.table.getHeader(h)) {
-                tab.table.sort(h, !(tab.table.sortClass === "sort-asc"));
-                tab.table.refresh();
-                tab.sortDirection = tab.table.sortClass;
-                tab.sortHeader = h;
-            }
-        };
-    }
-
-    function addTable(tab) {
         let table = new Table(`table-${tab.id}`);
         tab.table = table;
 
@@ -411,7 +263,6 @@ export async function BatchRunPage() {
             table.addHeader(h);
             if (h.visible === false) table.hideHeader(h.id);
         }
-        
 
         for (const [filename, file] of Object.entries(tab.files)) {
             // TODO: make sure the weights are up to date when we reach this step
@@ -423,15 +274,12 @@ export async function BatchRunPage() {
                 executionTime: file.info ? file.info.executionTime : "-",
             };
 
-            let metrics = graph.normalMetrics();
-            let objective = graph.objective();
-            let {
-                nodeOcclusion,
-                nodeEdgeOcclusion,
-                edgeLength,
-                edgeCrossing,
-                angularResolution,
-            } = metrics;
+            let metrics = null;
+            if (graph.status === Graph.status.COMPUTED) {
+                metrics = graph.normalMetrics();
+            }
+
+
             let row = {
                 status: {value: file.status, type: "text"},
                 filename: {
@@ -468,46 +316,42 @@ export async function BatchRunPage() {
                     type: "text",
                 },
                 nodeOcclusion: {
-                    value: nodeOcclusion.toFixed(DIGITS),
+                    value: metrics?metrics.nodeOcclusion.toFixed(DIGITS):"-",
                     type: "text",
                 },
                 nodeEdgeOcclusion: {
-                    value: nodeEdgeOcclusion.toFixed(DIGITS),
+                    value: metrics?metrics.nodeEdgeOcclusion.toFixed(DIGITS):"-",
                     type: "text",
                 },
-                edgeLength: {value: edgeLength.toFixed(DIGITS), type: "text"},
+                edgeLength: {value: metrics?metrics.edgeLength.toFixed(DIGITS):"-", type: "text"},
                 edgeCrossing: {
-                    value: edgeCrossing.toFixed(DIGITS),
+                    value: metrics?metrics.edgeCrossing.toFixed(DIGITS):"-",
                     type: "text",
                 },
                 angularResolution: {
-                    value: angularResolution.toFixed(DIGITS),
+                    value: metrics?metrics.angularResolution.toFixed(DIGITS):"-",
                     type: "text",
                 },
                 objective: {
-                    value: graph.objective().toFixed(DIGITS),
+                    value: metrics?graph.objective().toFixed(DIGITS):"-",
                     type: "text",
                 },
                 action: {
                     value: `<a href=# class="row-delete" data-filename="${filename}" >Delete</a>`,
                     type: "html",
                     onClick: (e) => {
-                        // delete file from all tabs
-                        console.log("delete file", filename);
-                        for (let tab of tabs) {
-                            // kill any running web worker
-                            let worker = tab.files[filename].worker;
-                            if (worker) {
-                                tab.runCount--;
-                                if (tab.runCount === 0) {
-                                    tab.status = tabStatus.DONE;
-                                    hideTabSpinner(tab);
-                                }
-                                worker.terminate();
+                        // kill any running web worker
+                        let worker = tab.files[filename].worker;
+                        if (worker) {
+                            tab.runCount--;
+                            if (tab.runCount === 0) {
+                                tab.status = Tab.status.DONE;
+                                hideTabSpinner(tab);
                             }
-                            delete tab.files[filename];
+                            worker.terminate();
                         }
-                        addTabContentEl(tab);
+                        delete tab.files[filename];
+                        renderTabs();
                     },
                 },
             };
@@ -521,69 +365,54 @@ export async function BatchRunPage() {
         table.refresh();
         // update play button state
         let runTestEl = PAGE.querySelector("#batchRunTest");
-        if (tab.status === tabStatus.RUNNING) {
+        if (tab.status === Tab.status.RUNNING) {
             runTestEl.classList.add("fa-stop");
             runTestEl.classList.remove("fa-play");
         } else {
             runTestEl.classList.add("fa-play");
             runTestEl.classList.remove("fa-stop");
         }
+
+        // construct side menu
+        createSideMenu(tab);
+        addLayoutParam(tab.layoutParam);
+
+        // add event listener to layout algorithm list to update parameters on change
+        let layoutAlgList = contentEl.querySelector("#layoutAlgList");
+        layoutAlgList.onchange = ({target}) => {
+            currentTab().status = Tab.status.DIRTY;
+            tab.layout = target.value;
+            tab.layoutParam = deepCopy(layouts[tab.layout].params);
+            addLayoutParam(currentTab().layoutParam);
+        };
+
+        // add event listener for the table
+        tabContainer.querySelector("table").onclick = ({target}) => {
+            let btn = null;
+            let h = null;
+            if (target.nodeName === "TH") {
+                btn = target.querySelector("button");
+                h = target.id;
+            } else if (target.nodeName === "BUTTON") {
+                btn = target;
+                h = target.parentNode.id;
+            }
+            if (tab.table.getHeader(h)) {
+                tab.table.sort(h, !(tab.table.sortClass === "sort-asc"));
+                tab.table.refresh();
+                tab.sortDirection = tab.table.sortClass;
+                tab.sortHeader = h;
+            }
+        };
     }
+
 
     function currentTab() {
-        let activeTabElId = PAGE.querySelector(".tab-active").id;
-        return tabs.find((t) => t.id === getTabIdFromElId(activeTabElId));
+        return tabs.find(t => t.id === ACTIVE_TAB_ID);
     }
-
-    function switchTab(tab) {
-        let tabEl = PAGE.querySelector(`#tab-${tab.id}`);
-        if (!tabEl) throw `no tab with id tab-${tab.id}`;
-
-        let oldTabEl = PAGE.querySelector(".tab-active");
-        if (oldTabEl && oldTabEl !== tabEl) {
-            let oldTabId = getTabIdFromElId(oldTabEl.id);
-            oldTabEl.classList.remove("tab-active");
-        }
-
-        tabEl.classList.add("tab-active");
-
-        addTabContentEl(tab);
-    }
-
-    let tabNum = 1;
-    let tabs = [];
-
-    const metricsParam = {
-        requiredEdgeLength: 100,
-    };
-    // eslint-disable-next-line no-undef
-    const sig = new sigma();
-    const weights = {
-        nodeOcclusion: 1,
-        nodeEdgeOcclusion: 1,
-        edgeLength: 1,
-        edgeCrossing: 1,
-        angularResolution: 1,
-    };
-
-    const tabStatus = {
-        FRESH: 0, // tab was just created
-        LOADING: 1, // still loading files
-        LOADED: 2, // all files have been loaded
-        RUNNING: 3, // running on files
-        PAUSED: 4, // paused after a run
-        DONE: 5, // Done running
-        DIRTY: 6, // Something is out of sync (ex param changed but no run was triggered yet)
-    };
-    const fileStatus = {
-        LOADED: 0,
-        RUNNING: 1,
-        COMPUTED: 2,
-        DIRTY: 3,
-    };
-
     // Assumes to be created in a loaded batchRun page (with side menu)
     // TODO: add option to save tab to disk (save the run)
+
     class Tab {
         constructor(title, otherTab) {
             let d = new Date();
@@ -593,7 +422,8 @@ export async function BatchRunPage() {
             this.id = `${date + Math.floor(Math.random() * 1000)}`;
             this.headers = deepCopy(otherTab ? otherTab.headers : headers);
             this.sortHeader = otherTab ? otherTab.sortHeader : null;
-            this.status = tabStatus.FRESH;
+            this.active = false;
+            this.status = Tab.status.FRESH;
             this.sortDirection = otherTab
                 ? otherTab.sortDirection
                 : "sort-neutral";
@@ -652,7 +482,7 @@ export async function BatchRunPage() {
         }
 
         runTest(filename) {
-            this.status = tabStatus.RUNNING;
+            this.status = Tab.status.RUNNING;
             showTabSpinner(this);
             let options = {
                 weights: this.weights,
@@ -689,7 +519,7 @@ export async function BatchRunPage() {
                 let graph = new Graph().deserialize(e.data.layoutAlg.graph);
 
                 this.files[filename].graph = graph;
-                this.files[filename].layout = e.layoutAlg;
+                this.files[filename].layout = e.data.layoutAlg.name;
                 this.files[filename].status = "done";
                 this.files[filename].info = {
                     executionTime: e.data.layoutAlg.executionTime,
@@ -698,22 +528,26 @@ export async function BatchRunPage() {
                 this.files[filename].worker = null;
 
                 this.files[filename].objective = graph.objective();
-                this.files[filename].originalObjective = this.files[
-                    filename
-                ].originalGraph.objective();
 
                 // TODO: Make sure the options are in sync with the ui
 
                 this.runCount--;
 
                 if (this.runCount === 0) {
-                    this.status = tabStatus.DONE;
+                    this.status = Tab.status.DONE;
                     hideTabSpinner(this);
                 }
-                addTable(currentTab());
+                if (PAGE.id === "#batchRun"){
+                    renderTabs();
+                }
                 worker.terminate();
 
                 console.timeEnd("onmessage time");
+
+                renderTabs();
+            
+
+
             }.bind(this);
         }
         runBatch() {
@@ -723,19 +557,26 @@ export async function BatchRunPage() {
                 this.runCount++;
                 this.runTest(filename);
             }
-            //addTable(this);
         }
         clearBatch() {
-            console.log(this.status);
-            if (this.status !== tabStatus.RUNNING) {
+            if (this.status !== Tab.status.RUNNING) {
                 this.files = {};
-                this.status = tabStatus.FRESH;
-                addTable(this);
+                this.status = Tab.status.FRESH;
+                renderTabs();
             } else {
                 alert("some tabs are still running!");
             }
         }
     }
+    Tab.status = {
+        FRESH: 0, // tab was just created
+        LOADING: 1, // still loading files
+        LOADED: 2, // all files have been loaded
+        RUNNING: 3, // running on files
+        PAUSED: 4, // paused after a run
+        DONE: 5, // Done running
+        DIRTY: 6, // Something is out of sync (ex param changed but no run was triggered yet)
+    };
     function loadFile(filename, data) {
         // TODO: do this in a web worker to avoid blocking the ui
         try {
@@ -744,17 +585,15 @@ export async function BatchRunPage() {
 
             currentTab().files[filename] = {
                 graph: graph,
-                data: data,
                 originalGraph: originalGraph,
                 status: "-",
                 info: null,
                 name: filename,
-                objective: graph.objective(),
-                originalObjective: originalGraph.objective(),
+                objective: "-",
             };
 
-            currentTab().status = tabStatus.LOADED;
-            addTabContentEl(currentTab());
+            currentTab().status = Tab.status.LOADED;
+            renderTabs();
         } catch (err) {
             console.warn(
                 `Can't parse ${filename}\n`,
@@ -765,23 +604,42 @@ export async function BatchRunPage() {
             );
         }
     }
-    // setup tab bar
-    let savedTabs = JSON.parse(localStorage.getItem("runs"));
-    lastTabNum = JSON.parse(localStorage.getItem("lastTabNum")) || 1;
-
-    if (savedTabs) {
-        for (const tab of savedTabs) {
-            let nTab = new Tab("new one");
-            nTab.restoreFrom(tab);
-            addNewTab(tabs, nTab);
+    function removeTab(tabId) {
+        // update the state of tabs
+        let index = tabs.findIndex((e) => e.id === tabId);
+        if (tabs[index].Active) {
+            let successorIndex = index > 0 ? index - 1 : 0;
+            tabs[successorIndex].active;
         }
+        tabs.splice(index, 1);
+        // re render tab list 
 
-        switchTab(tabs[0]);
-    } else {
-        let defaultTab = new Tab("Run 0");
-        addNewTab(tabs, defaultTab);
-        switchTab(defaultTab);
+
+
+
     }
+    function setupTabs(savedTabs) {
+        // TODO: handle default tab when restoring
+        if (savedTabs) {
+            console.log("restroing from ", savedTabs);
+            let newTabs = [];
+            for (const tab of savedTabs) {
+                let nTab = new Tab("new one");
+                nTab.restoreFrom(tab);
+                newTabs.push(nTab);
+            }
+            tabs = newTabs;
+            ACTIVE_TAB_ID = tabs[0].id;
+
+        } else {
+            let defaultTab = new Tab("Run 0");
+            ACTIVE_TAB_ID = defaultTab.id;
+            tabs.push(defaultTab);
+        }
+        renderTabs();
+
+    }
+    setupTabs(window.tabs);
 
     let tabList = PAGE.querySelector(".tab-list");
     tabList.addEventListener("click", (event) => {
@@ -791,22 +649,20 @@ export async function BatchRunPage() {
             const selectedTab = tabs.find(
                 (t) => t.id === getTabIdFromElId(el.id)
             );
-            switchTab(selectedTab);
+            ACTIVE_TAB_ID = selectedTab.id;
         } else if (el.id === "new-tab") {
             let prevTab = null;
             if (tabs.length > 0) prevTab = tabs[tabs.length - 1];
             let tab = new Tab(`Run ${lastTabNum++}`, prevTab);
-            addNewTab(tabs, tab);
-            switchTab(tab);
+            ACTIVE_TAB_ID = tab.id;
+            tabs.push(tab);
         } else if (el.classList.contains("tab-close-icon")) {
             let id = getTabIdFromElId(el.parentNode.parentNode.id);
-            let index = tabs.findIndex((e) => e.id === id);
-            tabs.splice(index, 1);
-            index = index > 0 ? index - 1 : 0;
-            el.parentNode.parentNode.remove();
-            if (el.parentNode.parentNode.classList.contains("tab-active"))
-                switchTab(tabs[index]);
+            removeTab(id);
+
         }
+
+        renderTabs();
     });
 
     // Add headers to show/hide side menu
@@ -937,12 +793,17 @@ export async function BatchRunPage() {
             case "genTest":
                 genModal.style.display = "flex";
                 break;
-            case "saveTest":
+            case "saveBatch":
+                saveBatch();
                 break;
             case "loadFile":
                 openFileDialog(loadFile);
                 break;
+            case "loadBatch":
+                openFileDialog(loadBatch);
+                break;
             case "batchRunTest":
+                // TODO: move this to rendertabs
                 if (target.classList.contains("fa-play")) {
                     target.classList.remove("fa-play");
                     target.classList.add("fa-stop");
@@ -952,7 +813,7 @@ export async function BatchRunPage() {
                     target.classList.add("fa-play");
                     let tab = currentTab();
                     hideTabSpinner(tab);
-                    tab.status = tabStatus.FRESH;
+                    tab.status = Tab.status.FRESH;
                     tab.runCount = 0;
                     for (const [filename, file] of Object.entries(tab.files)) {
                         file.status = "-";
@@ -968,16 +829,17 @@ export async function BatchRunPage() {
 
                         if (file.worker) file.worker.terminate();
                     }
-                    addTabContentEl(tab);
                 }
+                renderTabs();
                 break;
             case "backToMain":
                 MainPage();
+                window.tabs = tabs;
                 break;
             case "clearTest":
                 let canClear = true;
                 for (const tab of tabs) {
-                    if (tab.status === tabStatus.RUNNING) {
+                    if (tab.status === Tab.status.RUNNING) {
                         canClear = false;
                         break;
                     }
@@ -985,7 +847,9 @@ export async function BatchRunPage() {
                 if (canClear) {
                     localStorage.removeItem("runs");
                     localStorage.removeItem("lastTabNum");
-                    window.location.replace("batchRun.html");
+
+                    //window.location.replace("batchRun.html");
+                    currentTab().clearBatch();
                 } else {
                     alert("some tabs are still running!");
                 }
@@ -993,9 +857,9 @@ export async function BatchRunPage() {
             case "summary-page":
                 let completeBatch = true;
                 for (const tab of tabs) {
-                    if (tab.status !== tabStatus.DONE) {
+                    if (tab.status !== Tab.status.DONE) {
                         completeBatch = false;
-                        if (tab.status === tabStatus.DIRTY) {
+                        if (tab.status === Tab.status.DIRTY) {
                             alert(
                                 `Parameter changed without a re-run in ${tab.title}`
                             );
@@ -1005,14 +869,15 @@ export async function BatchRunPage() {
                         break;
                     }
                 }
-                if (completeBatch || true) {
+                if (completeBatch) {
+
+                    window.tabs = tabs;
                     SummaryPage(tabs);
                 }
                 break;
             default:
                 break;
-            case "save":
-                debugger;
+            case "exportBatch":
                 exportBatchToCSV(tabs);
                 break;
         }
@@ -1146,13 +1011,13 @@ export async function BatchRunPage() {
             let header = currentTab().headers.find(({id}) => id === colId);
             header.visible = target.checked;
 
-            addTable(currentTab());
+            renderTabs();
         });
 
     sideMenu
         .querySelector("#menu-sec-metrics")
         .addEventListener("change", (event) => {
-            currentTab().status = tabStatus.DIRTY;
+            currentTab().status = Tab.status.DIRTY;
             currentTab().weights = getWeights();
             currentTab().metricsParam = {
                 requiredEdgeLength: parseFloat(
@@ -1164,7 +1029,7 @@ export async function BatchRunPage() {
     sideMenu
         .querySelector("#menu-sec-layout-param")
         .addEventListener("change", ({target}) => {
-            currentTab().status = tabStatus.DIRTY;
+            currentTab().status = Tab.status.DIRTY;
             let type = target.nodeName;
             let param = currentTab().layoutParam.find(
                 (e) => e.name === target.name
@@ -1206,20 +1071,19 @@ export async function BatchRunPage() {
     function genTest(testNum, nMin, nMax, eMin, eMax, width, height) {
         // TODO: Make this async
 
-        while (testNum--) {
+        let d = new Date();
+        for (let i = 0; i < testNum; i++) {
             let G = generateGraph(nMin, nMax, eMin, eMax, height, width);
+            let date = `${d.getFullYear()}${d.getDate()}${d.getDate()}${d.getHours()}${d.getMinutes()}${d.getSeconds()}`;
 
             // eslint-disable-next-line no-undef
-            saveFile(G.export());
+            saveFile(G.export(), `${date}-randomGraph-${i}`);
         }
     }
 
     function exportBatchToCSV(tabs) {
-        // batch will contain tabs will files and there results
-
-        console.log(tabs);
         let csv =
-            "filename,execution time,evaluated solution,layout,nodes,edges,density,node occlusion,edge-node occlusion,edge length,edge crossing,angular resolution,node occlusion weight,edge-node occlusion weight,edge length weight,edge crossing weight,angular resolution weight,required edge length,objective\n";
+            "set,filename,execution time,evaluated solution,layout,nodes,edges,density,node occlusion,edge-node occlusion,edge length,edge crossing,angular resolution,node occlusion weight,edge-node occlusion weight,edge length weight,edge crossing weight,angular resolution weight,required edge length,objective\n";
 
         for (let tab of tabs) {
             for (let key of Object.keys(tab.files)) {
@@ -1234,7 +1098,7 @@ export async function BatchRunPage() {
                     evaluatedSolutions = info.evaluatedSolutions;
                 }
 
-                let row = `${key},${executionTime},${evaluatedSolutions},${
+                let row = `${tab.title},${key},${executionTime},${evaluatedSolutions},${
                     tab.layout
                     },${graph.nodes().length},${
                     graph.edges().length
@@ -1254,6 +1118,29 @@ export async function BatchRunPage() {
 
         saveFileDialog(csv, "csv");
     }
+
+    function saveBatch() {
+        console.time("tabToString");
+        let batch = JSON.stringify(tabs, null, 4);
+        saveFileDialog(batch, "batch.json");
+        console.timeEnd("tabToString");
+    }
+
+    function loadBatch(filename, data) {
+        try {
+            data = JSON.parse(data);
+            setupTabs(data);
+        } catch (err) {
+            console.warn(
+                `Can't parse ${filename}\n`,
+                "file content:\n",
+                data,
+                "error: ",
+                err
+            );
+        }
+    }
+
     // TODO: refactor this to be shared between main and batchrun
     function getLayoutAlg(graph, layoutAlgName, layoutParam) {
         graph.resetZn();
@@ -1272,5 +1159,142 @@ export async function BatchRunPage() {
         return layoutAlg;
     }
 
-    window.tabs = tabs;
+
+
+
+
+
+
+
+
+
+    //====================================================HTML====================================================
+
+
+    function createLayoutList(selectedLayout) {
+        let htmlOptions = "";
+        for (const [name, {displayName}] of Object.entries(layouts)) {
+            htmlOptions += `<option value="${name}" ${
+                name === selectedLayout ? "selected" : ""
+                }>${displayName}</option>`;
+        }
+        let selectHtml = `
+          <select name="layoutAlg" id="layoutAlgList">
+          ${htmlOptions}
+          </select>
+          `;
+        return selectHtml;
+    }
+    function createLayoutParam(params) {
+        function createItemWrapper(item) {
+            return `<div class="menu-item-group">
+              <div class="menu-item">
+                  ${item}
+              </div>
+          </div>`;
+        }
+
+        function createInputParam({name, displayName, value}) {
+            let inputHtml = `<div class=param-input-label>${displayName}</div>
+              <input type="number" name="${name}" class="param-input" id="${name}" value="${value}" </input>
+              `;
+            return inputHtml;
+        }
+        function createSelectParam({
+            name,
+            displayName,
+            selectedOptionIndex,
+            options,
+        }) {
+            let htmlOptions = "";
+            for (let i = 0; i < options.length; i++) {
+                const {name, displayName} = options[i];
+                htmlOptions += `<option value="${name}" ${
+                    selectedOptionIndex === i ? "selected" : ""
+                    }>${displayName}</option>`;
+            }
+
+            let selectHtml = `<div class=param-input-label>${displayName}</div>
+              <select name="${name}">${htmlOptions}</select>
+
+              `;
+
+            return selectHtml;
+        }
+
+        let html = "";
+        for (const param of params) {
+            let paramHtml = "";
+            if (param.type === "number") paramHtml = createInputParam(param);
+            else if (param.type === "list")
+                paramHtml = createSelectParam(param);
+            html += createItemWrapper(paramHtml);
+        }
+        return html;
+    }
+
+    function createTabEl(title, tabId) {
+        let html = `
+              <div class="tab-item" id="tab-${tabId}">
+                  <div class="tab-title">
+                      ${title}
+                  </div>
+
+                  <div class="tab-control">
+                      ${createSpinner()}
+                      ${
+            // prevent the default tab from being deleted
+            tabId !== tabs[0].id
+                ? `<span class="fas fa-times tab-close-icon"></span>`
+                : ``
+            }
+
+                  </div> 
+               </div> 
+              `;
+        return html;
+    }
+
+    function createTabContent({id, layout}) {
+        let html = `
+              <div class="tab-content" id="tab-content-${id}">
+                  <div class="param-container">
+                      <div class="dropdown" id="layoutAlg">
+                          <span>Layout Algorithm: </span>
+                          ${createLayoutList(layout)}
+
+                      </div>
+
+                      <div class="param-list">
+                      </div>
+                      <div class="file-number">
+                      
+                      <span>Number of files: </span>
+                      ${
+            Object.keys(tabs.find((e) => e.id === id).files).length
+            }</div>
+                  </div>
+
+              <div class="h-divider">
+
+              </div>
+                  <div class="table-container">
+                      <table class="run-table" id="table-${id}"><thead><tr></tr></thead><tbody></tbody></table>
+                  </div>
+              </div>
+             `;
+        return html;
+    }
+
+    function createSpinner() {
+        console.log("create spinner");
+        return `
+                 <div class="lds-ring tab-spinner">
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                 </div>
+              `;
+    }
 }

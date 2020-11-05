@@ -26,8 +26,15 @@
                 <span class="tooltip">Run Tests</span>
             </div>
 
-            <div class="icon fas fa-save" id="save">
+
+            <div class="icon fas fa-upload" id="loadBatch">
+                <span class="tooltip">Load Batch</span>
+            </div>
+            <div class="icon fas fa-download" id="saveBatch">
                 <span class="tooltip">Save Batch</span>
+            </div>
+            <div class="icon fas fa-file-csv" id="exportBatch">
+                <span class="tooltip">Export Batch</span>
             </div>
 
 
@@ -67,7 +74,8 @@
         </div>
 
         <main>
-            <div class="tab-list" id="tab-list">
+            <div class="tab-list" id="tab-list-container">
+                <div class="tab-list" id="tab-list"> </div>
                 <div class="fa fa-plus" id="new-tab" aria-hidden="true"></div>
             </div>
 
