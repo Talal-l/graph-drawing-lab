@@ -1075,9 +1075,11 @@ export async function BatchRunPage() {
         for (let i = 0; i < testNum; i++) {
             let G = generateGraph(nMin, nMax, eMin, eMax, height, width);
             let date = `${d.getFullYear()}${d.getDate()}${d.getDate()}${d.getHours()}${d.getMinutes()}${d.getSeconds()}`;
+            let exportedGraph = G.export();
 
             // eslint-disable-next-line no-undef
-            saveFile(G.export(), `${date}-randomGraph-${i}`);
+            saveFile(exportedGraph, `${date}-randomGraph-${i}`);
+            loadFile(`${date}-randomGraph-${i}`,exportedGraph);
         }
     }
 
@@ -1158,6 +1160,7 @@ export async function BatchRunPage() {
         }
         return layoutAlg;
     }
+
 
 
 
