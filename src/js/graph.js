@@ -3,6 +3,7 @@ import {
     random,
     shuffle,
     Vec,
+    equal,
 } from "./util.js";
 
 import {
@@ -13,7 +14,7 @@ import {
     angularResolutionN
 } from "./metrics2.js";
 
-import {ZNormalization} from "./normalization.js";
+import {ZNormalization as Normalization} from "./normalization.js";
 
 export { generateGraph, Graph };
 
@@ -106,9 +107,10 @@ class Graph {
         this._nodes = [];
         this._adjList = [];
 
+
         this.status = Graph.status.DIRTY;
         // init normalization objects
-        this._zn = new ZNormalization;
+        this._zn = new Normalization;
 
 
         options = options || {};
@@ -116,6 +118,7 @@ class Graph {
         this.edgeSize = 1.5;
         this.nodeColor = "#000";
         this.edgeColor = "#000";
+
         this._metrics = {
             nodeOcclusion: 0,
             nodeEdgeOcclusion: 0,
@@ -123,13 +126,22 @@ class Graph {
             edgeCrossing: 0,
             angularResolution: 0 
         };
-
-        this.bounds = {
-            xMax: 1000,
-            yMax: 1000,
-            xMin: -1000,
-            yMin: -1000
+        this._normalMetrics = {
+            nodeOcclusion: 0,
+            nodeEdgeOcclusion: 0,
+            edgeLength: 0,
+            edgeCrossing: 0,
+            angularResolution: 0 
         };
+        const width = 1600;
+        const height = 880;
+        this.defaultBounds = {
+            xMax: width - 20,
+            yMax: height - 20,
+            xMin: 20,
+            yMin: 20 
+        };
+        this.bounds = {... this.defaultBounds};
 
         this._nextId = 0;
         this.requiredEdgeLengthPerc = 0.5;
@@ -159,7 +171,7 @@ class Graph {
         return this._nextId++;
     }
 
-    nodes(copy = true) {
+    nodes(copy = false) {
         let clone = [];
         if (copy) {
             for (let n of this._nodes) {
@@ -222,29 +234,34 @@ class Graph {
     // or do nothing.
     // returns the new position if withing bound or null if outside.
     moveNode(nodeId, vec, effectBounds = false) {
-
-        if (this.status === Graph.status.DIRTY) {
-            this.calcMetrics();
-
-        }
+        
         let node = this._nodes[nodeId];
-
 
         let x = node.x + vec.x;
         let y = node.y + vec.y;
 
+
+        // TODO: Compare to the bounds in the java code
         if (!effectBounds && !this.withinBounds(x, y)) {
             return null;
         }
 
+        // this is needed since we don't compute metrics in the constructor to avoid slowdowns when loading the graph in the ui
+        if (this.status === Graph.status.DIRTY) {
+            this._metrics = this.calcMetrics();
+        }
+        // TODO: Test this!
         let oldPosMetrics = this.calcNodeMetrics(nodeId);
 
         node.x = x;
         node.y = y;
 
+
         let newPosMetrics = this.calcNodeMetrics(nodeId);
 
-        updateMetrics.call(this, oldPosMetrics, newPosMetrics);
+        this._metrics = updateMetrics(this._metrics, oldPosMetrics, newPosMetrics);
+        //this._normalMetrics = this.normalizeAll(this._metrics);
+
         if (effectBounds) {
             updateBounds.call(this);
         }
@@ -265,10 +282,13 @@ class Graph {
     // it doesn't move the node
     testMove(nodeId, vec, effectBounds = false) {
         if (this.status === Graph.status.DIRTY){
-            this.calcMetrics();
+            this._metrics = this.calcMetrics();
+            // normalize so we can preserve the normalized value after the move
+            this._normalMetrics = this.normalizeAll(this._metrics);
 
         }
         let oldMetrics = {...this._metrics};
+        let oldNormalMetrics = {...this._normalMetrics};
         let oldPosX = this._nodes[nodeId].x;
         let oldPosY = this._nodes[nodeId].y;
 
@@ -282,6 +302,8 @@ class Graph {
         this._nodes[nodeId].x = oldPosX;
         this._nodes[nodeId].y = oldPosY;
         this._metrics = oldMetrics;
+        // ignore the new history for the current node. Not sure if this is the best approach
+        //this._normalMetrics = oldNormalMetrics;
 
         this.status = Graph.status.COMPUTED;
         return objective;
@@ -335,10 +357,9 @@ class Graph {
         return false;
     }
 
-    objective() {
+    nodeObjective(nodeId){
         let wSum = 0;
-        let normalMetrics = this.normalMetrics();
-
+        let normalMetrics = this.normalizeAll(this.calcNodeMetrics(nodeId));
         for (let key in normalMetrics){
             wSum += normalMetrics[key] * this.weights[key];
         }
@@ -350,34 +371,71 @@ class Graph {
         }
         return wSum;
     }
-    normalMetrics() {
-        if (this.status === Graph.status.DIRTY) {
-            this._zn = new ZNormalization();
-            this.calcMetrics();
 
+    // should never change anything
+    objective() {
+        if (this.status === Graph.status.DIRTY) {
+            this._metrics = this.calcMetrics();
 
         }
-        // normalize and update the history
-        return this.normalizeAll(this._metrics);
+        this._normalMetrics = this.normalizeAll(this._metrics);
+        let wSum = 0;
+        for (let key in this._normalMetrics){
+            wSum += this._normalMetrics[key] * this.weights[key];
+        }
+        wSum = this._normalMetrics.nodeOcclusion;
+
+        if (!Number.isFinite(wSum) || wSum < 0) {
+            throw `invalid weights or metrics\nmetrics:\n ${JSON.stringify(
+                this._normalMetrics
+            )}\nweights:\n ${JSON.stringify(this.weights)}`;
+        }
+        return wSum;
     }
-    normalizeAll(){
+    normalMetrics() {
+       return this._normalMetrics;
+    }
+    normalizeAll(metrics){
         // use zScore normalization except for edge crossing
-        let E = 0;
-        for (let i = 0; i < this._adjList.length; i++) E += this._adjList[i].length;
-        E = E / 2;
-        let edgeCrossingNorm = E > 1 ? this._metrics.edgeCrossing / ((E * (E - 1)) / 2) : 0;
-        //console.log(`edgeCrossing: ${this._metrics.edgeCrossing}, edgeCrossingNorm: ${edgeCrossingNorm}, max: ${((E * (E - 1)) / 2)}`);
         let normalMetrics = {
-            nodeOcclusion: this._zn.normalize("nodeOcclusion", this._metrics.nodeOcclusion),
-            nodeEdgeOcclusion: this._zn.normalize("nodeEdgeOcclusion", this._metrics.nodeEdgeOcclusion),
-            edgeLength: this._zn.normalize("edgeLength", this._metrics.edgeLength),
-            angularResolution: this._zn.normalize("angularResolution", this._metrics.angularResolution),
-            edgeCrossing: edgeCrossingNorm
+            nodeOcclusion: 0,
+            nodeEdgeOcclusion: 0,
+            edgeLength: 0,
+            edgeCrossing: 0,
+            angularResolution: 0 
         };
 
+        if (this.weights.edgeCrossing) {
+            let E = 0;
+            for (let i = 0; i < this._adjList.length; i++) {
+                E += this._adjList[i].length;
+            }
+            E = E / 2;
+            normalMetrics.edgeCrossing = E > 1 ? metrics.edgeCrossing / ((E * (E - 1)) / 2) : 0;
+
+            //console.log("edgeCrossing: " + metrics.edgeCrossing.toFixed(10) + " normalized to: " + normalMetrics.edgeCrossing.toFixed(10));
+        }
+
+
+        //console.log(`edgeCrossing: ${this._metrics.edgeCrossing}, edgeCrossingNorm: ${edgeCrossingNorm}, max: ${((E * (E - 1)) / 2)}`);
+        if (this.weights.nodeOcclusion) {
+            normalMetrics.nodeOcclusion = this._zn.normalize("nodeOcclusion", metrics.nodeOcclusion);
+            //console.log("nodeNodeOcclusion: " + metrics.nodeOcclusion.toFixed(10) + " normalized to: " + normalMetrics.nodeOcclusion.toFixed(10));
+        }
+        if (this.weights.nodeEdgeOcclusion) {
+            normalMetrics.nodeEdgeOcclusion = this._zn.normalize("nodeEdgeOcclusion", metrics.nodeEdgeOcclusion);
+            //console.log("nodeEdgeOcclusion: " + metrics.nodeEdgeOcclusion.toFixed(10) + " normalized to: " + normalMetrics.nodeEdgeOcclusion.toFixed(10));
+        }
+        if (this.weights.edgeLength) {
+            normalMetrics.edgeLength = this._zn.normalize("edgeLength", metrics.edgeLength);
+            //console.log("edgeLength: " + metrics.edgeLength.toFixed(10) + " normalized to: " + normalMetrics.edgeLength.toFixed(10));
+        }
+        if (this.weights.angularResolution) {
+            normalMetrics.angularResolution = this._zn.normalize("angularResolution", metrics.angularResolution);
+            //console.log("angularResolution: " + metrics.angularResolution.toFixed(10) + " normalized to: " + normalMetrics.angularResolution.toFixed(10));
+        }
+
         return normalMetrics;
-
-
     }
 
     calcMetrics() {
@@ -390,32 +448,64 @@ class Graph {
             angularResolution: 0
         };
         for (let i = 0; i < this._nodes.length; i++) {
-            metrics.nodeOcclusion += nodeOcclusionN(this, i);
-            metrics.nodeEdgeOcclusion += nodeEdgeOcclusionN(this, i);
-            metrics.edgeLength += edgeLengthN(this, this.metricsParam.requiredEdgeLength, i);
-            metrics.edgeCrossing += edgeCrossingN(this, i) / 4;
-            metrics.angularResolution += angularResolutionN(this, i);
+            if (this.weights.nodeOcclusion) {
+                metrics.nodeOcclusion += nodeOcclusionN(this, i);
+            }
+            if (this.weights.nodeEdgeOcclusion) {
+                metrics.nodeEdgeOcclusion += nodeEdgeOcclusionN(this, i);
+            }
+            if (this.weights.edgeLength) {
+                metrics.edgeLength += edgeLengthN(this, this.metricsParam.requiredEdgeLength, i);
+            }
+            if (this.weights.edgeCrossing) {
+                metrics.edgeCrossing += edgeCrossingN(this, i) / 4;
+            }
+            if (this.weights.angularResolution) {
+                metrics.angularResolution += angularResolutionN(this, i);
+            }
         }
 
-        this._metrics = metrics;
+        metrics.nodeOcclusion /= 2;
+
         this.status = Graph.status.COMPUTED;
-        return this._metrics;
+        return metrics;
     }
-    calcNodeMetrics(nodeId){
+    calcNodeMetrics(nodeId) {
         let metrics = {
-            nodeOcclusion: nodeOcclusionN(this, nodeId),
-            nodeEdgeOcclusion: nodeEdgeOcclusionN(this, nodeId),
-            edgeLength: edgeLengthN(
+            nodeOcclusion: 0,
+            nodeEdgeOcclusion: 0,
+            edgeLength: 0,
+            edgeCrossing: 0,
+            angularResolution: 0
+        };
+
+        if (this.weights.nodeOcclusion) {
+            metrics.nodeOcclusion = nodeOcclusionN(this, nodeId);
+        }
+        if (this.weights.nodeEdgeOcclusion) {
+            metrics.nodeEdgeOcclusion = nodeEdgeOcclusionN(this, nodeId);
+        }
+
+        if (this.weights.edgeLength) {
+            metrics.edgeLength = edgeLengthN(
                 this,
                 this.metricsParam.requiredEdgeLength,
                 nodeId
-            ),
-            edgeCrossing: edgeCrossingN(this, nodeId),
-            angularResolution: angularResolutionN(this, nodeId)
-        };
+            );
+        }
 
+        if (this.weights.edgeCrossing) {
+            metrics.edgeCrossing = edgeCrossingN(this, nodeId);
+        }
+
+        if (this.weights.angularResolution) {
+            metrics.angularResolution = angularResolutionN(this, nodeId);
+        }
         return metrics;
     }
+
+
+
     setMetricParam(metricsParam) {
         let diff = false;
         for (let key of Object.keys(metricsParam)) {
@@ -434,7 +524,6 @@ class Graph {
         Object.assign(this.weights, weights);
     }
 
-
     density() {
         let V = this._nodes.length;
         let E = this.edges().length;
@@ -447,14 +536,8 @@ class Graph {
         this._nodes = [];
         this._adjList = [];
         this._nextId = -1;
-        this.bounds = {
-            xMax: 2000,
-            yMax: 2000,
-            xMin: -2000,
-            yMin: -2000
-        };
-        updateBounds.call(this);
-        this._zn = new ZNormalization;
+        this.bounds = {... this.defaultBounds};
+        this._zn = new Normalization;
         return this;
     }
     setBounds(bounds) {
@@ -462,9 +545,9 @@ class Graph {
         updateBounds.call(this);
     }
     withinBounds(x, y) {
-        let { xMax, yMax, xMin, yMin } = this.bounds;
+        let {xMax, yMax, xMin, yMin} = this.bounds;
         //return true;
-        return x <= xMax && x >= xMin && y <= yMax && y >= yMin;
+        return x < xMax && x > xMin && y < yMax && y > yMin;
     }
     // returns the min bounding box
     getBoundaries() {
@@ -493,7 +576,7 @@ class Graph {
         this._nodes = new Array(gn.length);
         this._adjList = new Array(gn.length);
         for (let i = 0; i < gn.length; i++) {
-            this._nodes[i] = { ...gn[i] };
+            this._nodes[i] = {...gn[i]};
             this._adjList[i] = [...gAdj[i]];
         }
 
@@ -504,14 +587,15 @@ class Graph {
         let g = graph;
         this.clear();
 
-        this._zn = new ZNormalization().deserialize(graph._zn);
-        this.options = { ...g.options };
-        this.bounds = { ...g.bounds };
+        this._zn = new Normalization().deserialize(graph._zn);
+        this.options = {...g.options};
+        this.bounds = {...g.bounds};
         this._nextId = g._nextId;
         this.requiredEdgeLengthPerc = g.requiredEdgeLengthPerc;
-        this.metricsParam = { ...g.metricsParam };
-        this.weights = { ...g.weights };
-        this._metrics = { ...g._metrics};
+        this.metricsParam = {...g.metricsParam};
+        this.weights = {...g.weights};
+        this._metrics = {...g._metrics};
+        this._normalMetrics = {...g._normalMetrics};
         this.minDist = g.minDist;
         this.maxDist = g.maxDist;
         this._nodesWithAngles = g.nodesWithAngles;
@@ -561,11 +645,12 @@ class Graph {
         s.nodeColor = this.nodeColor;
         s.edgeColor = this.edgeColor;
         s._metrics = {... this._metrics};
+        s._normalMetrics= {... this._normalMetrics};
         s.bounds = {... this.bounds};
-        s._nextId = this._nextId ;
-        s.requiredEdgeLength = this.requiredEdgeLengthPerc ;
-        s.requiredEdgeLength = this.requiredEdgeLength ;
-        s.metricsParam = {... this.metricsParam} ;
+        s._nextId = this._nextId;
+        s.requiredEdgeLength = this.requiredEdgeLengthPerc;
+        s.requiredEdgeLength = this.requiredEdgeLength;
+        s.metricsParam = {... this.metricsParam};
         s.weights = {... this.weights};
         s.minDist = this.minDist;
         s.maxDist = this.maxDist;
@@ -591,31 +676,34 @@ class Graph {
         };
 
         if (string === true) return JSON.stringify(serialized);
-        
+
 
         return serialized;
     }
 
-    import(data){
+    import(data) {
         this.status = Graph.status.DIRTY;
         if (typeof data === "string") {
             data = JSON.parse(data);
         }
         let nodeNum = data.graph.nodes.length;
         this._nodes = new Array(nodeNum);
-        this._adjList= new Array(nodeNum);
+        this._adjList = new Array(nodeNum);
 
-        for (let i = 0; i < nodeNum; i++){
-            this._nodes[i] = {... data.graph.nodes[i]};
-            this._adjList[i] = [... data.graph.adjList[i]];
+        for (let i = 0; i < nodeNum; i++) {
+            this._nodes[i] = {...data.graph.nodes[i]};
+            this._adjList[i] = [...data.graph.adjList[i]];
         }
 
-        updateBounds.call(this);
+        // TODO: make it so it's possible to update bound on load without doing it accidentally
+        //if (this.effectBounds){
+            //updateBounds.call(this);
+        //}
         return this;
 
     }
     toSigGraph() {
-        let graph = { nodes: [], edges: [] };
+        let graph = {nodes: [], edges: []};
         let nodes = this._nodes;
         let adj = this._adjList;
         for (let i = 0; i < nodes.length; i++) {
@@ -623,7 +711,7 @@ class Graph {
                 id: i,
                 label: i + "",
                 size: this.nodeSize,
-                color:this.nodeColor,
+                color: this.nodeColor,
                 x: nodes[i].x,
                 y: nodes[i].y
             };
@@ -634,15 +722,15 @@ class Graph {
                     source: i,
                     target: adj[i][j],
                     id: `${i}->${adj[i][j]}`,
-                    color:this.edgeColor,
+                    color: this.edgeColor,
                     size: this.edgeSize
                 });
             }
         }
         return graph;
     }
-    resetZn(){
-        this._zn = new ZNormalization();
+    resetZn() {
+        this._zn = new Normalization();
     }
 }
 Graph.status = {
@@ -651,17 +739,23 @@ Graph.status = {
 };
 
 
-function updateMetrics(oldMetrics, newMetrics) {
-    for (let key in this._metrics) {
-        if (!isFinite(this._metrics[key]) ){
-            throw ` ${key} = ${this._metrics[key]} `;
+function updateMetrics(currentMetrics, oldMetrics, newMetrics) {
+    let metrics = {...currentMetrics};
+    for (let key in metrics) {
+        if (!isFinite(metrics[key])) {
+            throw ` ${key} = ${metrics[key]} `;
         }
-        this._metrics[key] = this._metrics[key] -  oldMetrics[key] + newMetrics[key];
-    }
 
-    // update history
-    this.normalizeAll(this._metrics);
-    return { ...this._metrics };
+        if (equal(metrics[key], oldMetrics[key])){
+            metrics[key] = oldMetrics[key];
+        }
+        metrics[key] = metrics[key] - oldMetrics[key] + newMetrics[key];
+
+        if (metrics[key] < 0) {
+            throw ` ${key} = ${metrics[key]} `;
+        }
+    }
+    return metrics;
 }
 
 function updateBounds() {
@@ -679,8 +773,8 @@ function updateBounds() {
         };
     }
     this.maxDist = distance(
-        { x: this.bounds.xMax, y: this.bounds.yMax },
-        { x: this.bounds.xMin, y: this.bounds.yMin }
+        {x: this.bounds.xMax, y: this.bounds.yMax},
+        {x: this.bounds.xMin, y: this.bounds.yMin}
     );
 }
 

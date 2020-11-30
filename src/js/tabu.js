@@ -294,7 +294,10 @@ export class Tabu {
                 if (!inTabuSet(this.tabuSet, candidateSol)) {
                     this.evaluatedSolutions++;
                     // get the objective if node was moved in the direction of v
-                    let candidateSolObj = layout.testMove(nId, offset, this.effectBounds);
+                    let layoutClone = new Graph().restoreFrom(layout);
+                    // let candidateSolObj = layout.testMove(nId, offset, this.effectBounds);
+                    layoutClone.moveNode(nId, offset, this.effectBounds);
+                    let candidateSolObj = layoutClone.objective();
                     let ratio = candidateSolObj / currentObj;
 
                     // if currentObj == 0 then we can't select the move since we have the best move possible
@@ -363,11 +366,17 @@ export class Tabu {
     run() {
         let start = performance.now();
         this.done = false;
+        let lastObjective = -Infinity;
         //this.graph.resetZn();
-        this.graph.objective();
+
         while (this.it < this.maxIt && this.squareSize >= 1) {
             this.step();
             this.onStep(this);
+            lastObjective =  this.graph.objective();
+            if (this.graph.objective() < lastObjective && !equal(this.graph.objective(), lastObjective)){
+                console.error(`Objective is not supposed to get worse!`);
+                throw `Objective is not supposed to get worse!`;
+            }
         }
         this.executionTime = performance.now() - start;
         //console.log("ts objective: ", this.graph.objective());

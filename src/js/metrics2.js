@@ -9,14 +9,18 @@ export function nodeOcclusion(graph) {
     let sum = 0.0;
     let nodes = graph.nodes();
     for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-            let d = util.distanceSquared(nodes[i], nodes[j]);
-            if (d !== 0) sum += 1.0 / d;
+        for (let j = 0; j < nodes.length; j++) {
+            if (i !== j) {
+                let d = util.distance(nodes[i], nodes[j]);
+                if (d !== 0 ) {
+                    sum += 1.0 / (d*d);
+                }
+            }
         }
     }
-    return sum;
+    return sum/2;
 }
-export function edgeCrossing(graph, v) {
+export function edgeCrossing(graph) {
     const duplicateCount = 8;
     let sum = 0;
     let nodes = graph.nodes();
@@ -304,7 +308,7 @@ export function nodeOcclusionN(graph, nId) {
         if (nId !== j) {
             let d = util.distanceSquared(nodes[nId], nodes[j]);
             if (d !== 0) {
-                sum += 1.0 / d;
+                sum += 1.0 / (d);
             }
         }
     }

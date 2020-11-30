@@ -489,6 +489,7 @@ export async function BatchRunPage() {
                 metricsParam: this.metricsParam,
                 layoutParam: {},
             };
+            debugger;
             // copy the UI layout param into options.layoutParam
             // TODO: turn this into a function
             for (let p of this.layoutParam) {
@@ -500,6 +501,7 @@ export async function BatchRunPage() {
                 }
             }
             let graph = currentTab().files[filename].originalGraph;
+            graph.setWeights(this.weights);
             let layout = currentTab().layout;
             let layoutParam = options.layoutParam;
             let layoutAlg = getLayoutAlg(graph, layout, null);

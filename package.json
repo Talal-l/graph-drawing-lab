@@ -11,7 +11,7 @@
   },
   "jest": {
     "transform": {
-      "^.+\\.js?$": "babel-ject"
+      "^.+\\.js?$": "babel-jest"
     }
   },
   "repository": {

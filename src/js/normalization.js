@@ -51,7 +51,7 @@ export class ZNormalization {
         let newAvg;
         if (num == 0) newAvg = 0.0;
         else if (num == 1) newAvg = measure;
-        else newAvg = oldAvg + (measure - oldAvg) / num;
+        else newAvg = oldAvg + ((measure - oldAvg) / num);
         return newAvg;
     }
 
@@ -59,11 +59,13 @@ export class ZNormalization {
     // the value of previous average, the value of the current measure, and the number of elements in the array (list)
     updateSD(measure, oldSD, oldAvg, newAvg, num) {
         let newSD;
-        if (num == 0 || num == 1) newSD = 0.0;
-        else
+        if (num == 0 || num == 1) {
+            newSD = 0.0;
+        }
+        else {
             newSD = Math.sqrt(
-                oldSD * oldSD + (measure - oldAvg) * (measure - newAvg)
-            );
+                (oldSD * oldSD) + ((measure - oldAvg) * (measure - newAvg)));
+        }
         return newSD;
     }
 
@@ -76,7 +78,7 @@ export class ZNormalization {
         let len = this[metricName].history.length;
 
         // update sd and mean
-        if (len < 2) {
+        if (len === 1 || len === 2) {
             this[metricName].avg = m;
             newAvg = m;
             this[metricName].SD = 0;
@@ -95,7 +97,7 @@ export class ZNormalization {
         }
 
         // update min and max
-        if (len < 2) {
+        if (len <= 2) {
             this[metricName].max = m;
             this[metricName].min = m;
         } else {
@@ -103,7 +105,9 @@ export class ZNormalization {
             if (m < this[metricName].min) this[metricName].min = m;
         }
         // normalize using new values
-        if (equal(newSD, 0)) mNorm = m;
+        if (equal(newSD, 0)) {
+            mNorm = m;
+        }
         else {
             let mZScore = (m - newAvg) / newSD; // value
             min = (this[metricName].min - newAvg) / newSD; // min
@@ -156,6 +160,27 @@ export class ZNormalization {
         this.edgeCrossing.history = [...data.edgeCrossing.history];
         this.angularResolution.history = [...data.angularResolution.history];
 
+        return this;
+    }
+}
+export class FakeNormalization {
+    constructor() {
+    }
+    normalize(metricName, m) {
+       return m;
+    }
+    toJSON() {
+
+        return {};
+    }
+    serialize(string = true) {
+        if (string === true) return JSON.stringify(this);
+        else return this.toJSON();
+    }
+    deserialize(data) {
+        if (typeof data === "string") {
+            data = JSON.parse(data);
+        }
         return this;
     }
 }

@@ -1,5 +1,5 @@
 window.log = {};
-
+let halt = 0;
 let drawCount = 0;
 import { Graph } from "/src/js/graph.js";
 import {ZNormalization} from "/src/js/normalization.js";
@@ -47,26 +47,29 @@ let graphId = 0;
 // create the main sigma instance
 // load n50 graph
 let filesToLoad = [
-    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case0.json",
-    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case10.json",
-    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case11.json",
-    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case12.json",
-    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case13.json",
-    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case14.json",
-    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case15.json",
-    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case16.json",
-    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case17.json",
-    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case18.json",
-    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case19.json",
-    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case1.json",
-    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case2.json",
-    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case3.json",
-    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case4.json",
-    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case5.json",
-    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case6.json",
-    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case7.json",
-    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case8.json",
-    "dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case9.json",
+    "n150_dens0050_20Cases_case0.json",
+    //"2nodeOcclusionTest.json",
+
+    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case0.json",
+    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case10.json",
+    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case11.json",
+    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case12.json",
+    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case13.json",
+    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case14.json",
+    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case15.json",
+    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case16.json",
+    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case17.json",
+    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case18.json",
+    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case19.json",
+    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case1.json",
+    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case2.json",
+    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case3.json",
+    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case4.json",
+    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case5.json",
+    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case6.json",
+    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case7.json",
+    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case8.json",
+    //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case9.json",
      //"test2-1.json",
      //"202029291443371.json",
      //"666-2.json",
@@ -111,34 +114,39 @@ async function loadGraph() {
         log.importTimes.push(importTime)
 
         graph.weights.nodeOcclusion = 1;
-        graph.weights.nodeEdgeOcclusion = 1;
-        graph.weights.edgeLength = 1;
-        graph.weights.edgeCrossing = 1;
-        graph.weights.angularResolution = 1;
+        graph.weights.nodeEdgeOcclusion = 0;
+        graph.weights.edgeLength = 0;
+        graph.weights.edgeCrossing = 0;
+        graph.weights.angularResolution = 0;
         
 
 
 
-        let g1 = new Graph().restoreFrom(graph);
-        let g2 = new Graph().restoreFrom(graph);
+        let hc = new HillClimbing(graph);
 
-        let hc = await runLayoutPromise(g1,"hillClimbing");
-        hcRuns.push(hc);
-        let ts = await runLayoutPromise(g2,"tabu");
-        tsRuns.push(ts);
 
-        let hcAveObj = d3.median(hcRuns.map(e => e.graph.objective()))
-        let tsAveObj = d3.median(tsRuns.map(e => e.graph.objective()))
+        //hc.run();
+        displayGraph(hc,"graph1");
+        //let g2 = new Graph().restoreFrom(graph);
+
+        //let hc = await runLayoutPromise(g1,"hillClimbing");
+        //console.log(nodeOcclusion(graph));
+        //hcRuns.push(hc);
+        //let ts = await runLayoutPromise(g2,"tabu");
+        //tsRuns.push(ts);
+
+        //let hcAveObj = d3.median(hcRuns.map(e => e.graph.objective()))
+        //let tsAveObj = d3.median(tsRuns.map(e => e.graph.objective()))
         
 
         //// redraw graph with new data
-        document.querySelector("#chart-avg-objective").innerHTML = "";
-        barChart(
-            "chart-avg-objective",
-            "run",
-            "Average objective",
-            [{x:"hc",y:hcAveObj},{x:"ts",y:tsAveObj}]
-        );
+        //document.querySelector("#chart-avg-objective").innerHTML = "";
+        //barChart(
+            //"chart-avg-objective",
+            //"run",
+            //"Average objective",
+            //[{x:"hc",y:hcAveObj},{x:"ts",y:tsAveObj}]
+        //);
 
     }
 
@@ -309,7 +317,7 @@ function hillClimbingRelaxedTest(graph,effectBounds,strategy="immediate") {
     hc.effectBounds = effectBounds;
     let s = performance.now();
 
-    hc.run();
+    //hc.run();
 
     console.group("hc");
     console.log("hc evaluatedSolutions = ", hc.evaluatedSolutions);
@@ -356,10 +364,10 @@ function displayGraph(layoutAlg,gId){
         let parentNode = (graphContainer.parentNode);
         details = parentNode.querySelector("h3");
     }
-        details.innerText = `Alog: ${layoutAlg.layoutAlgName},\n Objective: ${layoutAlg.graph.objective()},\n it: ${layoutAlg.it},\n execution: ${layoutAlg.executionTime}`;
+        details.innerText = `Alog: ${layoutAlg?.layoutAlgName},\n Objective: ${layoutAlg?.graph?.objective()},\n it: ${layoutAlg?.it},\n execution: ${layoutAlg?.executionTime/1000}`;
 
 
-    return updateSigGraph(layoutAlg.graph, id);
+    return updateSigGraph(layoutAlg?.graph, id);
 
     }
 function updateSigGraph(graph,container) {
