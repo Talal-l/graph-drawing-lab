@@ -499,3 +499,18 @@ async function loadPage(pageName, dom) {
   page.classList.add("page", "active");
   return page;
 }
+export function offsets(squareSize) {
+    let s = squareSize;
+    let scaledOffsets = [
+        new Vec({x: s, y: 0}),
+        new Vec({x: s, y: s}),
+        new Vec({x: 0, y: s}),
+        new Vec({x: -s, y: s}),
+        new Vec({x: -s, y: 0}),
+        new Vec({x: -s, y: -s}),
+        new Vec({x: 0, y: -s}),
+        new Vec({x: s, y: -s}),
+
+    ];
+    return scaledOffsets;
+}

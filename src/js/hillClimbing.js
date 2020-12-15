@@ -1,4 +1,4 @@
-import {Vec} from "./util.js";
+import {offsets, Vec} from "./util.js";
 import {Graph} from "./graph.js";
 
 function equal(a, b) {
@@ -160,18 +160,4 @@ export class HillClimbing {
     }
 }
 
-function offsets(squareSize) {
-    let s = squareSize;
-    let scaledOffsets = [
-        new Vec({x: s, y: 0}),
-        new Vec({x: s, y: s}),
-        new Vec({x: 0, y: s}),
-        new Vec({x: -s, y: s}),
-        new Vec({x: -s, y: 0}),
-        new Vec({x: -s, y: -s}),
-        new Vec({x: 0, y: -s}),
-        new Vec({x: s, y: -s}),
 
-    ];
-    return scaledOffsets;
-}

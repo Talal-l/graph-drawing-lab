@@ -1,4 +1,4 @@
-import {Vec, distance, equal} from "./util.js";
+import {Vec, distance, equal, offsets} from "./util.js";
 import {Graph} from "./graph.js";
 
 // Util methods
@@ -136,21 +136,6 @@ function shortestDist(srcPos, dstPos, pathSquareSize) {
     return closest;
 }
 
-function offsets(squareSize) {
-    let s = squareSize;
-    let scaledOffsets = [
-        new Vec({x: s, y: 0}),
-        new Vec({x: s, y: -s}),
-        new Vec({x: 0, y: -s}),
-        new Vec({x: -s, y: -s}),
-        new Vec({x: -s, y: 0}),
-        new Vec({x: -s, y: s}),
-        new Vec({x: 0, y: s}),
-        new Vec({x: s, y: s}),
-    ];
-    return scaledOffsets;
-}
-
 export class Tabu {
     constructor(graph, params) {
         this.graph = graph;
@@ -165,7 +150,7 @@ export class Tabu {
         this.initCutoff = this.cutoff;
         this.cutoffReduction = params.cutoffReduction || 0.005;
         this.duration = params.duration || 5;
-        this.effectBounds = true;
+        this.effectBounds = false;
         this.layoutAlgName = "tabu";
 
         // PR parametrs
@@ -293,17 +278,16 @@ export class Tabu {
 
                 if (!inTabuSet(this.tabuSet, candidateSol)) {
                     this.evaluatedSolutions++;
-                    // get the objective if node was moved in the direction of v
-                    let layoutClone = new Graph().restoreFrom(layout);
-                    // let candidateSolObj = layout.testMove(nId, offset, this.effectBounds);
-                    layoutClone.moveNode(nId, offset, this.effectBounds);
-                    let candidateSolObj = layoutClone.objective();
+                    layout.setNodePos(nId, candidateSol.pos, this.effectBounds);
+                    let candidateSolObj = layout.objective();
+                    layout.setNodePos(nId, currentPos, this.effectBounds);
                     let ratio = candidateSolObj / currentObj;
 
                     // if currentObj == 0 then we can't select the move since we have the best move possible
                     if (!isFinite(ratio) || ratio > this.cutoff) {
                         this.tabuSet.push(candidateSol);
-                    } if (candidateSolObj < chosenSolObj) {
+                    }
+                    if (candidateSolObj < chosenSolObj) {
                         chosenSolObj = candidateSolObj;
                         chosenSol = candidateSol;
                     }

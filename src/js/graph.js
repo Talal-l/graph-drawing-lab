@@ -14,7 +14,7 @@ import {
     angularResolutionN
 } from "./metrics2.js";
 
-import {ZNormalization as Normalization} from "./normalization.js";
+import {FakeNormalization as Normalization} from "./normalization.js";
 
 export { generateGraph, Graph };
 
