@@ -132,10 +132,10 @@ class Graph {
         const width = 1600;
         const height = 880;
         this.defaultBounds = {
-            xMax: width - 20,
-            yMax: height - 20,
-            xMin: 20,
-            yMin: 20 
+            xMax: width/2 - 20,
+            yMax: height/2 - 20,
+            xMin: -width/2 - 20,
+            yMin: -height/2 - 20
         };
         this.bounds = {... this.defaultBounds};
 
@@ -755,6 +755,7 @@ function updateMetrics(currentMetrics, oldMetrics, newMetrics) {
 }
 
 function updateBounds() {
+    return;
     let b = this.getBoundaries();
 
     if (
