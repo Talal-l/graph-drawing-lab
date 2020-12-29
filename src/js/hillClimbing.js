@@ -45,16 +45,8 @@ export class HillClimbing {
     // single iteration of the layout algorithm
     step() {
         let lastObj = this.graph.objective();
-
-        //console.log("step: " + this.it + " nodeNodeOcclusion: " + this.graph._metrics.nodeOcclusion +
-            //" normalized to: " + this.graph.normalMetrics().nodeOcclusion,
-            //"History: " + JSON.stringify(this.graph._zn.nodeOcclusion.history));
-
         let vectors = offsets(this.squareSize);
         for (let nId = 0; nId < this.graph._nodes.length; nId++) {
-            // start with no move as the best move
-
-
             let bestMove = new Vec(0,0);
             let bestMoveObj = this.graph.nodeObjective(nId);
             let originalPos = this.graph.getNodePos(nId);
@@ -68,7 +60,6 @@ export class HillClimbing {
                     this.effectBounds
                 );
                 if (newPos == null) continue;
-                //console.log("moved node: " + nId + " using: (" + v.x + ", " + v.y + ") to: (" + newPos.x + ", " + newPos.y + ")");
 
                 let newPosObjective = (newPos != null) ? this.graph.nodeObjective(nId) :Infinity;
 

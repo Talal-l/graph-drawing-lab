@@ -1,4 +1,3 @@
-
 const sep = require("path").sep;
 const fs = require("fs");
 
@@ -9,7 +8,7 @@ function walkDir(path) {
         for (let p of list) files = files.concat(walkDir(path + sep + p));
     } else files.push(path);
     // filter out hidden files
-    return files.filter(f => !/(^|\/|\\)\.[^\/\.]/g.test(f));
+    return files.filter((f) => !/(^|\/|\\)\.[^\/\.]/g.test(f));
 }
 
 function convert(filePath) {
@@ -24,32 +23,32 @@ function convert(filePath) {
         let nodeNum = Number(byline[start + 1]);
         let graph = {
             nodes: new Array(nodeNum),
-            adjList: new Array(nodeNum).fill(new Array())
+            adjList: new Array(nodeNum).fill(new Array()),
         };
-        nodesCoord = byline[start + 2].split("  ").map(e => ({
+        nodesCoord = byline[start + 2].split("  ").map((e) => ({
             x: Number(e.split(" ")[0]),
-            y: Number(e.split(" ")[1])
+            y: Number(e.split(" ")[1]),
         }));
 
         for (let i = 0; i < nodesCoord.length - 1; i++) {
             let node = {
                 id: i,
                 x: nodesCoord[i].x,
-                y: nodesCoord[i].y
+                y: nodesCoord[i].y,
             };
             if (node.x !== null && node.y !== null) graph.nodes[i] = node;
         }
 
         let offset = start + 4;
         for (let j = 0; j < nodeNum; j += 1) {
-            let adj = byline[j + offset++].split(" ").map(e => Number(e));
+            let adj = byline[j + offset++].split(" ").map((e) => Number(e));
             adj.pop(); // remove "\r"
             graph.adjList[j] = adj;
         }
 
         files.push({
             sourcePath: filePath,
-            data: {graph: graph}
+            data: { graph: graph },
         });
         start += nodeNum * 2 + 4;
     }
@@ -58,14 +57,11 @@ function convert(filePath) {
 
 let args = process.argv.slice(2);
 
-
 let tmp = args[0].split(sep);
 let inputFilename = tmp.pop();
 let inputPath = tmp.join(sep);
 let outputPath = inputPath;
 let outputFilename = inputFilename.match("(.*)\\.")[1];
-
-
 
 let graphData = fs.readFileSync(`${inputPath}/${inputFilename}`, "utf-8");
 let graph = JSON.parse(graphData).graph;
@@ -76,16 +72,16 @@ let minY = 0;
 let minX = 0;
 
 for (let i = 0; i < graph.nodes.length; i++) {
-    let {x, y} = graph.nodes[i];
+    let { x, y } = graph.nodes[i];
     minX = Math.min(minX, x);
     minY = Math.min(minY, y);
 }
 fs.writeFileSync(out, graph.nodes.length + "\n", "utf-8");
 for (let i = 0; i < graph.nodes.length; i++) {
     let {x, y} = graph.nodes[i];
+    // shift all nodes so they fall in the positive quadrant (4th quadrant)
     let s = `${Math.floor(x + Math.abs(minX))} ${Math.floor(y + Math.abs(minY))}  `;
     fs.appendFileSync(out, s);
-
 }
 fs.appendFileSync(out, "\n");
 

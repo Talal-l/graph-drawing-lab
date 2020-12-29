@@ -2,7 +2,7 @@ window.log = {};
 let halt = 0;
 let drawCount = 0;
 import { Graph } from "/src/js/graph.js";
-import {ZNormalization} from "/src/js/normalization.js";
+import { ZNormalization } from "/src/js/normalization.js";
 import {
     nodeOcclusion,
     nodeEdgeOcclusion,
@@ -14,12 +14,13 @@ import {
     nodeEdgeOcclusionN,
     edgeLengthN,
     edgeCrossingN,
-    angularResolutionN
+    angularResolutionN,
 } from "/src/js/metrics2.js";
 import { deepCopy } from "/src/js/util.js";
 import { HillClimbing } from "/src/js/hillClimbing.js";
-import {Tabu} from "/src/js/tabu.js";
-import {CircularLayout} from "/src/js/circularLayout.js";
+import { Tabu } from "/src/js/tabu.js";
+import { TabuSearch } from "/src/js/tabuSearch.js";
+import { CircularLayout } from "/src/js/circularLayout.js";
 
 let container = document.querySelector("#container");
 
@@ -30,13 +31,13 @@ let canvasRenderer = {
     settings: {
         enableEdgeHovering: true,
         edgeHoverColor: "edge",
-        edgeHoverSizeRatio: 1.6
-    }
+        edgeHoverSizeRatio: 1.6,
+    },
 };
 let webglRenderer = {
     type: "webgl",
     camera: "cam1",
-    container: "container"
+    container: "container",
 };
 
 const edgeSize = 1.5;
@@ -47,8 +48,9 @@ let graphId = 0;
 // create the main sigma instance
 // load n50 graph
 let filesToLoad = [
-    "n150_dens0050_20Cases_case0.json",
+    //"n150_dens0050_20Cases_case0.json",
     //"2nodeOcclusionTest.json",
+    "n5e9crossing.json",
 
     //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case0.json",
     //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case10.json",
@@ -70,10 +72,10 @@ let filesToLoad = [
     //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case7.json",
     //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case8.json",
     //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case9.json",
-     //"test2-1.json",
-     //"202029291443371.json",
-     //"666-2.json",
-     //"150anim.json",
+    //"test2-1.json",
+    //"202029291443371.json",
+    //"666-2.json",
+    //"150anim.json",
     //"dataSet/TS_SA_HC/Category II/n100_dens0115_20cases_case0.json",
     //"dataSet/TS_SA_HC/Category I/n150_dens0150_20Cases_case0.json",
     //"dataSet/TS_SA_HC/Category II/n200_dens0100_20cases_case0.json",
@@ -90,7 +92,7 @@ async function loadGraph() {
     log.tsRuns = tsRuns;
     let i = 0;
     for (const file of filesToLoad) {
-        console.log("working with: ", file)
+        console.log("working with: ", file);
         let graphData = null;
         if (typeof window !== "undefined") {
             let response = await fetch(`data/${file}`);
@@ -105,53 +107,38 @@ async function loadGraph() {
         log.og = originalGraph;
 
         let graph = new Graph().import(graphData);
-        graphs.push(originalGraph,graph);
-
+        graphs.push(originalGraph, graph);
 
         let importStatrTime = performance.now();
         graph = new Graph().import(graphData);
+        let graph2 = new Graph().import(graphData);
+        let graph3 = new Graph().import(graphData);
         let importTime = performance.now() - importStatrTime;
-        log.importTimes.push(importTime)
+        log.importTimes.push(importTime);
 
-        graph.weights.nodeOcclusion = 1;
-        graph.weights.nodeEdgeOcclusion = 0;
-        graph.weights.edgeLength = 0;
-        graph.weights.edgeCrossing = 0;
-        graph.weights.angularResolution = 0;
-        
+        let w = {
+            nodeOcclusion: 1,
+            nodeEdgeOcclusion: 0,
+            edgeLength: 0,
+            edgeCrossing: 1,
+            angularResolution: 0,
+        };
 
-
+        graph.setWeights(w);
+        graph2.setWeights(w);
+        graph3.setWeights(w);
 
         let hc = new HillClimbing(graph);
+        let ts = new Tabu(graph2);
+        let tabu = new TabuSearch(graph3);
 
-
-        //hc.run();
-        displayGraph(hc,"graph1");
-        //let g2 = new Graph().restoreFrom(graph);
-
-        //let hc = await runLayoutPromise(g1,"hillClimbing");
-        //console.log(nodeOcclusion(graph));
-        //hcRuns.push(hc);
-        //let ts = await runLayoutPromise(g2,"tabu");
-        //tsRuns.push(ts);
-
-        //let hcAveObj = d3.median(hcRuns.map(e => e.graph.objective()))
-        //let tsAveObj = d3.median(tsRuns.map(e => e.graph.objective()))
-        
-
-        //// redraw graph with new data
-        //document.querySelector("#chart-avg-objective").innerHTML = "";
-        //barChart(
-            //"chart-avg-objective",
-            //"run",
-            //"Average objective",
-            //[{x:"hc",y:hcAveObj},{x:"ts",y:tsAveObj}]
-        //);
-
+        hc.run();
+        displayGraph(hc, "graph1");
+        ts.run();
+        displayGraph(ts, "graph2");
+        tabu.run();
+        displayGraph(tabu, "graph3");
     }
-
-    
-
 }
 
 function barChart(id, xLabel, yLabel, data) {
@@ -172,13 +159,13 @@ function barChart(id, xLabel, yLabel, data) {
     const yScale = d3
         .scaleLinear()
         .range([innerHeight, 0])
-        .domain([0, d3.max(data.map(e => e.y))]);
+        .domain([0, d3.max(data.map((e) => e.y))]);
     chart.append("g").call(d3.axisLeft(yScale));
 
     const xScale = d3
         .scaleBand()
         .range([0, innerWidth])
-        .domain(data.map(e => e.x))
+        .domain(data.map((e) => e.x))
         .padding(0.2);
 
     const myColor = d3.scaleOrdinal(d3.schemeAccent);
@@ -194,9 +181,9 @@ function barChart(id, xLabel, yLabel, data) {
         .enter()
         .append("rect")
         .attr("fill", (_, i) => myColor(i))
-        .attr("x", s => xScale(s.x))
-        .attr("y", s => yScale(s.y))
-        .attr("height", s => innerHeight - (yScale(s.y) || 0))
+        .attr("x", (s) => xScale(s.x))
+        .attr("y", (s) => yScale(s.y))
+        .attr("height", (s) => innerHeight - (yScale(s.y) || 0))
         .attr("width", xScale.bandwidth());
 
     svg.append("text")
@@ -213,11 +200,6 @@ function barChart(id, xLabel, yLabel, data) {
         .text(yLabel);
 }
 
-
-
-
-
-
 function average(arr) {
     let sum = 0;
     for (const e of arr) {
@@ -227,10 +209,10 @@ function average(arr) {
     return avg;
 }
 
-function testTestMove(graph){
+function testTestMove(graph) {
     let nId = 0;
-    let move = {x: 100000, y: -100};
-    let c1 = graph.testMove(nId,move);
+    let move = { x: 100000, y: -100 };
+    let c1 = graph.testMove(nId, move);
 
     graph.moveNode(nId, move);
     let c2 = graph.objective();
@@ -242,9 +224,7 @@ function metricsTimeTest(graph) {
 
     nodeOcclusionTime = timeTest(cases, nodeOcclusion, [graph]);
     window.nodeOcclusionTime = nodeOcclusionTime;
-    console.log(
-        "nodeOcclusion average time = " + average(nodeOcclusionTime)
-    );
+    console.log("nodeOcclusion average time = " + average(nodeOcclusionTime));
 
     let edgeCrossingTime = timeTest(cases, edgeCrossing, [graph]);
     window.edgeCrossingTime = edgeCrossingTime;
@@ -262,7 +242,7 @@ function metricsTimeTest(graph) {
     );
 
     let angularResolutionFastTime = timeTest(cases, angularResolutionFast, [
-        graph
+        graph,
     ]);
     window.angularResolutionfastTime = angularResolutionFastTime;
     console.log(
@@ -277,7 +257,7 @@ function metricsTimeTest(graph) {
     );
 
     let nodeEdgeOcclusionSlowTime = timeTest(cases, nodeEdgeOcclusionSlow, [
-        graph
+        graph,
     ]);
     window.nodeEdgeOcclusionSlowTime = nodeEdgeOcclusionSlowTime;
     console.log(
@@ -297,18 +277,17 @@ function timeTest(cases, fn, args) {
     }
     return times;
 }
-function testEdgesMethod(graph){
+function testEdgesMethod(graph) {
     let edgeCount = 0;
 
     let adj = graph.adjList();
-    for(let i = 0; i < adj.length; i++){
-        edgeCount+= (adj[i].length);
-
+    for (let i = 0; i < adj.length; i++) {
+        edgeCount += adj[i].length;
     }
     console.log("edgeCount", edgeCount, graph.edges().length);
 }
 
-function hillClimbingRelaxedTest(graph,effectBounds,strategy="immediate") {
+function hillClimbingRelaxedTest(graph, effectBounds, strategy = "immediate") {
     graph.metricsParam.requiredLength = 100;
     graph.resetZn();
     log.metricsBefore = { ...graph._metrics };
@@ -321,13 +300,13 @@ function hillClimbingRelaxedTest(graph,effectBounds,strategy="immediate") {
 
     console.group("hc");
     console.log("hc evaluatedSolutions = ", hc.evaluatedSolutions);
-    console.log("hc iterations", hc.it)
+    console.log("hc iterations", hc.it);
     console.log("hc time", performance.now() - s);
     console.groupEnd("hc");
     return graph;
 }
 
-function tsTest(graph){
+function tsTest(graph) {
     graph.metricsParam.requiredLength = 100;
     let tsTimeStart = performance.now();
     let ts = new Tabu(graph);
@@ -336,16 +315,16 @@ function tsTest(graph){
     ts.run();
     console.group("ts");
     console.log("ts evaluatedSolutions = ", ts.evaluatedSolutions);
-    console.log("ts iterations", ts.it)
+    console.log("ts iterations", ts.it);
     console.log("ts time: ", performance.now() - tsTimeStart);
     console.groupEnd("ts");
 
     return graph;
 }
 
-function displayGraph(layoutAlg,gId){
+function displayGraph(layoutAlg, gId) {
     let id = `graph-${gId}`;
-    let box = document.querySelector(".box")
+    let box = document.querySelector(".box");
     let wrapper;
     let details;
     let graphContainer = document.querySelector(`#${id}`);
@@ -354,34 +333,35 @@ function displayGraph(layoutAlg,gId){
         details = document.createElement("h3");
         graphContainer = document.createElement("div");
         wrapper.setAttribute("class", "wrapper");
-        graphContainer.setAttribute("id", id)
-        graphContainer.setAttribute("class", "container")
+        graphContainer.setAttribute("id", id);
+        graphContainer.setAttribute("class", "container");
         wrapper.appendChild(graphContainer);
         wrapper.appendChild(details);
         box.appendChild(wrapper);
     } else {
-
-        let parentNode = (graphContainer.parentNode);
+        let parentNode = graphContainer.parentNode;
         details = parentNode.querySelector("h3");
     }
-        details.innerText = `Alog: ${layoutAlg?.layoutAlgName},\n Objective: ${layoutAlg?.graph?.objective()},\n it: ${layoutAlg?.it},\n execution: ${layoutAlg?.executionTime/1000}`;
-
+    details.innerText = `Alog: ${
+        layoutAlg?.layoutAlgName
+    },\n Objective: ${layoutAlg?.graph?.objective()},\n it: ${
+        layoutAlg?.it
+    },\n execution: ${layoutAlg?.executionTime / 1000}`;
 
     return updateSigGraph(layoutAlg?.graph, id);
-
-    }
-function updateSigGraph(graph,container) {
+}
+function updateSigGraph(graph, container) {
     let sigDefaults = {
         renderer: {
             type: "canvas",
-            container:container 
+            container: container,
         },
         settings: {
             doubleClickEnabled: false,
             autoRescale: true,
             enableCamera: true,
-            defaultLabelColor:"#FF0000"
-        }
+            defaultLabelColor: "#FF0000",
+        },
     };
     document.querySelector(`#${container}`).innerHTML = "";
     let sig = new sigma(sigDefaults);
@@ -391,61 +371,66 @@ function updateSigGraph(graph,container) {
     return sig;
 }
 
-function serializeTest(graph){
+function serializeTest(graph) {
     // copy graph
-    let og =  graph;
+    let og = graph;
     let copy = new Graph().deserialize(og);
     window.log.og = og;
     window.log.copy = copy;
-
 }
-
 
 log.displayGraph = displayGraph;
 loadGraph();
-
-
 
 function runLayout(graph, layoutAlgName, display = false, animate = false) {
     let currentGraphId = graphId++;
     let worker = getWorker();
     worker.postMessage({
         layoutAlgName: layoutAlgName,
-        layoutAlg: getLayoutAlg(layoutAlgName,graph),
+        layoutAlg: getLayoutAlg(layoutAlgName, graph),
         command: "run",
         //emitOnMove: true,
         emitOnStep: animate,
     });
 
-    worker.onmessage = e => {
-        let layoutAlg = getLayoutAlg(layoutAlgName, new Graph()).deserialize(e.data.layoutAlg);
-        if (display)
-            displayGraph(layoutAlg,currentGraphId);
+    worker.onmessage = (e) => {
+        let layoutAlg = getLayoutAlg(layoutAlgName, new Graph()).deserialize(
+            e.data.layoutAlg
+        );
+        if (display) displayGraph(layoutAlg, currentGraphId);
         worker.terminate();
     };
 }
 
-function runLayoutPromise(graph, layoutAlgName, display = false, animate = false) {
-    return new Promise((resolve,reject) =>{
+function runLayoutPromise(
+    graph,
+    layoutAlgName,
+    display = false,
+    animate = false
+) {
+    return new Promise((resolve, reject) => {
         let currentGraphId = graphId++;
         let worker = getWorker();
         worker.postMessage({
             layoutAlgName: layoutAlgName,
-            layoutAlg: getLayoutAlg(layoutAlgName,graph),
+            layoutAlg: getLayoutAlg(layoutAlgName, graph),
             command: "run",
             //emitOnMove: true,
             emitOnStep: animate,
         });
 
-        worker.onmessage = e => {
-            let layoutAlg = getLayoutAlg(layoutAlgName, new Graph()).deserialize(e.data.layoutAlg);
+        worker.onmessage = (e) => {
+            let layoutAlg = getLayoutAlg(
+                layoutAlgName,
+                new Graph()
+            ).deserialize(e.data.layoutAlg);
             resolve(layoutAlg);
             worker.terminate();
         };
     });
 }
 
-function getLayoutAlg(layoutAlgName, graph,layoutParam = {}) {
+function getLayoutAlg(layoutAlgName, graph, layoutParam = {}) {
     let layoutAlg = null;
 
     switch (layoutAlgName) {
@@ -461,7 +446,6 @@ function getLayoutAlg(layoutAlgName, graph,layoutParam = {}) {
     }
     return layoutAlg;
 }
-function getWorker(){
-    return  new Worker("./src/js/layoutWorker.js", { type: "module" });
- 
+function getWorker() {
+    return new Worker("./src/js/layoutWorker.js", { type: "module" });
 }

@@ -1,5 +1,5 @@
-import {Vec, distance, equal, offsets} from "./util.js";
-import {Graph} from "./graph.js";
+import { Vec, distance, equal, offsets } from "./util.js";
+import { Graph } from "./graph.js";
 
 // Util methods
 function bestObjective(refSet) {
@@ -10,7 +10,6 @@ function bestObjective(refSet) {
         if (g === e.layout.graph) same++;
         if (e.layout.objective() < best.layout.objective()) best = e;
     }
-    //console.log("all the same", same, refSet.length);
     return best;
 }
 function worstObjective(refSet) {
@@ -18,7 +17,6 @@ function worstObjective(refSet) {
     for (let e of refSet) {
         if (e.layout.objective() > worst.layout.objective()) worst = e;
     }
-    //console.log("worstObjective worst", worst.layout.objective());
     return worst;
 }
 function str(obj) {
@@ -31,9 +29,11 @@ function sameGraph(G1, G2) {
 }
 function inTabuSet(set, s) {
     for (const sol of set) {
-        if (s.nodeId === sol.nodeId &&
+        if (
+            s.nodeId === sol.nodeId &&
             Math.floor(s.pos.x) === Math.floor(sol.pos.x) &&
-            Math.floor(s.pos.y) === Math.floor(sol.pos.y))
+            Math.floor(s.pos.y) === Math.floor(sol.pos.y)
+        )
             return true;
     }
     return false;
@@ -67,7 +67,6 @@ function replaceWorst(refSet, entry) {
             worstObj = l.objective();
         }
     }
-    //console.log("replaceWorst worst index", index);
     refSet[index] = entry;
 }
 
@@ -104,7 +103,6 @@ function medianPos(refSet) {
     for (const e of refSet) {
         sum += layoutDistance(e.layout, best);
     }
-    //console.log("median", sum / (refSet.length - 1));
     return sum / (refSet.length - 1);
 }
 function selectSrcDst(refSet) {
@@ -160,7 +158,7 @@ export class Tabu {
             pathLength: 15,
             pathSquareSize: 20,
             accelerationPeriod: 7,
-            acclerationRate: 0.002
+            acclerationRate: 0.002,
         };
         this.executionTime = 0;
         this.evaluatedSolutions = 0;
@@ -182,11 +180,8 @@ export class Tabu {
 
         */
     }
-    onNodeMove(nodeId, layoutAlg) {
-
-    }
-    onStep(layoutAlg) {
-    }
+    onNodeMove(nodeId, layoutAlg) {}
+    onStep(layoutAlg) {}
     moveAlongPath(src, dst) {
         let length = 0;
         let nodes = src.nodes();
@@ -199,14 +194,9 @@ export class Tabu {
                     dst.getNodePos(nId),
                     this.PRparam.pathSquareSize
                 );
-                let move = {nodeId: nId, pos: position, it: this.it};
+                let move = { nodeId: nId, pos: position, it: this.it };
                 if (!inTabuSet(this.tabuSet, move)) {
                     if (srcClone.objective() < best.objective()) {
-                        //console.log(
-                        //"found a better layout",
-                        //srcClone.objective(),
-                        //src.objective()
-                        //);
                         best = new Graph().restoreFrom(srcClone);
                     }
 
@@ -224,7 +214,8 @@ export class Tabu {
         while (i < this.PRparam.PRmaxIter && this.refSet.length > 1) {
             let [src, dst] = selectSrcDst(this.refSet);
             this.refSet = this.refSet.filter(
-                e => !layoutEqual(e.layout, src) && !layoutEqual(e.layout, dst)
+                (e) =>
+                    !layoutEqual(e.layout, src) && !layoutEqual(e.layout, dst)
             );
 
             // TODO: Do we need to clone src and dst
@@ -237,18 +228,16 @@ export class Tabu {
             }
             bestCandidateClone = new Graph().restoreFrom(bestCandidate);
 
-            let entry = {layout: bestCandidateClone, it: this.it};
+            let entry = { layout: bestCandidateClone, it: this.it };
 
             // update refSet
             if (!inRefSet(this.refSet, entry.layout)) {
                 if (this.refSet.length < this.PRparam.refSetSize) {
-                    //console.log("add to refSet");
                     this.refSet.push(entry);
                 } else if (
                     isHighQuality(this.refSet, entry.layout) ||
                     isDiverse(this.refSet, entry.layout)
                 ) {
-                    //console.log("update refSet");
                     replaceWorst(this.refSet, entry);
                 }
             }
@@ -266,10 +255,9 @@ export class Tabu {
             const currentPos = layout.getNodePos(nId);
 
             let chosenSol = null;
-            let chosenSolObj = Infinity;
+            let chosenSolObj = null;
 
             for (let offset of allOffsets) {
-
                 let candidateSol = {
                     nodeId: nId,
                     pos: offset.add(currentPos),
@@ -283,28 +271,31 @@ export class Tabu {
                     layout.setNodePos(nId, currentPos, this.effectBounds);
                     let ratio = candidateSolObj / currentObj;
 
-                    // if currentObj == 0 then we can't select the move since we have the best move possible
                     if (!isFinite(ratio) || ratio > this.cutoff) {
                         this.tabuSet.push(candidateSol);
                     }
-                    if (candidateSolObj < chosenSolObj) {
+                    if (
+                        chosenSolObj == null || 
+                        candidateSolObj < chosenSolObj
+                    ) {
                         chosenSolObj = candidateSolObj;
                         chosenSol = candidateSol;
                     }
                 }
-                else {
-                    //console.log("inTabuSet", str(candidateSol));
-                }
             }
 
             if (chosenSol !== null) {
-                layout.setNodePos(chosenSol.nodeId, chosenSol.pos, this.effectBounds);
-                this.onNodeMove(chosenSol.nodeId,this);
+                layout.setNodePos(
+                    chosenSol.nodeId,
+                    chosenSol.pos,
+                    this.effectBounds
+                );
+                this.onNodeMove(chosenSol.nodeId, this);
 
                 let currentSol = {
                     nodeId: nId,
                     pos: currentPos,
-                    it: this.it
+                    it: this.it,
                 };
                 this.tabuSet.push(currentSol);
             }
@@ -313,20 +304,16 @@ export class Tabu {
         if (this.usePR && !inRefSet(this.refSet, layout)) {
             console.log("using PR");
             let layoutClone = new Graph(layout.graph);
-            //console.log("adding to refSet layoutClone", layoutClone.test);
-            let entry = {layout: layoutClone, it: this.it};
+            let entry = { layout: layoutClone, it: this.it };
             if (this.refSet.length < this.PRparam.refSetSize) {
-                //console.log("add to refSet");
                 this.refSet.push(entry);
             } else if (
                 isHighQuality(this.refSet, layout) ||
                 isDiverse(this.refSet, layout)
             ) {
-                //console.log("update refSet");
                 replaceWorst(this.refSet, entry);
             }
         } else {
-            //console.log("already in refSet!");
         }
         if (this.it % this.intensifyIt === 0) {
             if (this.usePR) {
@@ -339,7 +326,9 @@ export class Tabu {
             this.cutoff -= this.cutoffReduction * this.intensifyIt;
         }
         // remove old sol from tabu set
-        let filtered = this.tabuSet.filter(s => this.it - s.it < this.duration);
+        let filtered = this.tabuSet.filter(
+            (s) => this.it - s.it < this.duration
+        );
         this.tabuSet = filtered;
 
         this.it++;
@@ -356,24 +345,24 @@ export class Tabu {
         while (this.it < this.maxIt && this.squareSize >= 1) {
             this.step();
             this.onStep(this);
-            lastObjective =  this.graph.objective();
-            if (this.graph.objective() < lastObjective && !equal(this.graph.objective(), lastObjective)){
-                console.error(`Objective is not supposed to get worse!`);
+            lastObjective = this.graph.objective();
+            if (
+                this.graph.objective() < lastObjective &&
+                !equal(this.graph.objective(), lastObjective)
+            ) {
                 throw `Objective is not supposed to get worse!`;
             }
         }
         this.executionTime = performance.now() - start;
-        //console.log("ts objective: ", this.graph.objective());
         return this.graph;
     }
-
 
     serialize(string = true) {
         let s = {};
         if (string === true) return JSON.stringify(this);
         s.graph = this.graph.serialize();
         // distance to move the node
-        s.params = {... this.params};
+        s.params = { ...this.params };
         s.squareSize = this.squareSize;
         s.squareReduction = this.squareReduction;
         s.it = this.it;
@@ -387,9 +376,9 @@ export class Tabu {
         s.evaluatedSolutions = this.evaluatedSolutions;
         s.executionTime = this.executionTime; // in ms
         s.effectBounds = this.effectBounds;
-        s.PRparam = {...this.PRparam};
-        s.tabuSet = [... this.tabuSet];
-        s.refSet = [... this.refSet];
+        s.PRparam = { ...this.PRparam };
+        s.tabuSet = [...this.tabuSet];
+        s.refSet = [...this.refSet];
         s.usePR = this.usePR;
         s.layoutAlgName = this.layoutAlgName;
 
@@ -414,13 +403,11 @@ export class Tabu {
         this.intensifyIt = data.intensifyIt;
         this.initCutoff = data.initCutoff;
         this.duration = data.duration;
-        this.PRparam = {...data.PRparam};
+        this.PRparam = { ...data.PRparam };
         this.tabuSet = [...data.tabuSet];
-        this.refSet = [... this.refSet];
+        this.refSet = [...this.refSet];
         this.usePR = data.usePR;
 
         return this;
     }
-
-
 }

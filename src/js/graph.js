@@ -246,7 +246,6 @@ class Graph {
         if (this.status === Graph.status.DIRTY) {
             this._metrics = this.calcMetrics();
         }
-        // TODO: Test this!
         let oldPosMetrics = this.calcNodeMetrics(nodeId);
 
         node.x = x;
@@ -542,7 +541,6 @@ class Graph {
     }
     withinBounds(x, y) {
         let {xMax, yMax, xMin, yMin} = this.bounds;
-        //return true;
         return x < xMax && x > xMin && y < yMax && y > yMin;
     }
     // returns the min bounding box
