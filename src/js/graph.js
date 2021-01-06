@@ -26,9 +26,8 @@ export { generateGraph, Graph };
  *
  */
 function ranSpanningTree(G) {
-    // TODO: Extract rendering details
     // deep copy of the existing nodes
-    let outTree = G.nodes();
+    let outTree = G.nodes(true);
     // select the root
     let inTree = [outTree.pop()];
 
@@ -53,7 +52,7 @@ function ranSpanningTree(G) {
  * @param {object} height Height of the HTML canvas element
  * @returns {object} a graph object
  */
-function generateGraph(nMin, nMax, eMin, eMax, width, height) {
+function generateGraph(nMin, nMax, eMin, eMax, width, height, s) {
     const x = width;
     const y = height;
 
@@ -71,9 +70,6 @@ function generateGraph(nMin, nMax, eMin, eMax, width, height) {
         G.addNode(n);
     }
     let nodes = G.nodes();
-
-    // randomize the nodes order to ensure we get random edges
-    shuffle(nodes);
 
     // create a random spanning tree (ST) to guarantee that the graph is connected
     ranSpanningTree(G);
