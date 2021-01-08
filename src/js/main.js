@@ -99,6 +99,7 @@ export async function MainPage() {
                         let N = GRAPH.nodes(e.data.node.id);
                         N.x = dragStartPos.x;
                         N.y = dragStartPos.y;
+
                         GRAPH.setNodePos(e.data.node.id, dragEndPos);
                     }
                     updateMetrics(sig);

@@ -1,7 +1,7 @@
 import * as util from "./util.js";
 
-let log = {};
-log.d = function(msg) {
+export let log = {};
+log.d = function (msg) {
     console.debug(msg);
 };
 
@@ -12,13 +12,13 @@ export function nodeOcclusion(graph) {
         for (let j = 0; j < nodes.length; j++) {
             if (i !== j) {
                 let d = util.distance(nodes[i], nodes[j]);
-                if (d !== 0 ) {
-                    sum += 1.0 / (d*d);
+                if (d !== 0) {
+                    sum += 1.0 / (d * d);
                 }
             }
         }
     }
-    return sum/2;
+    return sum / 2;
 }
 export function edgeCrossing(graph) {
     const duplicateCount = 8;
@@ -58,7 +58,7 @@ export function edgeCrossing(graph) {
                             if (i === 0)
                                 log.edgeCrossingIntersections.push([
                                     `${i}->${nIndex}`,
-                                    `${j}->${nIndex2}`
+                                    `${j}->${nIndex2}`,
                                 ]);
 
                             sum++;
@@ -160,77 +160,6 @@ export function angularResolutionN(graph, p) {
     return c;
 }
 
-export function angularResolutionFast(graph) {
-    log.angularResolutionFastResults = [];
-    log.angleToNodeIndex = {};
-
-    let nodes = graph.nodes();
-    let adj = graph.adjList();
-    let center = { x: 0, y: 0 };
-    let sum = 0.0;
-    for (let i = 0; i < nodes.length; i++) {
-        let degN = adj[i].length;
-        if (degN < 2) continue;
-        let angles = new Array(360);
-        let p = nodes[i];
-        for (let j of adj[i]) {
-            let p1 = nodes[j];
-            // atan2 assumes we are working from 0,0 so we need to translate the points so they start from (0,0)
-            p1 = { x: p1.x - p.x, y: p1.y - p.y };
-            let a = (util.antiClockAngle(p1) * 180) / Math.PI;
-            a = Math.floor(a);
-            // angles = [duplicatesNum, point]
-            if (angles[a]) {
-                angles[a][0]++;
-            } else {
-                angles[a] = [0, p1, a];
-                //log.angleToNodeIndex[a] = j;
-            }
-        }
-        let e1 = null;
-        let angleSum = 0;
-
-        //log.first = null;
-        //log.last = null;
-
-        for (let k = 0; k < 360; k++) {
-            if (angles[k]) {
-                if (e1 === null) {
-                    e1 = angles[k];
-                    //log.first = log.angleToNodeIndex[k];
-                } else {
-                    let p1Overlap = e1[0];
-                    let p1 = e1[1];
-
-                    let p2Overlap = angles[k][0];
-                    let p2 = angles[k][1];
-
-                    sum += ((p1Overlap + p2Overlap) * 2 * Math.PI) / degN;
-
-                    let deg = k - e1[2];
-                    let rad = (deg * Math.PI) / 180;
-                    angleSum += deg;
-                    sum += Math.abs((2 * Math.PI) / degN - rad);
-                    e1 = angles[k];
-                    //log.last = log.angleToNodeIndex[k];
-                }
-            }
-        }
-        // add the angle between first and last edges
-        let lastAngleDeg = 360 - angleSum;
-        let lastAngleRad = (lastAngleDeg * Math.PI) / 180;
-
-        //log.angularResolutionFastResults.push([
-        //`${i}->${log.first}`,
-        //`${i}->${log.last}`,
-        //lastAngleDeg
-        //]);
-
-        sum += Math.abs((2 * Math.PI) / degN - lastAngleRad);
-    }
-    return sum;
-}
-
 export function nodeEdgeOcclusion(graph) {
     let distSq = 0.0;
     let sum = 0.0;
@@ -308,7 +237,7 @@ export function nodeOcclusionN(graph, nId) {
         if (nId !== j) {
             let d = util.distanceSquared(nodes[nId], nodes[j]);
             if (d !== 0) {
-                sum += 1.0 / (d);
+                sum += 1.0 / d;
             }
         }
     }
@@ -344,8 +273,7 @@ export function edgeCrossingN(graph, nId) {
                         l1P1.x,
                         l1P1.y,
                         l1P2.x,
-                        l1P2.y,
-
+                        l1P2.y
                     );
                     if (insec) {
                         sum++;
@@ -368,7 +296,7 @@ export function edgeCrossingN(graph, nId) {
          to divide by 4 to get the correct number
     */
 
-    return sum/2;
+    return sum / 2;
 }
 
 export function edgeLengthN(graph, requiredLength, nId) {
@@ -387,16 +315,14 @@ export function edgeLengthN(graph, requiredLength, nId) {
 }
 
 export function angularResolutionNFast(graph, nId) {
-    //log.angularResolutionFastResults = [];
-    //log.angleToNodeIndex = {};
-
     let nodes = graph.nodes();
     let adj = graph.adjList();
-    let center = { x: 0, y: 0 };
+    log.angularPerNode = [];
+
     let sum = 0.0;
     let degN = adj[nId].length;
     if (degN > 1) {
-        let angles = new Array(360);
+        let angles = new Array(360 + 1);
         let p = nodes[nId];
         for (let j of adj[nId]) {
             let p1 = nodes[j];
@@ -404,47 +330,33 @@ export function angularResolutionNFast(graph, nId) {
             p1 = { x: p1.x - p.x, y: p1.y - p.y };
             let a = (util.antiClockAngle(p1) * 180) / Math.PI;
             a = Math.floor(a);
-            // angles = [duplicatesNum, point]
-            if (angles[a]) {
-                angles[a][0]++;
+            if (angles[a] != null) {
+                angles[a].overlap++;
             } else {
-                angles[a] = [0, p1, a];
-                //log.angleToNodeIndex[a] = j;
+                angles[a] = { nId: j, overlap: 0, pos: p1, degAngle: a };
             }
         }
         let e1 = null;
         let angleSum = 0;
 
-        //log.first = null;
-        //log.last = null;
+        log.anglesDiff = [];
 
         for (let k = 0; k < 360; k++) {
             if (angles[k]) {
                 if (e1 === null) {
                     e1 = angles[k];
-                    //log.first = log.angleToNodeIndex[k];
+                    sum += (e1.overlap * 2 * Math.PI) / degN;
+                    if (e1.overlap)
+                        log.anglesDiff.push({ e1, e2: angles[k], deg: k });
                 } else {
-                    let p1Overlap = e1[0];
-                    let p1 = e1[1];
-
-                    let p2Overlap = angles[k][0];
-                    let p2 = angles[k][1];
-
-                    sum += ((p1Overlap + p2Overlap) * 2 * Math.PI) / degN;
-
-                    let deg = k - e1[2];
-                    let rad = (deg * Math.PI) / 180;
+                    let deg = k - e1.degAngle;
+                    log.anglesDiff.push({ e1, e2: angles[k], deg: deg });
                     angleSum += deg;
+                    console.assert(isFinite(angleSum) && sum >= 0);
+                    let rad = (deg * Math.PI) / 180;
                     sum += Math.abs((2 * Math.PI) / degN - rad);
-
-                    //log.angularResolutionFastResults.push([
-                    //`${i}->${log.angleToNodeIndex[k]}`,
-                    //`${i}->${log.angleToNodeIndex[angles[k][2]]}`,
-                    //deg
-                    //]);
-
+                    console.assert(isFinite(sum) && sum >= 0);
                     e1 = angles[k];
-                    //log.last = log.angleToNodeIndex[k];
                 }
             }
         }
@@ -452,14 +364,13 @@ export function angularResolutionNFast(graph, nId) {
         let lastAngleDeg = 360 - angleSum;
         let lastAngleRad = (lastAngleDeg * Math.PI) / 180;
 
-        //log.angularResolutionFastResults.push([
-        //`${i}->${log.first}`,
-        //`${i}->${log.last}`,
-        //lastAngleDeg
-        //]);
-
         sum += Math.abs((2 * Math.PI) / degN - lastAngleRad);
+        if (!isFinite(sum)) {
+            throw "sum is NaN";
+        }
     }
+
+    log.angularPerNode.push({ nId, angularRes: sum });
     return sum;
 }
 
