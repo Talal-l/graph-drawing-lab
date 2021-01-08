@@ -120,14 +120,9 @@ export async function MainPage() {
             // get x,y after applying the same transformation that were applied to the camera
             let p = cam.cameraPosition(x, y);
 
-            let id = GRAPH.nextId;
             let n = {
-                label: id,
-                id: id,
                 x: p.x,
                 y: p.y,
-                size: nodeSize,
-                color: "#921",
             };
 
             GRAPH.addNode(n);

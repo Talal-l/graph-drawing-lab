@@ -129,7 +129,6 @@ class Graph {
         };
         this.bounds = { ...this.defaultBounds };
 
-        this._nextId = 0;
         this.requiredEdgeLengthPerc = 0.5;
         this.requiredEdgeLength = 100;
         this.metricsParam = options.metricsParam || {
@@ -169,6 +168,7 @@ class Graph {
 
     addNode(node) {
         this.status = Graph.status.DIRTY;
+        node.id = this._nodes.length;
         this._nodes.push(node);
         this._adjList.push(new Array(0));
         this._adjList[this._nodes.length - 1] = [];
@@ -698,8 +698,10 @@ class Graph {
 
         for (let i = 0; i < nodeNum; i++) {
             this._nodes[i] = { ...data.graph.nodes[i] };
+            this._nodes[i].id = i;
             this._adjList[i] = [...data.graph.adjList[i]];
         }
+        this.nextId = this._nodes.length;
 
         // TODO: make it so it's possible to update bound on load without doing it accidentally
         //if (this.effectBounds){
