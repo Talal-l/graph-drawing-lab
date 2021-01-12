@@ -48,7 +48,7 @@ export class HillClimbing {
         let vectors = offsets(this.squareSize);
         for (let nId = 0; nId < this.graph._nodes.length; nId++) {
             let bestMove = new Vec(0,0);
-            let bestMoveObj = this.graph.nodeObjective(nId);
+            let bestMoveObj = this.graph.objective();
             let originalPos = this.graph.getNodePos(nId);
 
             for (let v of vectors) {
@@ -61,7 +61,7 @@ export class HillClimbing {
                 );
                 if (newPos == null) continue;
 
-                let newPosObjective = (newPos != null) ? this.graph.nodeObjective(nId) :Infinity;
+                let newPosObjective = (newPos != null) ? this.graph.objective() :Infinity;
 
                 this.graph.setNodePos(
                     nId,
