@@ -1,4 +1,4 @@
-import {equal} from "./util.js";
+import { equal } from "./util.js";
 
 export class ZNormalization {
     constructor() {
@@ -7,42 +7,42 @@ export class ZNormalization {
             nodeEdgeOcclusion: 1,
             edgeLength: 1,
             edgeCrossing: 1,
-            angularResolution: 1
+            angularResolution: 1,
         };
         this.nodeOcclusion = {
             min: 0,
             max: 0,
             history: [],
             avg: 0,
-            SD: 0
+            SD: 0,
         };
         this.nodeEdgeOcclusion = {
             min: 0,
             max: 0,
             history: [],
             avg: 0,
-            SD: 0
+            SD: 0,
         };
         this.edgeLength = {
             min: 0,
             max: 0,
             history: [],
             avg: 0,
-            SD: 0
+            SD: 0,
         };
         this.edgeCrossing = {
             min: 0,
             max: 0,
             history: [],
             avg: 0,
-            SD: 0
+            SD: 0,
         };
         this.angularResolution = {
             min: 0,
             max: 0,
             history: [],
             avg: 0,
-            SD: 0
+            SD: 0,
         };
     }
 
@@ -51,7 +51,7 @@ export class ZNormalization {
         let newAvg;
         if (num == 0) newAvg = 0.0;
         else if (num == 1) newAvg = measure;
-        else newAvg = oldAvg + ((measure - oldAvg) / num);
+        else newAvg = oldAvg + (measure - oldAvg) / num;
         return newAvg;
     }
 
@@ -61,10 +61,10 @@ export class ZNormalization {
         let newSD;
         if (num == 0 || num == 1) {
             newSD = 0.0;
-        }
-        else {
+        } else {
             newSD = Math.sqrt(
-                (oldSD * oldSD) + ((measure - oldAvg) * (measure - newAvg)));
+                oldSD * oldSD + (measure - oldAvg) * (measure - newAvg)
+            );
         }
         return newSD;
     }
@@ -107,34 +107,32 @@ export class ZNormalization {
         // normalize using new values
         if (equal(newSD, 0)) {
             mNorm = m;
-        }
-        else {
+        } else {
             let mZScore = (m - newAvg) / newSD; // value
             min = (this[metricName].min - newAvg) / newSD; // min
             max = (this[metricName].max - newAvg) / newSD; // max
             mNorm = (mZScore - min) / (max - min); // normalized
             //if (metricName == "edgeCrossing")
-                //console.log("metric: ", metricName,"min: ", min, "max: ", max, "zScore: ", mZScore, "SD: ", newSD, "avg: ", newAvg, "Norm: ", mNorm);
+            //console.log("metric: ", metricName,"min: ", min, "max: ", max, "zScore: ", mZScore, "SD: ", newSD, "avg: ", newAvg, "Norm: ", mNorm);
         }
         if (!isFinite(mNorm)) throw `${metricName} = ${mNorm}`;
 
         return mNorm;
     }
     toJSON() {
-        let  s = {
-            normalMetrics : {... this.normalMetrics},
-            nodeOcclusion: {... this.nodeOcclusion},
-            nodeEdgeOcclusion: {... this.nodeEdgeOcclusion},
-            edgeLength: {... this.edgeLength},
-            edgeCrossing: {... this.edgeCrossing},
-            angularResolution: {... this.angularResolution},
-
+        let s = {
+            normalMetrics: { ...this.normalMetrics },
+            nodeOcclusion: { ...this.nodeOcclusion },
+            nodeEdgeOcclusion: { ...this.nodeEdgeOcclusion },
+            edgeLength: { ...this.edgeLength },
+            edgeCrossing: { ...this.edgeCrossing },
+            angularResolution: { ...this.angularResolution },
         };
-        s.nodeOcclusion.history = [... this.nodeOcclusion.history];
-        s.nodeEdgeOcclusion.history = [... this.nodeEdgeOcclusion.history];
-        s.edgeLength.history = [... this.edgeLength.history];
-        s.edgeCrossing.history = [... this.edgeCrossing.history];
-        s.angularResolution.history = [... this.angularResolution.history];
+        s.nodeOcclusion.history = [...this.nodeOcclusion.history];
+        s.nodeEdgeOcclusion.history = [...this.nodeEdgeOcclusion.history];
+        s.edgeLength.history = [...this.edgeLength.history];
+        s.edgeCrossing.history = [...this.edgeCrossing.history];
+        s.angularResolution.history = [...this.angularResolution.history];
 
         return s;
     }
@@ -147,12 +145,12 @@ export class ZNormalization {
             data = JSON.parse(data);
         }
 
-        this.normalMetrics = {...data.normalMetrics};
-        this.nodeOcclusion = {...data.nodeOcclusion};
-        this.nodeEdgeOcclusion = {...data.nodeEdgeOcclusion};
-        this.edgeLength = {...data.edgeLength};
-        this.edgeCrossing = {...data.edgeCrossing};
-        this.angularResolution = {...data.angularResolution};
+        this.normalMetrics = { ...data.normalMetrics };
+        this.nodeOcclusion = { ...data.nodeOcclusion };
+        this.nodeEdgeOcclusion = { ...data.nodeEdgeOcclusion };
+        this.edgeLength = { ...data.edgeLength };
+        this.edgeCrossing = { ...data.edgeCrossing };
+        this.angularResolution = { ...data.angularResolution };
 
         this.nodeOcclusion.history = [...data.nodeOcclusion.history];
         this.nodeEdgeOcclusion.history = [...data.nodeEdgeOcclusion.history];
@@ -164,13 +162,11 @@ export class ZNormalization {
     }
 }
 export class FakeNormalization {
-    constructor() {
-    }
+    constructor() {}
     normalize(metricName, m) {
-       return m;
+        return m;
     }
     toJSON() {
-
         return {};
     }
     serialize(string = true) {

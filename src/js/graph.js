@@ -9,7 +9,7 @@ import {
     angularResolutionNFast,
 } from "./metrics2.js";
 
-import { FakeNormalization as Normalization } from "./normalization.js";
+import { ZNormalization as Normalization } from "./normalization.js";
 
 export { generateGraph, Graph };
 
@@ -441,7 +441,10 @@ class Graph {
             //console.log("edgeLength: " + metrics.edgeLength.toFixed(10) + " normalized to: " + normalMetrics.edgeLength.toFixed(10));
         }
         if (this.weights.angularResolution) {
-            normalMetrics.angularResolution = metrics.angularResolution;
+            normalMetrics.angularResolution = this._zn.normalize(
+                "angularResolution",
+                metrics.angularResolution
+            );
             //console.log("angularResolution: " + metrics.angularResolution.toFixed(10) + " normalized to: " + normalMetrics.angularResolution.toFixed(10));
         }
 
@@ -705,7 +708,15 @@ class Graph {
             this._nodes[i].id = i;
             this._adjList[i] = [...data.graph.adjList[i]];
         }
-        this.nextId = this._nodes.length;
+
+        // center the graph
+        let b = this.getBoundaries();
+        let center = { x: (b.xMax - b.xMin) / 2, y: (b.yMax - b.yMin) / 2 };
+
+        for (let n of this._nodes) {
+            n.x -= center.x;
+            n.y -= center.y;
+        }
 
         // TODO: make it so it's possible to update bound on load without doing it accidentally
         //if (this.effectBounds){
