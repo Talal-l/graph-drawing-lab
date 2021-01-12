@@ -1,4 +1,4 @@
-import { distance, random, shuffle, Vec, equal } from "./util.js";
+import { distance, random, shuffle, Vec, equal, minMaxNorm } from "./util.js";
 
 import {
     nodeOcclusionN,
@@ -318,6 +318,17 @@ class Graph {
         }
         return edges;
     }
+    edgesNum() {
+        let E = 0;
+        let nodes = this._nodes;
+        let adj = this._adjList;
+        for (let i = 0; i < nodes.length; i++) {
+            for (let j = 0; j < adj[i].length; j++) {
+                if (adj[i][j] != null) E++;
+            }
+        }
+        return E;
+    }
     addEdge(n1Id, n2Id) {
         if (n1Id == null || n2Id == null)
             throw `invalid parameters ${n1Id} ${n2Id}`;
@@ -366,7 +377,6 @@ class Graph {
         return wSum;
     }
 
-    // should never change anything
     objective() {
         if (this.status === Graph.status.DIRTY) {
             this._metrics = this.calcMetrics();
@@ -376,8 +386,6 @@ class Graph {
         for (let key in this._normalMetrics) {
             wSum += this._normalMetrics[key] * this.weights[key];
         }
-        wSum = this._normalMetrics.nodeOcclusion;
-
         if (!Number.isFinite(wSum) || wSum < 0) {
             throw `invalid weights or metrics\nmetrics:\n ${JSON.stringify(
                 this._normalMetrics
@@ -433,7 +441,7 @@ class Graph {
             //console.log("edgeLength: " + metrics.edgeLength.toFixed(10) + " normalized to: " + normalMetrics.edgeLength.toFixed(10));
         }
         if (this.weights.angularResolution) {
-            normalMetrics.angularResolution = this._zn.normalize("angularResolution", metrics.angularResolution);
+            normalMetrics.angularResolution = metrics.angularResolution;
             //console.log("angularResolution: " + metrics.angularResolution.toFixed(10) + " normalized to: " + normalMetrics.angularResolution.toFixed(10));
         }
 
@@ -506,10 +514,6 @@ class Graph {
 
         if (this.weights.angularResolution) {
             metrics.angularResolution = angularResolutionNFast(this, nodeId);
-            console.log(
-                "angular resolution for " + nodeId,
-                metrics.angularResolution
-            );
         }
         return metrics;
     }
