@@ -9,7 +9,7 @@ import {
     angularResolutionNFast,
 } from "./metrics2.js";
 
-import { ZNormalization as Normalization } from "./normalization.js";
+import { FakeNormalization as Normalization } from "./normalization.js";
 
 export { generateGraph, Graph };
 
@@ -235,11 +235,15 @@ class Graph {
             this._metrics = this.calcMetrics();
         }
         let oldPosMetrics = this.calcNodeMetrics(nodeId);
+
+        // moving a node also can effect the angular resolution for all nodes adjacent to it
+        if (this.weights.angularResolution) {
         let oldOtherAngular = 0;
         for (let adjN of this._adjList[nodeId]) {
             oldOtherAngular += angularResolutionNFast(this, adjN);
         }
         oldPosMetrics.angularResolution += oldOtherAngular;
+        }
 
         node.x = x;
         node.y = y;
