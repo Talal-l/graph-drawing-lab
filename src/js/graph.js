@@ -238,11 +238,11 @@ class Graph {
 
         // moving a node also can effect the angular resolution for all nodes adjacent to it
         if (this.weights.angularResolution) {
-        let oldOtherAngular = 0;
-        for (let adjN of this._adjList[nodeId]) {
-            oldOtherAngular += angularResolutionNFast(this, adjN);
-        }
-        oldPosMetrics.angularResolution += oldOtherAngular;
+            let oldOtherAngular = 0;
+            for (let adjN of this._adjList[nodeId]) {
+                oldOtherAngular += angularResolutionNFast(this, adjN);
+            }
+            oldPosMetrics.angularResolution += oldOtherAngular;
         }
 
         node.x = x;
@@ -698,6 +698,45 @@ class Graph {
         return serialized;
     }
 
+    //let data = fs.readFileSync(filePath, "utf-8");
+    importCustom(data) {
+
+        this.status = Graph.status.DIRTY;
+        let byline = data.split("\n");
+        // let caseNum = Number(byline[0]);
+        let start = 0;
+        let nodesCoord = {};
+        let files = [];
+
+        let nodeNum = Number(byline[0]);
+        let graph = {
+            nodes: new Array(nodeNum),
+            adjList: new Array(nodeNum).fill(new Array()),
+        };
+        nodesCoord = byline[1].split("  ").map((e) => ({
+            x: Number(e.split(" ")[0]),
+            y: Number(e.split(" ")[1]),
+        }));
+
+        for (let i = 0; i < nodesCoord.length - 1; i++) {
+            let node = {
+                id: i,
+                x: nodesCoord[i].x,
+                y: nodesCoord[i].y,
+            };
+            if (node.x !== null && node.y !== null) graph.nodes[i] = node;
+        }
+
+        let offset = start + 4;
+        for (let j = 0; j < nodeNum; j += 1) {
+            let adj = byline[j + offset++].split(" ").map((e) => Number(e));
+            adj.pop(); // remove "\r"
+            graph.adjList[j] = adj;
+        }
+        this._adjList = graph.adjList;
+        this._nodes = graph.nodes;
+        return this;
+    }
     import(data) {
         this.status = Graph.status.DIRTY;
         if (typeof data === "string") {

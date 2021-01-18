@@ -9,7 +9,7 @@ import {
     nodeEdgeOcclusionSlow,
     edgeLength,
     angularResolution,
-    angularResolutionFast,
+    angularResolutionNFast,
     nodeOcclusionN,
     nodeEdgeOcclusionN,
     edgeLengthN,
@@ -50,7 +50,7 @@ let graphId = 0;
 let filesToLoad = [
     //"n150_dens0050_20Cases_case0.json",
     //"2nodeOcclusionTest.json",
-    "n5e9crossing.json",
+    "nice",
 
     //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case0.json",
     //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case10.json",
@@ -97,22 +97,25 @@ async function loadGraph() {
         if (typeof window !== "undefined") {
             let response = await fetch(`data/${file}`);
             window.nodeOcclusionTime = nodeOcclusionTime;
-            graphData = await response.json();
+            graphData = await response.text();
         } else {
             let fs = await import("fs");
             //var { performance } = await import("perf_hooks");
             graphData = await fs.promises.readFile(`../data/${file}`, "utf-8");
         }
-        let originalGraph = new Graph().import(graphData);
+        let originalGraph = new Graph().importCustom(graphData);
         log.og = originalGraph;
 
-        let graph = new Graph().import(graphData);
+        let graph = new Graph().importCustom(graphData);
         graphs.push(originalGraph, graph);
 
         let importStatrTime = performance.now();
-        graph = new Graph().import(graphData);
-        let graph2 = new Graph().import(graphData);
-        let graph3 = new Graph().import(graphData);
+
+
+        graph = new Graph().importCustom(graphData);
+        console.log(graph);
+        let graph2 = new Graph().importCustom(graphData);
+        let graph3 = new Graph().importCustom(graphData);
         let importTime = performance.now() - importStatrTime;
         log.importTimes.push(importTime);
 
@@ -134,12 +137,17 @@ async function loadGraph() {
 
         hc.run();
         displayGraph(hc, "graph1");
-        ts.run();
-        displayGraph(ts, "graph2");
-        tabu.run();
-        displayGraph(tabu, "graph3");
+        // ts.run();
+        // displayGraph(ts, "graph2");
+        // tabu.run();
+        // displayGraph(tabu, "graph3");
     }
 }
+
+
+
+
+
 
 function barChart(id, xLabel, yLabel, data) {
     console.log(id, data);
