@@ -122,10 +122,10 @@ class Graph {
         const width = 1600;
         const height = 880;
         this.defaultBounds = {
-            xMax: width / 2 - 20,
-            yMax: height / 2 - 20,
-            xMin: -width / 2 - 20,
-            yMin: -height / 2 - 20,
+            xMax: width - 20,
+            yMax: height - 20,
+            xMin: 0,
+            yMin: 0,
         };
         this.bounds = { ...this.defaultBounds };
 
@@ -700,7 +700,6 @@ class Graph {
 
     //let data = fs.readFileSync(filePath, "utf-8");
     importCustom(data) {
-
         this.status = Graph.status.DIRTY;
         let byline = data.split("\n");
         // let caseNum = Number(byline[0]);

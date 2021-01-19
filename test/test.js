@@ -123,7 +123,7 @@ async function loadGraph() {
             nodeOcclusion: 1,
             nodeEdgeOcclusion: 0,
             edgeLength: 0,
-            edgeCrossing: 1,
+            edgeCrossing: 0,
             angularResolution: 0,
         };
 
