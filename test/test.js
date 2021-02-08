@@ -21,6 +21,7 @@ import { HillClimbing } from "/src/js/hillClimbing.js";
 import { Tabu } from "/src/js/tabu.js";
 import { TabuSearch } from "/src/js/tabuSearch.js";
 import { CircularLayout } from "/src/js/circularLayout.js";
+import { hillClimbing_Fast_NoGrid} from "/src/js/hcjavaClone.js";
 
 let container = document.querySelector("#container");
 
@@ -135,12 +136,13 @@ async function loadGraph() {
         let ts = new Tabu(graph2);
         let tabu = new TabuSearch(graph3);
 
-        hc.run();
+        hillClimbing_Fast_NoGrid(graph);
         displayGraph(hc, "graph1");
         // ts.run();
         // displayGraph(ts, "graph2");
         // tabu.run();
         // displayGraph(tabu, "graph3");
+
     }
 }
 
