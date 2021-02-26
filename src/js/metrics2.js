@@ -230,13 +230,14 @@ export function nodeEdgeOcclusionSlow(graph) {
 
 // metrics for a node
 
-export function nodeOcclusionN(graph, nId) {
+export function nodeOcclusionN(graph, nId, threshold) {
     let sum = 0.0;
     let nodes = graph.nodes();
     for (let j = 0; j < nodes.length; j++) {
         if (nId !== j) {
             let d = util.distanceSquared(nodes[nId], nodes[j]);
-            if (d !== 0) {
+
+            if (d < threshold && d !== 0) {
                 sum += 1.0 / d;
             }
         }
@@ -276,6 +277,11 @@ export function edgeCrossingN(graph, nId) {
                         l1P2.y
                     );
                     if (insec) {
+                        //console.log(nId + "-" + nIndex + "X" + j + "-" + nIndex2 + "\n" 
+                            //+ "( ((1-t)" + l1P1.x + "+t" + l1P2.x + "), ((1-t)" + l1P1.y + "+t" + l1P2.y + ") )\n"
+                            //+ "( ((1-t)" + l2P1.x + "+t" + l2P2.x + "), ((1-t)" + l2P1.y + "+t" + l2P2.y + ") )\n\n"
+
+                        //);
                         sum++;
                     }
                 }
@@ -296,7 +302,7 @@ export function edgeCrossingN(graph, nId) {
          to divide by 4 to get the correct number
     */
 
-    return sum / 2;
+    return sum;
 }
 
 export function edgeLengthN(graph, requiredLength, nId) {

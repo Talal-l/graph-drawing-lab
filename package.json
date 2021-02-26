@@ -1,13 +1,14 @@
 {
   "name": "graph-drawing",
+  "type":"module",
   "version": "1.0.0",
   "description": "A Javascript tool to help explore and compare different graph layout algorithms.",
   "main": "main.js",
   "scripts": {
-    "start": "webpack && electron .",
-    "watch": "webpack --watch --silent & electron .",
+    "start": "webpack webpack.config.cjs && electron .",
+    "watch": "webpack webpack.config.cjs --watch --silent & electron .",
     "test": "jest",
-    "layoutTest": "webpack --watch --silent & electron . layoutTest"
+    "layoutTest": "webpack webpack.config.cjs --watch --silent & electron . layoutTest"
   },
   "jest": {
     "transform": {

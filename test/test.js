@@ -51,7 +51,7 @@ let graphId = 0;
 let filesToLoad = [
     //"n150_dens0050_20Cases_case0.json",
     //"2nodeOcclusionTest.json",
-    "nice",
+    "Gr1",
 
     //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case0.json",
     //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case10.json",
@@ -135,6 +135,8 @@ async function loadGraph() {
         let hc = new HillClimbing(graph);
         let ts = new Tabu(graph2);
         let tabu = new TabuSearch(graph3);
+
+        displayGraph(ts, "graph2");
 
         hillClimbing_Fast_NoGrid(graph);
         displayGraph(hc, "graph1");
