@@ -1,5 +1,13 @@
 import { nodeOcclusionN, edgeCrossingN } from "./metrics2.js";
+import {equal} from "./util.js";
 
+function printDouble(d){
+    if (d == 0) {
+        return "0";
+    }else {
+        return d.toFixed(14);
+    }
+ }
 function F(a) {
     return a === 0 ? '0.0' : a;
 }
@@ -58,11 +66,11 @@ export function hillClimbing_Fast_NoGrid(graph) {
     let windowX = 1600; // 1600 max width size of displayed window
     let windowY = 880; // 880 max height size of displayed window
     let G = {
-        weight1: 0,
-        weight2: 0,
-        weight3: 1,
-        weight4: 0,
-        weight5: 0,
+        weight1: 1, // node occlusion
+        weight2: 1, // edge length
+        weight3: 1, // edge crossing 
+        weight4: 0, // node edge occlusion   
+        weight5: 1, // angular resolution
         threshold1: 100,
     }; // Object from class MyGraph (extended from JFrame) to create a small window
     let TabuIteration = []; // to keep track of number of tabu moves in each iterations
@@ -175,7 +183,7 @@ export function hillClimbing_Fast_NoGrid(graph) {
         for (let i = 0; i < a.length; i++) {
             sum += weights[i] * a[i];
         }
-        console.log("ComputeCost: " + (sum == 0 ? '0.0' : sum));
+        //console.log("ComputeCost: " + (sum == 0 ? '0.0' : sum));
         return sum;
     }
 
@@ -484,18 +492,24 @@ export function hillClimbing_Fast_NoGrid(graph) {
     NormalizedVector = [];
     NormalizedVector.push(...EqualizeScales(SolutionVector)); // normalize the solution
     cost = ComputeCost(NormalizedVector); // compute initial cost from solution vector
-    console.log("initial cost: " + cost);
+    console.log("initial cost: " + printDouble(cost));
+    console.log("cost: " + printDouble(cost) + " old_cost: " + printDouble(old_cost));
 
     while (square_size >= 1) {
         // drawing process
         Drawer3(square_size); // draw according to all measures
         cost = ComputeCost(EqualizeScales(fitness3()));
         hcIterations++;
-        console.log("it: " + hcIterations);
-        console.log("cost: " + cost + " old_cost: " + old_cost);
-        if (cost >= old_cost)
+        //if (hcIterations == 4) {return;}
+        console.log("it: " + hcIterations + " square_size: " + square_size);
+        //console.log("cost: " + (cost) + " old_cost: " + (old_cost));
+        //console.log("cost diff: " + (cost - old_cost) );
+        if ( (!equal(cost,old_cost) && cost >= old_cost) || equal(cost, old_cost)){
             // reduce the square size if the current size does not make any improvements
+            console.log("currentSize: " + square_size);
             square_size /= 4; // the square size shrinks during the process
+            console.log("newSize: " + square_size);
+        }
 
     }
     function Drawer3(square_size) {
@@ -519,7 +533,7 @@ export function hillClimbing_Fast_NoGrid(graph) {
             oldMeasures = [];
             let f = fitness3(i);
             oldMeasures.push(...EqualizeScales(f)); // compute previous measures and store them in a vector
-            console.log("point: " + i + " squareSize: " + square_size + " oldMeasures: " + (oldMeasures[2] ? oldMeasures[2] : "0.0") + " fitness: " + f[2]);
+            //console.log("point: " + i + " squareSize: " + square_size + " oldMeasures: " + (oldMeasures[2] ? oldMeasures[2] : "0.0") + " fitness: " + f[2]);
 
 
             // right location
@@ -527,16 +541,20 @@ export function hillClimbing_Fast_NoGrid(graph) {
                 original_point.x + square_size > 20 &&
                 original_point.x + square_size < windowX - 20
             ) {
-                console.log("right location");
+                console.log("right location: " + square_size);
+                console.log("original point: " + "(" + original_point.x + ", " + original_point.y + ")");
                 points[i].x = original_point.x + square_size; // update point
                 points[i].y = original_point.y;
+                console.log("updated point: " + "(" + points[i].x + ", " + points[i].y + ")");
                 compute_distances(i); // recompute distances of the moved node with the other nodes
                 newMeasures = [];
                 newMeasures.push(...EqualizeScales(fitness3(i))); // compute current measures and store them in a vector
                 oldFit = ComputeCost(oldMeasures); // compute previous cost
                 newFit = ComputeCost(newMeasures); // compute current cost
+                console.log("oldFit: " + printDouble(oldFit) + " newFit: " + printDouble(newFit));
                 HillEvalSolutions++; // counts number of compute fitness functon
-                if (newFit < oldFit) {
+                if (!equal(newFit,oldFit) && newFit < oldFit) {
+                    console.log("move to right location");
                     // compare fitness of the node in its new and old positions
                     UpdateSolutionVector(oldMeasures, newMeasures); // update solution vector
                     NormalizedVector = [];
@@ -568,7 +586,9 @@ export function hillClimbing_Fast_NoGrid(graph) {
                 oldFit = ComputeCost(oldMeasures);
                 newFit = ComputeCost(newMeasures);
                 HillEvalSolutions++; // counts number of compute fitness functon
-                if (newFit < oldFit) {
+                console.log("oldFit: " + printDouble(oldFit) + " newFit: " + printDouble(newFit));
+                if (!equal(newFit,oldFit) && newFit < oldFit) {
+                    console.log("move to lower-right location");
                     // compare fitness of the node in its new and old positions
                     UpdateSolutionVector(oldMeasures, newMeasures);
                     NormalizedVector = [];
@@ -599,7 +619,9 @@ export function hillClimbing_Fast_NoGrid(graph) {
                 oldFit = ComputeCost(oldMeasures);
                 newFit = ComputeCost(newMeasures);
                 HillEvalSolutions++; // counts number of compute fitness functon
-                if (newFit < oldFit) {
+                    console.log("oldFit: " + printDouble(oldFit) + " newFit: " + printDouble(newFit));
+                if (!equal(newFit,oldFit) && newFit < oldFit) {
+                    console.log("move to bottom location");
                     // compare fitness of the node in its new and old positions
                     UpdateSolutionVector(oldMeasures, newMeasures);
                     NormalizedVector = [];
@@ -632,7 +654,9 @@ export function hillClimbing_Fast_NoGrid(graph) {
                 oldFit = ComputeCost(oldMeasures);
                 newFit = ComputeCost(newMeasures);
                 HillEvalSolutions++; // counts number of compute fitness functon
-                if (newFit < oldFit) {
+                console.log("oldFit: " + printDouble(oldFit) + " newFit: " + printDouble(newFit));
+                if (!equal(newFit,oldFit) && newFit < oldFit) {
+                    console.log("move to lower-left location")
                     // compare fitness of the node in its new and old positions
                     UpdateSolutionVector(oldMeasures, newMeasures);
                     NormalizedVector = [];
@@ -663,7 +687,10 @@ export function hillClimbing_Fast_NoGrid(graph) {
                 oldFit = ComputeCost(oldMeasures);
                 newFit = ComputeCost(newMeasures);
                 HillEvalSolutions++; // counts number of compute fitness functon
-                if (newFit < oldFit) {
+                console.log("oldFit: " + printDouble(oldFit) + " newFit: " + printDouble(newFit));
+                if (!equal(newFit,oldFit) && newFit < oldFit) {
+
+                    console.log("move to left location")
                     // compare fitness of the node in its new and old positions
                     UpdateSolutionVector(oldMeasures, newMeasures);
                     NormalizedVector = [];
@@ -696,7 +723,10 @@ export function hillClimbing_Fast_NoGrid(graph) {
                 oldFit = ComputeCost(oldMeasures);
                 newFit = ComputeCost(newMeasures);
                 HillEvalSolutions++; // counts number of compute fitness functon
-                if (newFit < oldFit) {
+                console.log("oldFit: " + printDouble(oldFit) + " newFit: " + printDouble(newFit));
+                if (!equal(newFit,oldFit) && newFit < oldFit) {
+
+                    console.log("move to upper-left location")
                     // compare fitness of the node in its new and old positions
                     UpdateSolutionVector(oldMeasures, newMeasures);
                     NormalizedVector = [];
@@ -727,7 +757,10 @@ export function hillClimbing_Fast_NoGrid(graph) {
                 oldFit = ComputeCost(oldMeasures);
                 newFit = ComputeCost(newMeasures);
                 HillEvalSolutions++; // counts number of compute fitness functon
-                if (newFit < oldFit) {
+                console.log("oldFit: " + printDouble(oldFit) + " newFit: " + printDouble(newFit));
+                if (!equal(newFit,oldFit) && newFit < oldFit) {
+
+                    console.log("move to up location")
                     // compare fitness of the node in its new and old positions
                     UpdateSolutionVector(oldMeasures, newMeasures);
                     NormalizedVector = [];
@@ -760,8 +793,10 @@ export function hillClimbing_Fast_NoGrid(graph) {
                 oldFit = ComputeCost(oldMeasures);
                 newFit = ComputeCost(newMeasures);
                 HillEvalSolutions++; // counts number of compute fitness functon
-                console.log("newFit: " + F(newFit) + " oldFit: " + F(oldFit));
-                if (newFit < oldFit) {
+                console.log("oldFit: " + printDouble(oldFit) + " newFit: " + printDouble(newFit));
+                if (!equal(newFit,oldFit) && newFit < oldFit) {
+
+                    console.log("move to upper-right location")
                     // compare fitness of the node in its new and old positions
                     UpdateSolutionVector(oldMeasures, newMeasures);
                     NormalizedVector = [];
@@ -777,7 +812,7 @@ export function hillClimbing_Fast_NoGrid(graph) {
                     compute_distances(i); // recompute the distances of the node in its previous position
                 }
             }
-            console.log("point: " + i + " pos: " + points[i].x + "," + points[i].y+ " cost: " + cost);
+            //console.log("point: " + i + " pos: " + points[i].x + "," + points[i].y+ " cost: " + cost);
         }
     }
 
@@ -869,16 +904,15 @@ export function hillClimbing_Fast_NoGrid(graph) {
     function measure2_3(p) {
         // edges length criterion (all edges incident to node p only)
         // Compute the cost function according to edges length criterion (sum of (ei-required_distance)^2 divided by 2 since every edges is counted twice)
-        //let required_length = 100; // required edge length
-        //let e;// for edge length
-        //let c = 0;  // to compute cost of this criterion then will be added to the overall cost
-        //for (let i = 0; i < adjacency[p].length; i++) // for all nodes adjacent to node p
-        //{
-        //e = distances[p][adjacency[p][i]];     //get length of the edge from the array distances
-        //c += (((e - required_length) * (e - required_length)));      // Sum((edge length - required distance)^2)
-        //}
-        //return (c); // we do not divide by 2 here becuase we only compute the length of every edge incident to node p
-        return 0;
+        let required_length = 100; // required edge length
+        let e;// for edge length
+        let c = 0;  // to compute cost of this criterion then will be added to the overall cost
+        for (let i = 0; i < adjacency[p].length; i++) // for all nodes adjacent to node p
+        {
+            e = distances[p][adjacency[p][i]];     //get length of the edge from the array distances
+            c += (((e - required_length) * (e - required_length)));      // Sum((edge length - required distance)^2)
+        }
+        return (c); // we do not divide by 2 here becuase we only compute the length of every edge incident to node p
     }
 
     function measure3_3(p) {
@@ -990,50 +1024,51 @@ export function hillClimbing_Fast_NoGrid(graph) {
     }
 
     function measure5_3(p) {
-        // Angular Resolution for all angles which are affected by node p
-        // This method computes angular resolution criterion
-        //let angle_threshold = G.threshold5(); // Threshold value to test the angles which are below this value only
-        //let c = 0; // to compute the cost of this criterion
-        //let x1, x2, y1, y2; // used for computing the slopes of the lines
-        //let degree, radian; // stores the degree between two lines
-        //for(let i=0; i<adjacency[ p ].length; i++)  // for the first line (p,i)
-        //{
-        //// the following checks the angles whose common node is p
-        //for(let j=i+1; j<adjacency[ p ].length; j++)  // for the second line sharing the same point p as for the first line (p,j)
-        //{
-        //x1 = points[ adjacency[ p ][ i ] ].x - points[ p ].x; // x coordinate difference in line 1
-        //y1 = points[ adjacency[ p ][ i ] ].y - points[ p ].y; // y coordinate difference in line 1
-        //x2 = points[ adjacency[ p ][ j ] ].x - points[ p ].x; // x coordinate difference in line 2
-        //y2 = points[ adjacency[ p ][ j ] ].y - points[ p ].y; // y coordinate difference in line 2
-        //degree = Math.acos(((x1 * x2) + (y1 * y2))/(Math.sqrt(x1*x1 + y1*y1) * Math.sqrt(x2*x2 + y2*y2))); // compute the angle in radian
-        //degree = Math.toDegrees(degree); // compute the angle in degrees
-        //if (degree < angle_threshold)  // check only the angles which are less than the given threshold
-        //{
-        //radian = Math.toRadians(degree); // convert the degree to radian
-        //c += Math.abs(((2*Math.PI)/adjacency[ p ].length)-radian); // add the following to the total cost: (((2*PI)/degree of the point p) - degree in radian between line1 and line2)
-        //}
-        //}
-        //// the following checks the angles whose common node is the node adjacent to p (not p itself)
-        //for(let j=0; j<adjacency[ adjacency[ p ][ i ] ].length; j++)
-        //{
-        //if(adjacency[ adjacency[ p ][ i ] ][ j ] != p)
-        //{
-        //x1 = points[ p ].x - points[ adjacency[ p ][ i ] ].x; // x coordinate difference in line 1
-        //y1 = points[ p ].y - points[ adjacency[ p ][ i ] ].y; // y coordinate difference in line 1
-        //x2 = points[ adjacency[ adjacency[ p ][ i ] ][ j ] ].x - points[ adjacency[ p ][ i ] ].x; // x coordinate difference in line 2
-        //y2 = points[ adjacency[ adjacency[ p ][ i ] ][ j ] ].y - points[ adjacency[ p ][ i ] ].y; // y coordinate difference in line 2
-        //degree = Math.acos(((x1 * x2) + (y1 * y2))/(Math.sqrt(x1*x1 + y1*y1) * Math.sqrt(x2*x2 + y2*y2))); // compute the angle in radian
-        //degree = Math.toDegrees(degree); // compute the angle in degrees
-        //if (degree < angle_threshold)  // check only the angles which are less than the given threshold
-        //{
-        //radian = Math.toRadians(degree); // convert the degree to radian
-        //c += Math.abs(((2*Math.PI)/adjacency[ adjacency[ p ][ i ] ].length)-radian); // add the following to the total cost: (((2*PI)/degree of the point i adjacent to p) - degree in radian between line1 and line2)
-        //}
-        //}
-        //}
-        //}
-        //return c;
-        return 0;
+        //Angular Resolution for all angles which are affected by node p
+        //This method computes angular resolution criterion
+        let angle_threshold = 25; // Threshold value to test the angles which are below this value only
+        //console.log("angle_threshold: " + angle_threshold);
+        let c = 0; // to compute the cost of this criterion
+        let x1, x2, y1, y2; // used for computing the slopes of the lines
+        let degree, radian; // stores the degree between two lines
+        for (let i = 0; i < adjacency[p].length; i++)  // for the first line (p,i)
+        {
+            // the following checks the angles whose common node is p
+            for (let j = i + 1; j < adjacency[p].length; j++)  // for the second line sharing the same point p as for the first line (p,j)
+            {
+                x1 = points[adjacency[p][i]].x - points[p].x; // x coordinate difference in line 1
+                y1 = points[adjacency[p][i]].y - points[p].y; // y coordinate difference in line 1
+                x2 = points[adjacency[p][j]].x - points[p].x; // x coordinate difference in line 2
+                y2 = points[adjacency[p][j]].y - points[p].y; // y coordinate difference in line 2
+                //console.log("p: " + p + " x1: " + x1 + " y1: " + y1 + " x2: " + x2 + " y2: " + y2);
+                radian = Math.acos(((x1 * x2) + (y1 * y2)) / (Math.sqrt(x1 * x1 + y1 * y1) * Math.sqrt(x2 * x2 + y2 * y2))); // compute the angle in radian
+                degree = radian * 180 / Math.PI; // compute the angle in degrees
+                //console.log("p: " + p + " degree: " + degree + " radian: " + radian);
+                if (degree < angle_threshold)  // check only the angles which are less than the given threshold
+                {
+                    c += Math.abs(((2 * Math.PI) / adjacency[p].length) - radian); // add the following to the total cost: (((2*PI)/degree of the point p) - degree in radian between line1 and line2)
+                }
+            }
+            // the following checks the angles whose common node is the node adjacent to p (not p itself)
+            for (let j = 0; j < adjacency[adjacency[p][i]].length; j++) {
+                if (adjacency[adjacency[p][i]][j] != p) {
+                    x1 = points[p].x - points[adjacency[p][i]].x; // x coordinate difference in line 1
+                    y1 = points[p].y - points[adjacency[p][i]].y; // y coordinate difference in line 1
+                    x2 = points[adjacency[adjacency[p][i]][j]].x - points[adjacency[p][i]].x; // x coordinate difference in line 2
+                    y2 = points[adjacency[adjacency[p][i]][j]].y - points[adjacency[p][i]].y; // y coordinate difference in line 2
+
+                    //console.log("p: " + p + " x1: " + x1 + " y1: " + y1 + " x2: " + x2 + " y2: " + y2);
+                    radian = Math.acos(((x1 * x2) + (y1 * y2)) / (Math.sqrt(x1 * x1 + y1 * y1) * Math.sqrt(x2 * x2 + y2 * y2))); // compute the angle in radian
+                    degree = radian * 180 / Math.PI; // compute the angle in degrees
+                    //console.log("p: " + p + " degree: " + degree + " radian: " + radian);
+                    if (degree < angle_threshold)  // check only the angles which are less than the given threshold
+                    {
+                        c += Math.abs(((2 * Math.PI) / adjacency[adjacency[p][i]].length) - radian); // add the following to the total cost: (((2*PI)/degree of the point i adjacent to p) - degree in radian between line1 and line2)
+                    }
+                }
+            }
+        }
+        return c;
     }
 
 }

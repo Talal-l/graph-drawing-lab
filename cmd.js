@@ -17,7 +17,7 @@ function main(){
         
 
         let graph = new Graph().importCustom(file);
-        graph.setWeights(w);
+        //graph.setWeights(w);
 
         hillClimbing_Fast_NoGrid(graph);
 

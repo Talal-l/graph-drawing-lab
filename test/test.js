@@ -121,23 +121,23 @@ async function loadGraph() {
         log.importTimes.push(importTime);
 
         let w = {
-            nodeOcclusion: 1,
+            nodeOcclusion: 0,
             nodeEdgeOcclusion: 0,
             edgeLength: 0,
             edgeCrossing: 0,
             angularResolution: 0,
         };
 
-        graph.setWeights(w);
-        graph2.setWeights(w);
-        graph3.setWeights(w);
+        //graph.setWeights(w);
+        //graph2.setWeights(w);
+        //graph3.setWeights(w);
 
-        let hc = new HillClimbing(graph);
         let ts = new Tabu(graph2);
-        let tabu = new TabuSearch(graph3);
+        //let tabu = new TabuSearch(graph3);
 
         displayGraph(ts, "graph2");
 
+        let hc = new HillClimbing(graph);
         hillClimbing_Fast_NoGrid(graph);
         displayGraph(hc, "graph1");
         // ts.run();
