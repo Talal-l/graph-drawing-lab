@@ -1,4 +1,4 @@
-import { nodeOcclusionN, edgeCrossingN } from "./metrics2.js";
+import { nodeOcclusionN, edgeCrossingN, edgeLengthN } from "./metrics2.js";
 import {equal} from "./util.js";
 
 function printDouble(d){
@@ -8,20 +8,7 @@ function printDouble(d){
         return d.toFixed(14);
     }
  }
-function F(a) {
-    return a === 0 ? '0.0' : a;
-}
 
-function arrToString( array) {
-    let s = "";
-    for (let i = 0; i < array.length; i++) {
-        s += array[i] ? array[i] :'0.0' + ", ";
-       }
-    return s;
-}
-
-
-let log = { crossing: [] };
 export function hillClimbing_Fast_NoGrid(graph) {
     // Keep track of all points position
     let points = []; // List of small Rectangles which represents points (nodes)
@@ -33,21 +20,54 @@ export function hillClimbing_Fast_NoGrid(graph) {
     let distances = [[]]; // Arrays of distances between every two nodes
     let SolutionVector = []; // Vector that always stores the chosen solution (saves the measures with the best values so far in a list)
     let NormalizedVector = []; // Vector that always stores the chosen solution (normalized)
+
     let m1 = []; // list of values of measure 1 used for normaization process
     let m2 = []; // list of values of measure 2 used for normaization process
     let m3 = []; // list of values of measure 3 used for normaization process
     let m4 = []; // list of values of measure 4 used for normaization process
     let m5 = []; // list of values of measure 5 used for normaization process
+
+    let metrics = {
+        nodeOcclusion: 0,
+        nodeEdgeOcclusion: 0,
+        edgeLength: 0,
+        edgeCrossing: 0,
+        angularResolution: 0,
+    };
+    let normData = {
+        nodeOcclusion: {min: 0, max: 0, oldAvg:0, newAvg:0, oldSd:0, newSd:0},
+        nodeEdgeOcclusion: {min: 0, max: 0, oldAvg:0, newAvg:0, oldSd:0, newSd:0},
+        edgeLength: {min: 0, max: 0, oldAvg:0, newAvg:0, oldSd:0, newSd:0},
+        edgeCrossing: {min: 0, max: 0, oldAvg:0, newAvg:0, oldSd:0, newSd:0},
+        angularResolution: {min: 0, max: 0, oldAvg:0, newAvg:0, oldSd:0, newSd:0},
+    };
+
+    let offsets = [
+        {x: 1, y: 0}, // right
+        {x: 1, y: 1}, // lower-right
+        {x: 0, y: 1}, // bottom
+        {x: -1, y: 1}, // lower left
+        {x: -1, y: 0}, // left location
+        {x: -1, y: -1}, // upper left
+        {x: 0, y: -1}, // up
+        {x: 1, y: -1}, // upper right
+    ];
+
     let max_m1, min_m1; // to save max and min values of measure 1 to help finding a normalized value
     let max_m2, min_m2; // to save max and min values of measure 2 to help finding a normalized value
     let max_m3, min_m3; // to save max and min values of measure 3 to help finding a normalized value
     let max_m4, min_m4; // to save max and min values of measure 4 to help finding a normalized value
     let max_m5, min_m5; // to save max and min values of measure 5 to help finding a normalized value
+
+
+
+
     let oldAvgM1, newAvgM1, oldSDM1, newSDM1; // to save the old and new average and old and new standard deviation for measure 1 (used for normalization)
     let oldAvgM2, newAvgM2, oldSDM2, newSDM2; // to save the old and new average and old and new standard deviation for measure 2 (used for normalization)
     let oldAvgM3, newAvgM3, oldSDM3, newSDM3; // to save the old and new average and old and new standard deviation for measure 3 (used for normalization)
     let oldAvgM4, newAvgM4, oldSDM4, newSDM4; // to save the old and new average and old and new standard deviation for measure 4 (used for normalization)
     let oldAvgM5, newAvgM5, oldSDM5, newSDM5; // to save the old and new average and old and new standard deviation for measure 5 (used for normalization)
+
     let TabuList = []; // a list of strings which represent solutions that will not be searched for a period of time in the following format: nNODENUMxCOORDyYCOORDiITERATIONNUM iteration number helps in the tabu duration time
     let costDiff; // saves the difference between two costs (helps in Tabu Search Approach)
     let index; // used for deleting in moving nodes option
@@ -67,10 +87,10 @@ export function hillClimbing_Fast_NoGrid(graph) {
     let windowY = 880; // 880 max height size of displayed window
     let G = {
         weight1: 1, // node occlusion
-        weight2: 1, // edge length
-        weight3: 1, // edge crossing 
+        weight2: 0, // edge length
+        weight3: 0, // edge crossing 
         weight4: 0, // node edge occlusion   
-        weight5: 1, // angular resolution
+        weight5: 0, // angular resolution
         threshold1: 100,
     }; // Object from class MyGraph (extended from JFrame) to create a small window
     let TabuIteration = []; // to keep track of number of tabu moves in each iterations
@@ -476,6 +496,7 @@ export function hillClimbing_Fast_NoGrid(graph) {
         temp.push(c5);
 
         // return the normalized vector of measures
+        //console.log(temp);
         return temp;
     }
 
@@ -489,11 +510,12 @@ export function hillClimbing_Fast_NoGrid(graph) {
     HillEvalSolutions = 0;
     SolutionVector = []; // clear solution vector
     SolutionVector.push(...initial_solution3()); // compute initial solution and save the measures in the solution vector
+    console.log(SolutionVector);
     NormalizedVector = [];
     NormalizedVector.push(...EqualizeScales(SolutionVector)); // normalize the solution
     cost = ComputeCost(NormalizedVector); // compute initial cost from solution vector
-    console.log("initial cost: " + printDouble(cost));
-    console.log("cost: " + printDouble(cost) + " old_cost: " + printDouble(old_cost));
+    //console.log("initial cost: " + printDouble(cost));
+    //console.log("cost: " + printDouble(cost) + " old_cost: " + printDouble(old_cost));
 
     while (square_size >= 1) {
         // drawing process
@@ -501,14 +523,14 @@ export function hillClimbing_Fast_NoGrid(graph) {
         cost = ComputeCost(EqualizeScales(fitness3()));
         hcIterations++;
         //if (hcIterations == 4) {return;}
-        console.log("it: " + hcIterations + " square_size: " + square_size);
+        //console.log("it: " + hcIterations + " square_size: " + square_size);
         //console.log("cost: " + (cost) + " old_cost: " + (old_cost));
         //console.log("cost diff: " + (cost - old_cost) );
         if ( (!equal(cost,old_cost) && cost >= old_cost) || equal(cost, old_cost)){
             // reduce the square size if the current size does not make any improvements
-            console.log("currentSize: " + square_size);
+            //console.log("currentSize: " + square_size);
             square_size /= 4; // the square size shrinks during the process
-            console.log("newSize: " + square_size);
+            //console.log("newSize: " + square_size);
         }
 
     }
@@ -541,20 +563,20 @@ export function hillClimbing_Fast_NoGrid(graph) {
                 original_point.x + square_size > 20 &&
                 original_point.x + square_size < windowX - 20
             ) {
-                console.log("right location: " + square_size);
-                console.log("original point: " + "(" + original_point.x + ", " + original_point.y + ")");
+                //console.log("right location: " + square_size);
+                //console.log("original point: " + "(" + original_point.x + ", " + original_point.y + ")");
                 points[i].x = original_point.x + square_size; // update point
                 points[i].y = original_point.y;
-                console.log("updated point: " + "(" + points[i].x + ", " + points[i].y + ")");
+                //console.log("updated point: " + "(" + points[i].x + ", " + points[i].y + ")");
                 compute_distances(i); // recompute distances of the moved node with the other nodes
                 newMeasures = [];
                 newMeasures.push(...EqualizeScales(fitness3(i))); // compute current measures and store them in a vector
                 oldFit = ComputeCost(oldMeasures); // compute previous cost
                 newFit = ComputeCost(newMeasures); // compute current cost
-                console.log("oldFit: " + printDouble(oldFit) + " newFit: " + printDouble(newFit));
+                //console.log("oldFit: " + printDouble(oldFit) + " newFit: " + printDouble(newFit));
                 HillEvalSolutions++; // counts number of compute fitness functon
                 if (!equal(newFit,oldFit) && newFit < oldFit) {
-                    console.log("move to right location");
+                    //console.log("move to right location");
                     // compare fitness of the node in its new and old positions
                     UpdateSolutionVector(oldMeasures, newMeasures); // update solution vector
                     NormalizedVector = [];
@@ -577,7 +599,7 @@ export function hillClimbing_Fast_NoGrid(graph) {
                 original_point.y + square_size > 20 &&
                 original_point.y + square_size < windowY - 20
             ) {
-                console.log("lower-right location");
+                //console.log("lower-right location");
                 points[i].x = original_point.x + square_size; // update point
                 points[i].y = original_point.y + square_size;
                 compute_distances(i); // recompute distances of the moved node with the other nodes
@@ -586,9 +608,9 @@ export function hillClimbing_Fast_NoGrid(graph) {
                 oldFit = ComputeCost(oldMeasures);
                 newFit = ComputeCost(newMeasures);
                 HillEvalSolutions++; // counts number of compute fitness functon
-                console.log("oldFit: " + printDouble(oldFit) + " newFit: " + printDouble(newFit));
+                //console.log("oldFit: " + printDouble(oldFit) + " newFit: " + printDouble(newFit));
                 if (!equal(newFit,oldFit) && newFit < oldFit) {
-                    console.log("move to lower-right location");
+                    //console.log("move to lower-right location");
                     // compare fitness of the node in its new and old positions
                     UpdateSolutionVector(oldMeasures, newMeasures);
                     NormalizedVector = [];
@@ -609,7 +631,7 @@ export function hillClimbing_Fast_NoGrid(graph) {
                 original_point.y + square_size > 20 &&
                 original_point.y + square_size < windowY - 20
             ) {
-                console.log("bottom location");
+                //console.log("bottom location");
 
                 points[i].x = original_point.x; // update point
                 points[i].y = original_point.y + square_size;
@@ -619,9 +641,9 @@ export function hillClimbing_Fast_NoGrid(graph) {
                 oldFit = ComputeCost(oldMeasures);
                 newFit = ComputeCost(newMeasures);
                 HillEvalSolutions++; // counts number of compute fitness functon
-                    console.log("oldFit: " + printDouble(oldFit) + " newFit: " + printDouble(newFit));
+                    //console.log("oldFit: " + printDouble(oldFit) + " newFit: " + printDouble(newFit));
                 if (!equal(newFit,oldFit) && newFit < oldFit) {
-                    console.log("move to bottom location");
+                    //console.log("move to bottom location");
                     // compare fitness of the node in its new and old positions
                     UpdateSolutionVector(oldMeasures, newMeasures);
                     NormalizedVector = [];
@@ -644,7 +666,7 @@ export function hillClimbing_Fast_NoGrid(graph) {
                 original_point.y + square_size > 20 &&
                 original_point.y + square_size < windowY - 20
             ) {
-                console.log("lower-left location");
+                //console.log("lower-left location");
 
                 points[i].x = original_point.x - square_size; // update point
                 points[i].y = original_point.y + square_size;
@@ -654,9 +676,9 @@ export function hillClimbing_Fast_NoGrid(graph) {
                 oldFit = ComputeCost(oldMeasures);
                 newFit = ComputeCost(newMeasures);
                 HillEvalSolutions++; // counts number of compute fitness functon
-                console.log("oldFit: " + printDouble(oldFit) + " newFit: " + printDouble(newFit));
+                //console.log("oldFit: " + printDouble(oldFit) + " newFit: " + printDouble(newFit));
                 if (!equal(newFit,oldFit) && newFit < oldFit) {
-                    console.log("move to lower-left location")
+                    //console.log("move to lower-left location")
                     // compare fitness of the node in its new and old positions
                     UpdateSolutionVector(oldMeasures, newMeasures);
                     NormalizedVector = [];
@@ -677,7 +699,7 @@ export function hillClimbing_Fast_NoGrid(graph) {
                 original_point.x - square_size > 20 &&
                 original_point.x - square_size < windowX - 20
             ) {
-                console.log("left location");
+                //console.log("left location");
 
                 points[i].x = original_point.x - square_size; // update point
                 points[i].y = original_point.y;
@@ -687,10 +709,10 @@ export function hillClimbing_Fast_NoGrid(graph) {
                 oldFit = ComputeCost(oldMeasures);
                 newFit = ComputeCost(newMeasures);
                 HillEvalSolutions++; // counts number of compute fitness functon
-                console.log("oldFit: " + printDouble(oldFit) + " newFit: " + printDouble(newFit));
+                //console.log("oldFit: " + printDouble(oldFit) + " newFit: " + printDouble(newFit));
                 if (!equal(newFit,oldFit) && newFit < oldFit) {
 
-                    console.log("move to left location")
+                    //console.log("move to left location")
                     // compare fitness of the node in its new and old positions
                     UpdateSolutionVector(oldMeasures, newMeasures);
                     NormalizedVector = [];
@@ -713,7 +735,7 @@ export function hillClimbing_Fast_NoGrid(graph) {
                 original_point.y - square_size > 20 &&
                 original_point.y - square_size < windowY - 20
             ) {
-                console.log("upper-left location");
+                //console.log("upper-left location");
 
                 points[i].x = original_point.x - square_size; // update point
                 points[i].y = original_point.y - square_size;
@@ -723,10 +745,10 @@ export function hillClimbing_Fast_NoGrid(graph) {
                 oldFit = ComputeCost(oldMeasures);
                 newFit = ComputeCost(newMeasures);
                 HillEvalSolutions++; // counts number of compute fitness functon
-                console.log("oldFit: " + printDouble(oldFit) + " newFit: " + printDouble(newFit));
+                //console.log("oldFit: " + printDouble(oldFit) + " newFit: " + printDouble(newFit));
                 if (!equal(newFit,oldFit) && newFit < oldFit) {
 
-                    console.log("move to upper-left location")
+                    //console.log("move to upper-left location")
                     // compare fitness of the node in its new and old positions
                     UpdateSolutionVector(oldMeasures, newMeasures);
                     NormalizedVector = [];
@@ -747,7 +769,7 @@ export function hillClimbing_Fast_NoGrid(graph) {
                 original_point.y - square_size > 20 &&
                 original_point.y - square_size < windowY - 20
             ) {
-                console.log("up location");
+                //console.log("up location");
 
                 points[i].x = original_point.x; // update point
                 points[i].y = original_point.y - square_size;
@@ -757,10 +779,10 @@ export function hillClimbing_Fast_NoGrid(graph) {
                 oldFit = ComputeCost(oldMeasures);
                 newFit = ComputeCost(newMeasures);
                 HillEvalSolutions++; // counts number of compute fitness functon
-                console.log("oldFit: " + printDouble(oldFit) + " newFit: " + printDouble(newFit));
+                //console.log("oldFit: " + printDouble(oldFit) + " newFit: " + printDouble(newFit));
                 if (!equal(newFit,oldFit) && newFit < oldFit) {
 
-                    console.log("move to up location")
+                    //console.log("move to up location")
                     // compare fitness of the node in its new and old positions
                     UpdateSolutionVector(oldMeasures, newMeasures);
                     NormalizedVector = [];
@@ -783,7 +805,7 @@ export function hillClimbing_Fast_NoGrid(graph) {
                 original_point.y - square_size > 20 &&
                 original_point.y - square_size < windowY - 20
             ) {
-                console.log("upper-right location");
+                //console.log("upper-right location");
 
                 points[i].x = original_point.x + square_size; // update point
                 points[i].y = original_point.y - square_size;
@@ -793,10 +815,10 @@ export function hillClimbing_Fast_NoGrid(graph) {
                 oldFit = ComputeCost(oldMeasures);
                 newFit = ComputeCost(newMeasures);
                 HillEvalSolutions++; // counts number of compute fitness functon
-                console.log("oldFit: " + printDouble(oldFit) + " newFit: " + printDouble(newFit));
+                //console.log("oldFit: " + printDouble(oldFit) + " newFit: " + printDouble(newFit));
                 if (!equal(newFit,oldFit) && newFit < oldFit) {
 
-                    console.log("move to upper-right location")
+                    //console.log("move to upper-right location")
                     // compare fitness of the node in its new and old positions
                     UpdateSolutionVector(oldMeasures, newMeasures);
                     NormalizedVector = [];
@@ -824,6 +846,7 @@ export function hillClimbing_Fast_NoGrid(graph) {
 
     function fitness3(p) {
         // This function computes the fitness (cost) function including all measures along with their corresponding weights (all nodes)
+        
         let c1 = 0;
         let c2 = 0;
         let c3 = 0;
@@ -884,62 +907,19 @@ export function hillClimbing_Fast_NoGrid(graph) {
     function measure1_3(p) {
         // nodes distribution criterion for specific node p
         // Compute the cost function according to nodes distribution criterion (sum of inverse propotional to distance squared)
-
         let node_threshold = G.threshold1 ** 2; // to test if the distance between nodes is less than this value or not.
         return nodeOcclusionN(graph, p, node_threshold);
-        let c = 0; // to compute cost of this criterion then will be added to the overall cost
-        let d; // distance
-        for (let i = 0; i < points.length; i++) {
-            if (i != p) {
-                // do not count the distance from the node to itself
-                d = distances[p][i];
-                if (d < node_threshold && d != 0)
-                    // to check the distances between nodes which are less than the threshold
-                    c += 1.0 / (d * d); // compute the cost function
-            }
-        }
-        return c; // we don't divide by 2 here because we are just computing the distances from node p to every other node
     }
 
     function measure2_3(p) {
-        // edges length criterion (all edges incident to node p only)
-        // Compute the cost function according to edges length criterion (sum of (ei-required_distance)^2 divided by 2 since every edges is counted twice)
         let required_length = 100; // required edge length
-        let e;// for edge length
-        let c = 0;  // to compute cost of this criterion then will be added to the overall cost
-        for (let i = 0; i < adjacency[p].length; i++) // for all nodes adjacent to node p
-        {
-            e = distances[p][adjacency[p][i]];     //get length of the edge from the array distances
-            c += (((e - required_length) * (e - required_length)));      // Sum((edge length - required distance)^2)
-        }
-        return (c); // we do not divide by 2 here becuase we only compute the length of every edge incident to node p
+        return edgeLengthN(graph,required_length,p);
     }
 
     function measure3_3(p) {
         let e  = edgeCrossingN(graph, p);
         return e;
 
-        // lines intersections criterion (just checks the lines that node p is one of their end points)
-        // This method computes number of intesections between lines
-        // It goes through the adjacency list and creates line for each edge
-        //let intersections = 0;
-        //for(let i=0; i<adjacency[ p ].length; i++) // creates lines for edges whose end point is point p
-        //{
-        //let line1 = new Line2D.Double(points[ p ].x, points[ p ].y , points[ adjacency[ p ][ i ] ].x, points[ adjacency[ p ][ i ] ].y); // create line 1
-        //for(let m=0; m<points.length; m++)
-        //{
-        //for(let n=0; n<adjacency[ m ].length; n++) // creates lines for edges whose end point is m (but not p)
-        //{
-        //if(m!=p && m!=adjacency[ p ][ i ] && adjacency[ m ][ n ]!=p && adjacency[ m ][ n ]!=adjacency[ p ][ i ]) // if there is no common point between line 1 and the points of line 2
-        //{
-        //Line2D.Double line2 = new Line2D.Double(points[ m ].x, points[ m ].y , points[ adjacency[ m ][ n ] ].x, points[ adjacency[ m ][ n ] ].y); // create line 2
-        //if(line1.intersectsLine(line2)) // if two lines intersect
-        //intersections++;  // count intersections
-        //}
-        //}
-        //}
-        //}
-        //return intersections;
     }
 
     function measure4_3(p) {

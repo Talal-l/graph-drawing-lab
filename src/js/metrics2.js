@@ -160,6 +160,57 @@ export function angularResolutionN(graph, p) {
     return c;
 }
 
+
+export function angularResolution2N(graph,p) {
+    let points = graph.nodes(true);
+    let adjacency = graph.adjList();
+    //Angular Resolution for all angles which are affected by node p
+    //This method computes angular resolution criterion
+    let angle_threshold = 25; // Threshold value to test the angles which are below this value only
+    let c = 0; // to compute the cost of this criterion
+    let x1, x2, y1, y2; // used for computing the slopes of the lines
+    let degree, radian; // stores the degree between two lines
+    for (let i = 0; i < adjacency[p].length; i++)  // for the first line (p,i)
+    {
+        // the following checks the angles whose common node is p
+        for (let j = i + 1; j < adjacency[p].length; j++)  // for the second line sharing the same point p as for the first line (p,j)
+        {
+            x1 = points[adjacency[p][i]].x - points[p].x; // x coordinate difference in line 1
+            y1 = points[adjacency[p][i]].y - points[p].y; // y coordinate difference in line 1
+            x2 = points[adjacency[p][j]].x - points[p].x; // x coordinate difference in line 2
+            y2 = points[adjacency[p][j]].y - points[p].y; // y coordinate difference in line 2
+            //console.log("p: " + p + " x1: " + x1 + " y1: " + y1 + " x2: " + x2 + " y2: " + y2);
+            radian = Math.acos(((x1 * x2) + (y1 * y2)) / (Math.sqrt(x1 * x1 + y1 * y1) * Math.sqrt(x2 * x2 + y2 * y2))); // compute the angle in radian
+            degree = radian * 180 / Math.PI; // compute the angle in degrees
+            //console.log("p: " + p + " degree: " + degree + " radian: " + radian);
+            if (degree < angle_threshold)  // check only the angles which are less than the given threshold
+            {
+                c += Math.abs(((2 * Math.PI) / adjacency[p].length) - radian); // add the following to the total cost: (((2*PI)/degree of the point p) - degree in radian between line1 and line2)
+            }
+        }
+        // the following checks the angles whose common node is the node adjacent to p (not p itself)
+        for (let j = 0; j < adjacency[adjacency[p][i]].length; j++) {
+            if (adjacency[adjacency[p][i]][j] != p) {
+                x1 = points[p].x - points[adjacency[p][i]].x; // x coordinate difference in line 1
+                y1 = points[p].y - points[adjacency[p][i]].y; // y coordinate difference in line 1
+                x2 = points[adjacency[adjacency[p][i]][j]].x - points[adjacency[p][i]].x; // x coordinate difference in line 2
+                y2 = points[adjacency[adjacency[p][i]][j]].y - points[adjacency[p][i]].y; // y coordinate difference in line 2
+
+                //console.log("p: " + p + " x1: " + x1 + " y1: " + y1 + " x2: " + x2 + " y2: " + y2);
+                radian = Math.acos(((x1 * x2) + (y1 * y2)) / (Math.sqrt(x1 * x1 + y1 * y1) * Math.sqrt(x2 * x2 + y2 * y2))); // compute the angle in radian
+                degree = radian * 180 / Math.PI; // compute the angle in degrees
+                //console.log("p: " + p + " degree: " + degree + " radian: " + radian);
+                if (degree < angle_threshold)  // check only the angles which are less than the given threshold
+                {
+                    c += Math.abs(((2 * Math.PI) / adjacency[adjacency[p][i]].length) - radian); // add the following to the total cost: (((2*PI)/degree of the point i adjacent to p) - degree in radian between line1 and line2)
+                }
+            }
+        }
+    }
+    return c;
+}
+
+
 export function nodeEdgeOcclusion(graph) {
     let distSq = 0.0;
     let sum = 0.0;

@@ -5,8 +5,7 @@ import {
     nodeEdgeOcclusionN,
     edgeLengthN,
     edgeCrossingN,
-    angularResolutionN,
-    angularResolutionNFast,
+    angularResolution2N,
 } from "./metrics2.js";
 
 import { FakeNormalization as Normalization } from "./normalization.js";
@@ -240,7 +239,7 @@ class Graph {
         if (this.weights.angularResolution) {
             let oldOtherAngular = 0;
             for (let adjN of this._adjList[nodeId]) {
-                oldOtherAngular += angularResolutionNFast(this, adjN);
+                oldOtherAngular += angularResolution2N(this, adjN);
             }
             oldPosMetrics.angularResolution += oldOtherAngular;
         }
@@ -251,7 +250,7 @@ class Graph {
         let newPosMetrics = this.calcNodeMetrics(nodeId);
         let newOtherAngular = 0;
         for (let adjN of this._adjList[nodeId]) {
-            newOtherAngular += angularResolutionNFast(this, adjN);
+            newOtherAngular += angularResolution2N(this, adjN);
         }
         newPosMetrics.angularResolution += newOtherAngular;
 
@@ -466,7 +465,7 @@ class Graph {
         };
         for (let i = 0; i < this._nodes.length; i++) {
             if (this.weights.nodeOcclusion) {
-                metrics.nodeOcclusion += nodeOcclusionN(this, i);
+                metrics.nodeOcclusion += nodeOcclusionN(this, i,100**2);
             }
             if (this.weights.nodeEdgeOcclusion) {
                 metrics.nodeEdgeOcclusion += nodeEdgeOcclusionN(this, i);
@@ -479,14 +478,18 @@ class Graph {
                 );
             }
             if (this.weights.edgeCrossing) {
-                metrics.edgeCrossing += edgeCrossingN(this, i) / 4;
+                metrics.edgeCrossing += edgeCrossingN(this, i);
             }
             if (this.weights.angularResolution) {
-                metrics.angularResolution += angularResolutionNFast(this, i);
+                metrics.angularResolution += angularResolution2N(this, i,25);
             }
         }
 
         metrics.nodeOcclusion /= 2;
+        metrics.edgeLength /= 2;
+        metrics.edgeCrossing /= 8;
+        metrics.nodeEdgeOcclusion /= 2;
+        metrics.angularResolution /= 3;
 
         this.status = Graph.status.COMPUTED;
         return metrics;
@@ -501,7 +504,7 @@ class Graph {
         };
 
         if (this.weights.nodeOcclusion) {
-            metrics.nodeOcclusion = nodeOcclusionN(this, nodeId);
+            metrics.nodeOcclusion = nodeOcclusionN(this, nodeId,100**2);
         }
         if (this.weights.nodeEdgeOcclusion) {
             metrics.nodeEdgeOcclusion = nodeEdgeOcclusionN(this, nodeId);
@@ -520,7 +523,7 @@ class Graph {
         }
 
         if (this.weights.angularResolution) {
-            metrics.angularResolution = angularResolutionNFast(this, nodeId);
+            metrics.angularResolution = angularResolution2N(this, nodeId);
         }
         return metrics;
     }

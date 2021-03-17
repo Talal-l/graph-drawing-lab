@@ -22,6 +22,7 @@ import { Tabu } from "/src/js/tabu.js";
 import { TabuSearch } from "/src/js/tabuSearch.js";
 import { CircularLayout } from "/src/js/circularLayout.js";
 import { hillClimbing_Fast_NoGrid} from "/src/js/hcjavaClone.js";
+import { hillClimbing_Fast_NoGrid as hc2 }  from "/src/js/hcjavaClone2.js";
 
 let container = document.querySelector("#container");
 
@@ -114,9 +115,7 @@ async function loadGraph() {
 
 
         graph = new Graph().importCustom(graphData);
-        console.log(graph);
         let graph2 = new Graph().importCustom(graphData);
-        let graph3 = new Graph().importCustom(graphData);
         let importTime = performance.now() - importStatrTime;
         log.importTimes.push(importTime);
 
@@ -125,25 +124,24 @@ async function loadGraph() {
             nodeEdgeOcclusion: 0,
             edgeLength: 0,
             edgeCrossing: 0,
-            angularResolution: 0,
+            angularResolution: 1,
         };
-
-        //graph.setWeights(w);
-        //graph2.setWeights(w);
-        //graph3.setWeights(w);
-
-        let ts = new Tabu(graph2);
-        //let tabu = new TabuSearch(graph3);
-
-        displayGraph(ts, "graph2");
 
         let hc = new HillClimbing(graph);
         hillClimbing_Fast_NoGrid(graph);
         displayGraph(hc, "graph1");
-        // ts.run();
-        // displayGraph(ts, "graph2");
-        // tabu.run();
-        // displayGraph(tabu, "graph3");
+
+        let hc4 = new HillClimbing(graph2);
+        hc2(graph2);
+        displayGraph(hc4, "graph2");
+
+        let graph3 =  new Graph().importCustom(graphData);
+
+        //let hc5 = new HillClimbing(graph2);
+        //hc5.run();
+        //displayGraph(hc5, "graph5");
+
+
 
     }
 }
@@ -356,7 +354,7 @@ function displayGraph(layoutAlg, gId) {
     }
     details.innerText = `Alog: ${
         layoutAlg?.layoutAlgName
-    },\n Objective: ${layoutAlg?.graph?.objective()},\n it: ${
+    },\n Objective:,\n it: ${
         layoutAlg?.it
     },\n execution: ${layoutAlg?.executionTime / 1000}`;
 
