@@ -2,13 +2,6 @@ import { nodeOcclusionN, edgeCrossingN, edgeLengthN } from "./metrics2.js";
 import { equal } from "./util.js";
 
 let HillEvalSolutions = 0;
-function printDouble(d) {
-    if (d == 0) {
-        return "0";
-    } else {
-        return d.toFixed(14);
-    }
-}
 
 export function hillClimbing_Fast_NoGrid(graph) {
     // Keep track of all points position
@@ -29,9 +22,9 @@ export function hillClimbing_Fast_NoGrid(graph) {
     let weights = {
         nodeOcclusion: 1,
         nodeEdgeOcclusion: 0,
-        edgeLength: 0,
-        edgeCrossing: 0,
-        angularResolution: 0,
+        edgeLength: 1,
+        edgeCrossing: 1,
+        angularResolution: 1,
     };
 
     graph.setWeights(weights);
@@ -47,7 +40,7 @@ export function hillClimbing_Fast_NoGrid(graph) {
         nodeOcclusion: { min: 0, max: 0, oldAvg: 0, newAvg: 0, oldSd: 0, newSd: 0, history: [] },
         nodeEdgeOcclusion: { min: 0, max: 0, oldAvg: 0, newAvg: 0, oldSd: 0, newSd: 0, history: [] },
         edgeLength: { min: 0, max: 0, oldAvg: 0, newAvg: 0, oldSd: 0, newSd: 0, history: [] },
-        edgeCrossing: { min: 0, max: 0, oldAvg: 0, newAvg: 0, oldSd: 0, newSd: 0, history: [] },
+        edgeCrossing: null, // doesn't use zScoreNormalization
         angularResolution: { min: 0, max: 0, oldAvg: 0, newAvg: 0, oldSd: 0, newSd: 0, history: [] },
     };
 
@@ -136,10 +129,17 @@ export function hillClimbing_Fast_NoGrid(graph) {
             if (m < params.min) { params.min = m; }
         }
     }
-
-    // TODO: handle edge crossing
     function normM(params, m) {
         let mNorm;
+        if (params == null) {
+            let e = graph.edgesNum() / 2; // divide by 2 because it is undirected edge
+            if (e > 1) {
+                mNorm = m / ((e * (e - 1)) / 2);
+            } else {
+                mNorm = 0;
+            }
+            return mNorm;
+        }
         params.history.push(m);
         if (params.history.length == 1 || params.history.length == 2) {
             params.oldAvg = m;
@@ -175,7 +175,11 @@ export function hillClimbing_Fast_NoGrid(graph) {
     function EqualizeScales(a) {
         let temp = {};
         for (let key of Object.keys(a)) {
-            temp[key] = normM(normData[key], a[key]);
+            if (key == "edgeCrossing") {
+                temp[key] = normM(null, a[key]);
+            } else {
+                temp[key] = normM(normData[key], a[key]);
+            }
         }
         //console.log(temp);
         return temp;
@@ -200,7 +204,6 @@ export function hillClimbing_Fast_NoGrid(graph) {
     HillEvalSolutions = 0;
     metrics = graph.calcMetrics(); // compute initial solution and save the measures in the solution vector
     //console.log(measure5_3(p));
-
     EqualizeScales(metrics);
     normalizedMetrics = EqualizeScales(metrics); // normalize the solution
 
@@ -218,10 +221,8 @@ export function hillClimbing_Fast_NoGrid(graph) {
 
     }
     function Drawer3(square_size) {
-        // Drawing process (Fast Version without grids) (choose a new position for each node and compute the fitness, then update the cost function accordingly)
         let oldMeasures = {}; // store previous measures
         let newMeasures = {}; // store current measures
-
         let oldFit, newFit; // to store old fitness and new fitness of the moved node
         let bestPos = { x: 0, y: 0 };
         let original_point = { x: 0, y: 0 }; // temporary points

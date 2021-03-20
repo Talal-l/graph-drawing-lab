@@ -52,7 +52,7 @@ let graphId = 0;
 let filesToLoad = [
     //"n150_dens0050_20Cases_case0.json",
     //"2nodeOcclusionTest.json",
-    "Gr1",
+    "Gr4",
 
     //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case0.json",
     //"dataSet/TS_SA_HC/Category II/n50_dens0130_20cases_case10.json",

@@ -87,10 +87,10 @@ export function hillClimbing_Fast_NoGrid(graph) {
     let windowY = 880; // 880 max height size of displayed window
     let G = {
         weight1: 1, // node occlusion
-        weight2: 0, // edge length
-        weight3: 0, // edge crossing 
+        weight2: 1, // edge length
+        weight3: 1, // edge crossing 
         weight4: 0, // node edge occlusion   
-        weight5: 0, // angular resolution
+        weight5: 1, // angular resolution
         threshold1: 100,
     }; // Object from class MyGraph (extended from JFrame) to create a small window
     let TabuIteration = []; // to keep track of number of tabu moves in each iterations
