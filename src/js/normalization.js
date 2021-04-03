@@ -12,35 +12,35 @@ export class ZNormalization {
         this.nodeOcclusion = {
             min: 0,
             max: 0,
-            history: [],
+            len: 0,
             avg: 0,
             SD: 0,
         };
         this.nodeEdgeOcclusion = {
             min: 0,
             max: 0,
-            history: [],
+            len: 0,
             avg: 0,
             SD: 0,
         };
         this.edgeLength = {
             min: 0,
             max: 0,
-            history: [],
+            len: 0,
             avg: 0,
             SD: 0,
         };
         this.edgeCrossing = {
             min: 0,
             max: 0,
-            history: [],
+            len: 0,
             avg: 0,
             SD: 0,
         };
         this.angularResolution = {
             min: 0,
             max: 0,
-            history: [],
+            len: 0,
             avg: 0,
             SD: 0,
         };
@@ -74,8 +74,9 @@ export class ZNormalization {
     normalize(metricName, m) {
         let max, min, mNorm, newAvg, newSD;
 
-        this[metricName].history.push(m);
-        let len = this[metricName].history.length;
+        this[metricName].len++;
+
+        let len = this[metricName].len;
 
         // update sd and mean
         if (len === 1 || len === 2) {
@@ -128,11 +129,11 @@ export class ZNormalization {
             edgeCrossing: {...this.edgeCrossing},
             angularResolution: {...this.angularResolution},
         };
-        s.nodeOcclusion.history = [...this.nodeOcclusion.history];
-        s.nodeEdgeOcclusion.history = [...this.nodeEdgeOcclusion.history];
-        s.edgeLength.history = [...this.edgeLength.history];
-        s.edgeCrossing.history = [...this.edgeCrossing.history];
-        s.angularResolution.history = [...this.angularResolution.history];
+        s.nodeOcclusion.len = this.nodeOcclusion.len;
+        s.nodeEdgeOcclusion.len = this.nodeEdgeOcclusion.len;
+        s.edgeLength.len = this.edgeLength.len;
+        s.edgeCrossing.len = this.edgeCrossing.len;
+        s.angularResolution.len = this.angularResolution.len;
 
         return s;
     }
@@ -152,11 +153,11 @@ export class ZNormalization {
         this.edgeCrossing = {...data.edgeCrossing};
         this.angularResolution = {...data.angularResolution};
 
-        this.nodeOcclusion.history = [...data.nodeOcclusion.history];
-        this.nodeEdgeOcclusion.history = [...data.nodeEdgeOcclusion.history];
-        this.edgeLength.history = [...data.edgeLength.history];
-        this.edgeCrossing.history = [...data.edgeCrossing.history];
-        this.angularResolution.history = [...data.angularResolution.history];
+        this.nodeOcclusion.len = data.nodeOcclusion.len;
+        this.nodeEdgeOcclusion.len = data.nodeEdgeOcclusion.len;
+        this.edgeLength.len = data.edgeLength.len;
+        this.edgeCrossing.len = data.edgeCrossing.len;
+        this.angularResolution.len = data.angularResolution.len;
 
         return this;
     }
@@ -165,11 +166,11 @@ export class ZNormalization {
 export class ZNorm {
     constructor(edgeNum) {
         this.normData = {
-            nodeOcclusion: {min: 0, max: 0, oldAvg: 0, newAvg: 0, oldSd: 0, newSd: 0, history: []},
-            nodeEdgeOcclusion: {min: 0, max: 0, oldAvg: 0, newAvg: 0, oldSd: 0, newSd: 0, history: []},
-            edgeLength: {min: 0, max: 0, oldAvg: 0, newAvg: 0, oldSd: 0, newSd: 0, history: []},
+            nodeOcclusion: {min: 0, max: 0, oldAvg: 0, newAvg: 0, oldSd: 0, newSd: 0, len: 0},
+            nodeEdgeOcclusion: {min: 0, max: 0, oldAvg: 0, newAvg: 0, oldSd: 0, newSd: 0, len: 0},
+            edgeLength: {min: 0, max: 0, oldAvg: 0, newAvg: 0, oldSd: 0, newSd: 0, len: 0},
             edgeCrossing: null, // doesn't use zScoreNormalization
-            angularResolution: {min: 0, max: 0, oldAvg: 0, newAvg: 0, oldSd: 0, newSd: 0, history: []},
+            angularResolution: {min: 0, max: 0, oldAvg: 0, newAvg: 0, oldSd: 0, newSd: 0, len: 0},
         };
         this.edgeNum = edgeNum;
     }
@@ -202,7 +203,7 @@ export class ZNorm {
 
     // compute and save current max and min for measure  values (old max and min are compared to parameter m)
     maxmin_m(params, m) {
-        if (params.history.length == 0 || params.history.length == 1 || params.history.length == 2) {
+        if (params.len == 0 || params.len == 1 || params.len == 2) {
             // if no or one value only in the array of the measure 
             params.max = m;
             params.min = m;
@@ -222,20 +223,20 @@ export class ZNorm {
             }
             return mNorm;
         }
-        params.history.push(m);
-        if (params.history.length == 1 || params.history.length == 2) {
+        params.len++ ;
+        if (params.len == 1 || params.len== 2) {
             params.oldAvg = m;
             params.newAvg = m;
             params.oldSd = 0;
             params.newSd = 0;
         } else {
-            params.newAvg = this.Avg_measures(m, params.oldAvg, params.history.length - 1); // find mean
+            params.newAvg = this.Avg_measures(m, params.oldAvg, params.len- 1); // find mean
             params.newSd = this.SD_measures(
                 m,
                 params.oldSd,
                 params.oldAvg,
                 params.newAvg,
-                params.history.length - 1
+                params.len - 1
             ); // find standard deviation
             params.oldAvg = params.newAvg;
             params.oldSd = params.newSd;
@@ -269,11 +270,11 @@ export class ZNorm {
 
     clear() {
         this.normData = {
-            nodeOcclusion: {min: 0, max: 0, oldAvg: 0, newAvg: 0, oldSd: 0, newSd: 0, history: []},
-            nodeEdgeOcclusion: {min: 0, max: 0, oldAvg: 0, newAvg: 0, oldSd: 0, newSd: 0, history: []},
-            edgeLength: {min: 0, max: 0, oldAvg: 0, newAvg: 0, oldSd: 0, newSd: 0, history: []},
-            edgeCrossing: {min: 0, max: 0, oldAvg: 0, newAvg: 0, oldSd: 0, newSd: 0, history: []},
-            angularResolution: {min: 0, max: 0, oldAvg: 0, newAvg: 0, oldSd: 0, newSd: 0, history: []},
+            nodeOcclusion: {min: 0, max: 0, oldAvg: 0, newAvg: 0, oldSd: 0, newSd: 0, len: 0},
+            nodeEdgeOcclusion: {min: 0, max: 0, oldAvg: 0, newAvg: 0, oldSd: 0, newSd: 0, len: 0},
+            edgeLength: {min: 0, max: 0, oldAvg: 0, newAvg: 0, oldSd: 0, newSd: 0, len: 0},
+            edgeCrossing: {min: 0, max: 0, oldAvg: 0, newAvg: 0, oldSd: 0, newSd: 0, len: 0},
+            angularResolution: {min: 0, max: 0, oldAvg: 0, newAvg: 0, oldSd: 0, newSd: 0, len: 0},
         };
     }
 };

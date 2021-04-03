@@ -5,6 +5,20 @@ log.d = function (msg) {
     console.debug(msg);
 };
 
+
+export function updateMetrics(metrics, oldV, newV) {
+        let m = {...metrics};
+        for (let key of Object.keys(m)) {
+            if (m[key] != 0) {
+                m[key] = m[key] - oldV[key] + newV[key];
+            }
+            else {
+                m[key] = 0;
+            }
+        }
+        return m;
+    }
+
 export function nodeOcclusion(graph) {
     let sum = 0.0;
     let nodes = graph.nodes();

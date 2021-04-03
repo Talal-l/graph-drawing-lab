@@ -1,17 +1,13 @@
-import {offsets, Vec} from "./util.js";
+import {equal} from "./util.js";
+import {ZNorm} from "./normalization.js";
 import {Graph} from "./graph.js";
+import {updateMetrics} from "./metrics2.js";
 
-function equal(a, b) {
-    const EPS = 1e-10;
-    return Math.abs(a - b) < EPS;
-}
 
 export class HillClimbing {
     constructor(graph, params) {
-        console.log("params", JSON.stringify(params));
         if (!params) params = {};
         this.graph = graph;
-        // distance to move the node
         this.squareSize = params.squareSize || 512;
         this.squareReduction = params.squareReduction || 4;
         this.it = 0;
@@ -23,96 +19,124 @@ export class HillClimbing {
         this.effectBounds = false;
         this.layoutAlgName = "hillClimbing";
 
-        /* 
-            Assuming the following
-            
-                   ^ 0,-1
-                   |
-          -1.0 <---.---> 1,0
-                   |
-                   v  0,1
+        this.metrics = {
+            nodeOcclusion: 0,
+            nodeEdgeOcclusion: 0,
+            edgeLength: 0,
+            edgeCrossing: 0,
+            angularResolution: 0,
+        };
 
-        */
+        graph.setWeights({
+            nodeOcclusion: 1,
+            nodeEdgeOcclusion: 0,
+            edgeLength: 1,
+            edgeCrossing: 1,
+            angularResolution: 1,
+        });
+
+        this.offsets = [
+            {x: 1, y: 0}, // right
+            {x: 1, y: 1}, // lower-right
+            {x: 0, y: 1}, // bottom
+            {x: -1, y: 1}, // lower left
+            {x: -1, y: 0}, // left location
+            {x: -1, y: -1}, // upper left
+            {x: 0, y: -1}, // up
+            {x: 1, y: -1}, // upper right
+        ];
+
+        this.zn = new ZNorm(graph.edgesNum());
+        this.cost = 0;
+        this.old_cost = Infinity;
+
+
+        this.metrics = graph.calcMetrics();
+        // we need teh extra normalization to match the java results
+        this.zn.equalizeScales(this.metrics);
+        let normalizedMetrics = this.zn.equalizeScales(this.metrics);
+        this.cost = graph.objective(normalizedMetrics);
     }
-    onNodeMove(nodeId, layoutAlg) {
 
+    onNodeMove(nodeId, layoutAlg) {
     }
     onStep(layoutAlg) {
-
     }
 
 
-    // single iteration of the layout algorithm
+
     step() {
-        let lastObj = this.graph.objective();
-        let vectors = offsets(this.squareSize);
-        for (let nId = 0; nId < this.graph._nodes.length; nId++) {
-            let bestMove = new Vec(0,0);
-            let bestMoveObj = this.graph.objective();
-            let originalPos = this.graph.getNodePos(nId);
+        let oldMeasures = {};
+        let newMeasures = {};
+        let rawOldMeasures = {};
+        let rawNewMeasures = {};
+        let oldFit, newFit;
+        let bestPos = {x: 0, y: 0};
+        let original_point = {x: 0, y: 0};
+        let points = this.graph._nodes;
 
-            for (let v of vectors) {
-                this.evaluatedSolutions++;
+        this.old_cost = this.cost;
+        for (let i = 0; i < points.length; i++) {
 
-                let newPos = this.graph.moveNode(
-                    nId,
-                    v,
-                    this.effectBounds
-                );
-                if (newPos == null) continue;
+            // save original and it's normalied metrics
+            original_point.x = points[i].x;
+            original_point.y = points[i].y;
+            bestPos.x = points[i].x;
+            bestPos.y = points[i].y;
 
-                let newPosObjective = (newPos != null) ? this.graph.objective() :Infinity;
+            rawOldMeasures = this.graph.calcNodeMetrics(i);
+            oldMeasures = this.zn.equalizeScales(rawOldMeasures);
 
-                this.graph.setNodePos(
-                    nId,
-                    originalPos,
-                    this.effectBounds
-                );
+            for (let offset of this.offsets) {
+                points[i].x = original_point.x + offset.x * this.squareSize;
+                points[i].y = original_point.y + offset.y * this.squareSize;
+                if (this.graph.withinBounds(points[i].x, points[i].y)) {
+                    this.evaluatedSolutions++;
 
-                if (newPosObjective !== null && newPosObjective < bestMoveObj) {
-                    bestMoveObj = newPosObjective;
-                    bestMove = v;
+                    rawNewMeasures = this.graph.calcNodeMetrics(i);
+                    newMeasures = this.zn.equalizeScales(rawNewMeasures);
+
+                    oldFit = this.graph.objective(oldMeasures);
+                    newFit = this.graph.objective(newMeasures);
+                    if (!equal(newFit, oldFit) && newFit < oldFit) {
+                        this.metrics = updateMetrics(this.metrics, rawOldMeasures, rawNewMeasures);
+                        this.cost = this.graph.objective(this.metrics);
+                        oldMeasures = newMeasures;
+                        rawOldMeasures = rawNewMeasures;
+                        bestPos.x = points[i].x;
+                        bestPos.y = points[i].y;
+                    } else {
+                        points[i].x = bestPos.x;
+                        points[i].y = bestPos.y;
+                    }
+                } else {
+                    // reset 
+                    points[i].x = bestPos.x;
+                    points[i].y = bestPos.y;
                 }
+
             }
-            // triggers an event
-            this.graph.moveNode(
-                nId,
-                bestMove,
-                this.effectBounds
-            );
-
-
-            this.onNodeMove(nId, this);
-
         }
 
-        let currentObj = this.graph.objective();
-
-        if (equal(lastObj, currentObj) || currentObj > lastObj) {
-
-            this.squareSize /= this.squareReduction;
+        this.cost = this.graph.objective(this.zn.equalizeScales(this.metrics));
+        if ((!equal(this.cost, this.old_cost) && this.cost >= this.old_cost) || equal(this.cost, this.old_cost)) {
+            this.squareSize /= 4;
         }
-
-        this.it++;
 
         return this.graph;
     }
 
-    // run
     run() {
-
         let start = performance.now();
         this.done = false;
-        this.graph.resetZn();
-        while (this.it < this.maxIt && this.squareSize >= 1) {
-            let startStep = performance.now();
+        while (this.squareSize >= 1) {
             this.step();
             this.onStep(this);
-            //console.log("stepTime: ", performance.now() - startStep, "cost: " + this.graph.objective());
         }
-        this.executionTime = performance.now() - start;
-    }
 
+        this.executionTime = performance.now() - start;
+        return this.graph;
+    }
     serialize(string = true) {
         let s = {};
         if (string === true) return JSON.stringify(this);
@@ -150,5 +174,3 @@ export class HillClimbing {
         return this;
     }
 }
-
-

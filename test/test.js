@@ -23,7 +23,6 @@ import { TabuSearch } from "/src/js/tabuSearch.js";
 import { CircularLayout } from "/src/js/circularLayout.js";
 import { hillClimbing_Fast_NoGrid} from "/src/js/hcjavaClone.js";
 import { hillClimbing_Fast_NoGrid as hc2G }  from "/src/js/hcjavaClone3.js";
-import { HillClimbing as hhh}  from "/src/js/hcjavaClone4.js";
 
 let container = document.querySelector("#container");
 
@@ -133,22 +132,8 @@ async function loadGraph() {
         displayGraph(hc, "graph1");
 
         let hc4 = new HillClimbing(graph2);
-        hc2G(graph2);
+        hc4.run();
         displayGraph(hc4, "graph2");
-
-        let graph3 =  new Graph().importCustom(graphData);
-        let hc5 = new HillClimbing(graph3);
-        let hh = new hhh(graph3);
-        hh.run();
-        displayGraph(hc5, "graph5");
-
-        //let graph4 =  new Graph().importCustom(graphData);
-        //let hc6 = new HillClimbing(graph4);
-        //hc6.run();
-        //displayGraph(hc6, "graph6");
-
-
-
 
     }
 }
