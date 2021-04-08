@@ -7,6 +7,7 @@ import {updateMetrics, calcMetrics, calcNodeMetrics, MetricsWeights, MetricsPara
 export class HillClimbing {
     constructor(graph, params) {
         if (!params) params = new MetricsParams;
+        this.params = params;
         this.graph = graph;
         this.weights = params.weights || new MetricsWeights();
         this.squareSize = params.squareSize || 512;
@@ -34,52 +35,6 @@ export class HillClimbing {
         ];
 
     }
-    _normalizeAll(metrics) {
-        // use zScore normalization except for edge crossing
-        let normalMetrics = {
-            nodeOcclusion: 0,
-            nodeEdgeOcclusion: 0,
-            edgeLength: 0,
-            edgeCrossing: 0,
-            angularResolution: 0,
-        };
-
-        if (this.weights.edgeCrossing) {
-            let E = 0;
-            for (let i = 0; i < this._adjList.length; i++) {
-                E += this._adjList[i].length;
-            }
-            E = E / 2;
-            normalMetrics.edgeCrossing =
-                E > 1 ? metrics.edgeCrossing / ((E * (E - 1)) / 2) : 0;
-        }
-        if (this.weights.nodeOcclusion) {
-            normalMetrics.nodeOcclusion = this.zn.normalize(
-                "nodeOcclusion",
-                metrics.nodeOcclusion
-            );
-        }
-        if (this.weights.nodeEdgeOcclusion) {
-            normalMetrics.nodeEdgeOcclusion = this.zn.normalize(
-                "nodeEdgeOcclusion",
-                metrics.nodeEdgeOcclusion
-            );
-        }
-        if (this.weights.edgeLength) {
-            normalMetrics.edgeLength = this.zn.normalize(
-                "edgeLength",
-                metrics.edgeLength
-            );
-        }
-        if (this.weights.angularResolution) {
-            normalMetrics.angularResolution = this.zn.normalize(
-                "angularResolution",
-                metrics.angularResolution
-            );
-        }
-
-        return normalMetrics;
-    }
     onNodeMove(nodeId, layoutAlg) {
     }
     onStep(layoutAlg) {
@@ -92,7 +47,6 @@ export class HillClimbing {
         }
         return wSum;
     }
-
 
     step() {
         let oldMeasures = null;

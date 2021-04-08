@@ -8,7 +8,7 @@ log.d = function (msg) {
 export class Metrics{
     constructor(){
         this.nodeOcclusion = 0;
-        this.nodeEdgeOcclusion = 0;
+        //this.nodeEdgeOcclusion = 0;
         this.edgeCrossing = 0;
         this.edgeLength = 0;
         this.angularResolution = 0;
@@ -17,7 +17,7 @@ export class Metrics{
 export class MetricsWeights{
     constructor(){
         this.nodeOcclusion = 1;
-        this.nodeEdgeOcclusion = 1;
+        //this.nodeEdgeOcclusion = 1;
         this.edgeCrossing = 1;
         this.edgeLength = 1;
         this.angularResolution = 1;
@@ -53,9 +53,9 @@ export function calcMetrics(graph, params) {
         if (weights.nodeOcclusion) {
             metrics.nodeOcclusion += nodeOcclusionN(graph, i, params.occlusionThreshold ** 2);
         }
-        if (weights.nodeEdgeOcclusion) {
-            metrics.nodeEdgeOcclusion += nodeEdgeOcclusionN(graph, i);
-        }
+        //if (weights.nodeEdgeOcclusion) {
+            //metrics.nodeEdgeOcclusion += nodeEdgeOcclusionN(graph, i);
+        //}
         if (weights.edgeLength) {
             metrics.edgeLength += edgeLengthN(
                 graph,
@@ -74,7 +74,7 @@ export function calcMetrics(graph, params) {
     metrics.nodeOcclusion /= 2;
     metrics.edgeLength /= 2;
     metrics.edgeCrossing /= 8;
-    metrics.nodeEdgeOcclusion /= 2;
+    //metrics.nodeEdgeOcclusion /= 2;
     metrics.angularResolution /= 3;
 
     return metrics;
@@ -89,9 +89,9 @@ export function calcNodeMetrics(graph, nodeId, params) {
     if (weights.nodeOcclusion) {
         metrics.nodeOcclusion = nodeOcclusionN(graph, nodeId, params.occlusionThreshold ** 2);
     }
-    if (weights.nodeEdgeOcclusion) {
-        metrics.nodeEdgeOcclusion = nodeEdgeOcclusionN(graph, nodeId);
-    }
+    //if (weights.nodeEdgeOcclusion) {
+        //metrics.nodeEdgeOcclusion = nodeEdgeOcclusionN(graph, nodeId);
+    //}
 
     if (weights.edgeLength) {
         metrics.edgeLength = edgeLengthN(
@@ -106,7 +106,7 @@ export function calcNodeMetrics(graph, nodeId, params) {
     }
 
     if (weights.angularResolution) {
-        metrics.angularResolution = angularResolution2N(graph, nodeId);
+        metrics.angularResolution = angularResolution2N(graph, nodeId, params.angleThreshold);
     }
     return metrics;
 }
@@ -268,12 +268,11 @@ export function angularResolutionN(graph, p) {
 }
 
 
-export function angularResolution2N(graph,p) {
+export function angularResolution2N(graph,p,threshold) {
     let points = graph.nodes(true);
     let adjacency = graph.adjList();
     //Angular Resolution for all angles which are affected by node p
     //This method computes angular resolution criterion
-    let angle_threshold = 25; // Threshold value to test the angles which are below this value only
     let c = 0; // to compute the cost of this criterion
     let x1, x2, y1, y2; // used for computing the slopes of the lines
     let degree, radian; // stores the degree between two lines
@@ -290,7 +289,7 @@ export function angularResolution2N(graph,p) {
             radian = Math.acos(((x1 * x2) + (y1 * y2)) / (Math.sqrt(x1 * x1 + y1 * y1) * Math.sqrt(x2 * x2 + y2 * y2))); // compute the angle in radian
             degree = radian * 180 / Math.PI; // compute the angle in degrees
             //console.log("p: " + p + " degree: " + degree + " radian: " + radian);
-            if (degree < angle_threshold)  // check only the angles which are less than the given threshold
+            if (degree <threshold)  // check only the angles which are less than the given threshold
             {
                 c += Math.abs(((2 * Math.PI) / adjacency[p].length) - radian); // add the following to the total cost: (((2*PI)/degree of the point p) - degree in radian between line1 and line2)
             }
@@ -307,7 +306,7 @@ export function angularResolution2N(graph,p) {
                 radian = Math.acos(((x1 * x2) + (y1 * y2)) / (Math.sqrt(x1 * x1 + y1 * y1) * Math.sqrt(x2 * x2 + y2 * y2))); // compute the angle in radian
                 degree = radian * 180 / Math.PI; // compute the angle in degrees
                 //console.log("p: " + p + " degree: " + degree + " radian: " + radian);
-                if (degree < angle_threshold)  // check only the angles which are less than the given threshold
+                if (degree <threshold)  // check only the angles which are less than the given threshold
                 {
                     c += Math.abs(((2 * Math.PI) / adjacency[adjacency[p][i]].length) - radian); // add the following to the total cost: (((2*PI)/degree of the point i adjacent to p) - degree in radian between line1 and line2)
                 }
