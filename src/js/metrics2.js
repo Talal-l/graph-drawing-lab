@@ -5,7 +5,31 @@ log.d = function (msg) {
     console.debug(msg);
 };
 
-
+export class Metrics{
+    constructor(){
+        this.nodeOcclusion = 0;
+        this.nodeEdgeOcclusion = 0;
+        this.edgeCrossing = 0;
+        this.edgeLength = 0;
+        this.angularResolution = 0;
+    }
+}
+export class MetricsWeights{
+    constructor(){
+        this.nodeOcclusion = 1;
+        this.nodeEdgeOcclusion = 1;
+        this.edgeCrossing = 1;
+        this.edgeLength = 1;
+        this.angularResolution = 1;
+    }
+}
+export class MetricsParams{
+    constructor(){
+        this.requiredEdgeLength = 100;
+        this.occlusionThreshold = 100;
+        this.angleThreshold = 25;
+    }
+}
 export function updateMetrics(metrics, oldV, newV) {
         let m = {...metrics};
         for (let key of Object.keys(m)) {
@@ -18,6 +42,75 @@ export function updateMetrics(metrics, oldV, newV) {
         }
         return m;
     }
+
+
+export function calcMetrics(graph, params) {
+    console.log("calcMetrics");
+    params = params || new MetricsParams();
+    let weights = params.weights || new MetricsWeights();
+    let metrics = new Metrics();
+    for (let i = 0; i < graph._nodes.length; i++) {
+        if (weights.nodeOcclusion) {
+            metrics.nodeOcclusion += nodeOcclusionN(graph, i, params.occlusionThreshold ** 2);
+        }
+        if (weights.nodeEdgeOcclusion) {
+            metrics.nodeEdgeOcclusion += nodeEdgeOcclusionN(graph, i);
+        }
+        if (weights.edgeLength) {
+            metrics.edgeLength += edgeLengthN(
+                graph,
+                params.requiredEdgeLength,
+                i
+            );
+        }
+        if (weights.edgeCrossing) {
+            metrics.edgeCrossing += edgeCrossingN(graph, i);
+        }
+        if (weights.angularResolution) {
+            metrics.angularResolution += angularResolution2N(graph, i, params.angleThreshold);
+        }
+    }
+
+    metrics.nodeOcclusion /= 2;
+    metrics.edgeLength /= 2;
+    metrics.edgeCrossing /= 8;
+    metrics.nodeEdgeOcclusion /= 2;
+    metrics.angularResolution /= 3;
+
+    return metrics;
+}
+
+
+export function calcNodeMetrics(graph, nodeId, params) {
+    params = params || new MetricsParams();
+    let metrics = new Metrics();
+    let weights = params.weights || new MetricsWeights();
+
+    if (weights.nodeOcclusion) {
+        metrics.nodeOcclusion = nodeOcclusionN(graph, nodeId, params.occlusionThreshold ** 2);
+    }
+    if (weights.nodeEdgeOcclusion) {
+        metrics.nodeEdgeOcclusion = nodeEdgeOcclusionN(graph, nodeId);
+    }
+
+    if (weights.edgeLength) {
+        metrics.edgeLength = edgeLengthN(
+            graph,
+            params.requiredEdgeLength,
+            nodeId
+        );
+    }
+
+    if (weights.edgeCrossing) {
+        metrics.edgeCrossing = edgeCrossingN(graph, nodeId);
+    }
+
+    if (weights.angularResolution) {
+        metrics.angularResolution = angularResolution2N(graph, nodeId);
+    }
+    return metrics;
+}
+
 
 export function nodeOcclusion(graph) {
     let sum = 0.0;

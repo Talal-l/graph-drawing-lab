@@ -6,7 +6,7 @@ import { CircularLayout } from "./circularLayout.js";
 import { HillClimbing } from "./hillClimbing.js";
 import { Tabu } from "./tabu.js";
 import { BatchRunPage } from "./batchRun.js";
-
+import {Metrics, MetricsWeights} from "./metrics2.js";
 
 export async function MainPage() {
     const PAGE = await loadPage("main", document);
@@ -50,6 +50,7 @@ export async function MainPage() {
     let cam = sig.cameras.cam1;
     // create the main graph instance
     let GRAPH = new Graph();
+    let metrics = new Metrics();
     //
     let CURRENT_LAYOUT_ALG = null;
     let CURRENT_LAYOUT_ALG_NAME = null;
@@ -432,10 +433,10 @@ export async function MainPage() {
         };
     }
     function updateObjective() {
-        GRAPH.setWeights(getWeights());
         PAGE.querySelector(
             "#objective-function"
-        ).innerHTML = GRAPH.objective().toFixed(DIGITS);
+        ).innerHTML = 0;
+            //GRAPH.objective().toFixed(DIGITS);
     }
 
     function updateSigGraph() {
@@ -457,7 +458,6 @@ export async function MainPage() {
         //requiredEdgeLength
         //});
 
-        let metrics = GRAPH.normalMetrics();
 
         // update ui
         PAGE.querySelector("#node-num").innerHTML = GRAPH.nodes().length;
@@ -486,8 +486,6 @@ export async function MainPage() {
     }
 
     function getLayoutAlg() {
-        GRAPH.resetZn();
-        console.log("reset graph zn");
         let list = PAGE.querySelector("#layoutAlgList");
         let requiredEdgeLength = parseFloat(
             PAGE.querySelector("#edge-length-required").value
@@ -607,13 +605,18 @@ export async function MainPage() {
                         GRAPH.import(data);
                     } catch (err) {
                         //TODO: show message in ui
-                        console.warn(
-                            `Can't parse ${filename}\n`,
-                            "file content:\n",
-                            data,
-                            "error: ",
-                            err
-                        );
+                        // try the other format
+                        try {
+                            GRAPH.importCustom(data);
+                        } catch (err) {
+                            console.warn(
+                                `Can't parse ${filename}\n`,
+                                "file content:\n",
+                                data,
+                                "error: ",
+                                err
+                            );
+                        }
                     }
                     refreshScreen(sig, updateMetrics, updateSigGraph);
                     cleanup();

@@ -1,13 +1,14 @@
 import {equal} from "./util.js";
 import {ZNorm} from "./normalization.js";
 import {Graph} from "./graph.js";
-import {updateMetrics} from "./metrics2.js";
+import {updateMetrics, calcMetrics, calcNodeMetrics, MetricsWeights, MetricsParams, Metrics} from "./metrics2.js";
 
 
 export class HillClimbing {
     constructor(graph, params) {
-        if (!params) params = {};
+        if (!params) params = new MetricsParams;
         this.graph = graph;
+        this.weights = params.weights || new MetricsWeights();
         this.squareSize = params.squareSize || 512;
         this.squareReduction = params.squareReduction || 4;
         this.it = 0;
@@ -19,21 +20,7 @@ export class HillClimbing {
         this.effectBounds = false;
         this.layoutAlgName = "hillClimbing";
 
-        this.metrics = {
-            nodeOcclusion: 0,
-            nodeEdgeOcclusion: 0,
-            edgeLength: 0,
-            edgeCrossing: 0,
-            angularResolution: 0,
-        };
-
-        graph.setWeights({
-            nodeOcclusion: 1,
-            nodeEdgeOcclusion: 0,
-            edgeLength: 1,
-            edgeCrossing: 1,
-            angularResolution: 1,
-        });
+        this.metrics = new Metrics;
 
         this.offsets = [
             {x: 1, y: 0}, // right
@@ -46,30 +33,72 @@ export class HillClimbing {
             {x: 1, y: -1}, // upper right
         ];
 
-        this.zn = new ZNorm(graph.edgesNum());
-        this.cost = 0;
-        this.old_cost = Infinity;
-
-
-        this.metrics = graph.calcMetrics();
-        // we need teh extra normalization to match the java results
-        this.zn.equalizeScales(this.metrics);
-        let normalizedMetrics = this.zn.equalizeScales(this.metrics);
-        this.cost = graph.objective(normalizedMetrics);
     }
+    _normalizeAll(metrics) {
+        // use zScore normalization except for edge crossing
+        let normalMetrics = {
+            nodeOcclusion: 0,
+            nodeEdgeOcclusion: 0,
+            edgeLength: 0,
+            edgeCrossing: 0,
+            angularResolution: 0,
+        };
 
+        if (this.weights.edgeCrossing) {
+            let E = 0;
+            for (let i = 0; i < this._adjList.length; i++) {
+                E += this._adjList[i].length;
+            }
+            E = E / 2;
+            normalMetrics.edgeCrossing =
+                E > 1 ? metrics.edgeCrossing / ((E * (E - 1)) / 2) : 0;
+        }
+        if (this.weights.nodeOcclusion) {
+            normalMetrics.nodeOcclusion = this.zn.normalize(
+                "nodeOcclusion",
+                metrics.nodeOcclusion
+            );
+        }
+        if (this.weights.nodeEdgeOcclusion) {
+            normalMetrics.nodeEdgeOcclusion = this.zn.normalize(
+                "nodeEdgeOcclusion",
+                metrics.nodeEdgeOcclusion
+            );
+        }
+        if (this.weights.edgeLength) {
+            normalMetrics.edgeLength = this.zn.normalize(
+                "edgeLength",
+                metrics.edgeLength
+            );
+        }
+        if (this.weights.angularResolution) {
+            normalMetrics.angularResolution = this.zn.normalize(
+                "angularResolution",
+                metrics.angularResolution
+            );
+        }
+
+        return normalMetrics;
+    }
     onNodeMove(nodeId, layoutAlg) {
     }
     onStep(layoutAlg) {
     }
-
+    _objective(normalizedMetrics) {
+        let m = normalizedMetrics;
+        let wSum = 0;
+        for (let key in m) {
+            wSum += m[key] * this.weights[key];
+        }
+        return wSum;
+    }
 
 
     step() {
-        let oldMeasures = {};
-        let newMeasures = {};
-        let rawOldMeasures = {};
-        let rawNewMeasures = {};
+        let oldMeasures = null;
+        let newMeasures = null;
+        let rawOldMeasures = null;
+        let rawNewMeasures = null;
         let oldFit, newFit;
         let bestPos = {x: 0, y: 0};
         let original_point = {x: 0, y: 0};
@@ -84,7 +113,7 @@ export class HillClimbing {
             bestPos.x = points[i].x;
             bestPos.y = points[i].y;
 
-            rawOldMeasures = this.graph.calcNodeMetrics(i);
+            rawOldMeasures = calcNodeMetrics(this.graph,i);
             oldMeasures = this.zn.equalizeScales(rawOldMeasures);
 
             for (let offset of this.offsets) {
@@ -93,14 +122,14 @@ export class HillClimbing {
                 if (this.graph.withinBounds(points[i].x, points[i].y)) {
                     this.evaluatedSolutions++;
 
-                    rawNewMeasures = this.graph.calcNodeMetrics(i);
+                    rawNewMeasures = calcNodeMetrics(this.graph,i);
                     newMeasures = this.zn.equalizeScales(rawNewMeasures);
 
-                    oldFit = this.graph.objective(oldMeasures);
-                    newFit = this.graph.objective(newMeasures);
+                    oldFit = this._objective(oldMeasures);
+                    newFit = this._objective(newMeasures);
                     if (!equal(newFit, oldFit) && newFit < oldFit) {
                         this.metrics = updateMetrics(this.metrics, rawOldMeasures, rawNewMeasures);
-                        this.cost = this.graph.objective(this.metrics);
+                        this.cost = this._objective(this.metrics);
                         oldMeasures = newMeasures;
                         rawOldMeasures = rawNewMeasures;
                         bestPos.x = points[i].x;
@@ -118,7 +147,7 @@ export class HillClimbing {
             }
         }
 
-        this.cost = this.graph.objective(this.zn.equalizeScales(this.metrics));
+        this.cost = this._objective(this.zn.equalizeScales(this.metrics));
         if ((!equal(this.cost, this.old_cost) && this.cost >= this.old_cost) || equal(this.cost, this.old_cost)) {
             this.squareSize /= 4;
         }
@@ -129,6 +158,16 @@ export class HillClimbing {
     run() {
         let start = performance.now();
         this.done = false;
+        this.zn = new ZNorm(this.graph.edgesNum());
+        this.cost = 0;
+        this.old_cost = Infinity;
+        this.metrics = calcMetrics(this.graph,this.params);
+        // we need teh extra normalization to match the java results
+        this.zn.equalizeScales(this.metrics);
+        let normalizedMetrics = this.zn.equalizeScales(this.metrics);
+        this.cost = this._objective(normalizedMetrics);
+
+
         while (this.squareSize >= 1) {
             this.step();
             this.onStep(this);

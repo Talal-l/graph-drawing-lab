@@ -124,7 +124,7 @@ async function loadGraph() {
             nodeEdgeOcclusion: 0,
             edgeLength: 0,
             edgeCrossing: 0,
-            angularResolution: 1,
+            angularResolution: 0,
         };
 
         let hc = new HillClimbing(graph);
@@ -134,6 +134,14 @@ async function loadGraph() {
         let hc4 = new HillClimbing(graph2);
         hc4.run();
         displayGraph(hc4, "graph2");
+
+        //let graph3 = new Graph().importCustom(graphData);
+        //let hc3 = new HillClimbing(graph3);
+        //hc2G(graph3)
+        //displayGraph(hc3, "graph3");
+
+
+
 
     }
 }
