@@ -418,9 +418,9 @@ export async function MainPage() {
             nodeOcclusion: parseFloat(
                 PAGE.querySelector("#node-occlusion-weight").value
             ),
-            nodeEdgeOcclusion: parseFloat(
-                PAGE.querySelector("#edge-node-occlusion-weight").value
-            ),
+            //nodeEdgeOcclusion: parseFloat(
+                //PAGE.querySelector("#edge-node-occlusion-weight").value
+            //),
             edgeLength: parseFloat(
                 PAGE.querySelector("#edge-length-weight").value
             ),
@@ -468,9 +468,9 @@ export async function MainPage() {
         PAGE.querySelector(
             "#node-occlusion"
         ).innerHTML = metrics.nodeOcclusion.toFixed(DIGITS);
-        PAGE.querySelector(
-            "#edge-node-occlusion"
-        ).innerHTML = metrics.nodeEdgeOcclusion.toFixed(DIGITS);
+        //PAGE.querySelector(
+            //"#edge-node-occlusion"
+        //).innerHTML = metrics.nodeEdgeOcclusion.toFixed(DIGITS);
 
         PAGE.querySelector(
             "#edge-length"

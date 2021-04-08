@@ -254,10 +254,6 @@ class Graph {
         this.bounds = {...this.defaultBounds};
         return this;
     }
-    setBounds(bounds) {
-        this.bounds = bounds;
-        updateBounds.call(this);
-    }
     withinBounds(x, y) {
         let {xMax, yMax, xMin, yMin} = this.bounds;
         return x < xMax && x > xMin && y < yMax && y > yMin;
@@ -293,7 +289,6 @@ class Graph {
             this._adjList[i] = [...gAdj[i]];
         }
 
-        updateBounds.call(this);
     }
     // copies a complete graph
     restoreFrom(graph) {
@@ -472,22 +467,4 @@ class Graph {
         return graph;
     }
 }
-function updateBounds() {
-    let b = this.getBoundaries();
 
-    if (
-        !this.withinBounds(b.xMax, b.yMax) ||
-        !this.withinBounds(b.xMin, b.yMin)
-    ) {
-        this.bounds = {
-            xMax: Math.max(this.bounds.xMax, b.xMax),
-            yMax: Math.max(this.bounds.yMax, b.yMax),
-            xMin: Math.min(this.bounds.xMin, b.xMin),
-            yMin: Math.min(this.bounds.yMin, b.yMin),
-        };
-    }
-    this.maxDist = distance(
-        {x: this.bounds.xMax, y: this.bounds.yMax},
-        {x: this.bounds.xMin, y: this.bounds.yMin}
-    );
-}

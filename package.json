@@ -5,10 +5,10 @@
   "description": "A Javascript tool to help explore and compare different graph layout algorithms.",
   "main": "main.js",
   "scripts": {
-    "start": "webpack webpack.config.cjs && electron .",
-    "watch": "webpack webpack.config.cjs --watch --silent & electron .",
+    "start": "webpack --config webpack.config.cjs && electron .",
+    "watch": "webpack --config webpack.config.cjs --watch --silent & electron .",
     "test": "jest",
-    "layoutTest": "webpack webpack.config.cjs --watch --silent & electron . layoutTest"
+    "layoutTest": "webpack --config webpack.config.cjs --watch --silent & electron . layoutTest"
   },
   "jest": {
     "transform": {
