@@ -97,7 +97,7 @@ async function loadGraph() {
         console.log("working with: ", file);
         let graphData = null;
         if (typeof window !== "undefined") {
-            let response = await fetch(`data/${file}`);
+            let response = await fetch(`test/data/${file}`);
             window.nodeOcclusionTime = nodeOcclusionTime;
             graphData = await response.text();
         } else {
