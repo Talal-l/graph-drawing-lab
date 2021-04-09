@@ -1,7 +1,7 @@
 import {equal} from "./util.js";
 import {ZNorm} from "./normalization.js";
 import {Graph} from "./graph.js";
-import {updateMetrics, calcMetrics, calcNodeMetrics, MetricsWeights, MetricsParams, Metrics} from "./metrics2.js";
+import {updateMetrics, calcMetrics, calcNodeMetrics, MetricsWeights, MetricsParams, Metrics, objective} from "./metrics2.js";
 
 
 export class HillClimbing {
@@ -40,12 +40,7 @@ export class HillClimbing {
     onStep(layoutAlg) {
     }
     _objective(normalizedMetrics) {
-        let m = normalizedMetrics;
-        let wSum = 0;
-        for (let key in m) {
-            wSum += m[key] * this.weights[key];
-        }
-        return wSum;
+        return objective(normalizedMetrics,this.weights);
     }
 
     step() {
@@ -116,7 +111,7 @@ export class HillClimbing {
         this.cost = 0;
         this.old_cost = Infinity;
         this.metrics = calcMetrics(this.graph,this.params);
-        // we need teh extra normalization to match the java results
+        // we need the extra normalization to match the java results
         this.zn.equalizeScales(this.metrics);
         let normalizedMetrics = this.zn.equalizeScales(this.metrics);
         this.cost = this._objective(normalizedMetrics);
@@ -147,8 +142,6 @@ export class HillClimbing {
         s.layoutAlgName = this.layoutAlgName;
 
         return s;
-
-
     }
     deserialize(data) {
         if (typeof data === "string") data = JSON.parse(data);

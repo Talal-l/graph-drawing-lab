@@ -14,13 +14,13 @@ onmessage = function (e) {
         // TODO: only send delta
         // to avoid sending too many messages
         if (layoutAlg.evaluatedSolutions % 100 === 0)
-            postMessage({type: "move", nodeId, layoutAlg, layoutAlgName, command});
+            postMessage({type: "move", nodeId, layoutAlg, layoutAlgName, command},"*");
 
     };
 
     let onStep = (layoutAlg) => {
         // TODO: only send delta
-        postMessage({type: "step",layoutAlg, layoutAlgName, command});
+        postMessage({type: "step",layoutAlg, layoutAlgName, command},"*");
     };
 
     switch (layoutAlgName) {

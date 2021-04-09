@@ -31,19 +31,24 @@ export class MetricsParams{
     }
 }
 export function updateMetrics(metrics, oldV, newV) {
-        let m = {...metrics};
-        for (let key of Object.keys(m)) {
-            if (m[key] != 0) {
-                m[key] = m[key] - oldV[key] + newV[key];
-            }
-            else {
-                m[key] = 0;
-            }
+    let m = {...metrics};
+    for (let key of Object.keys(m)) {
+        if (m[key] != 0) {
+            m[key] = m[key] - oldV[key] + newV[key];
         }
-        return m;
+        else {
+            m[key] = 0;
+        }
     }
-
-
+    return m;
+}
+export function objective(metrics, weights) {
+    let sum = 0;
+    for (let key of Object.keys(metrics)) {
+        sum += metrics[key] * weights[key];
+    }
+    return sum;
+}
 export function calcMetrics(graph, params) {
     console.log("calcMetrics");
     params = params || new MetricsParams();
@@ -79,8 +84,6 @@ export function calcMetrics(graph, params) {
 
     return metrics;
 }
-
-
 export function calcNodeMetrics(graph, nodeId, params) {
     params = params || new MetricsParams();
     let metrics = new Metrics();
@@ -110,8 +113,6 @@ export function calcNodeMetrics(graph, nodeId, params) {
     }
     return metrics;
 }
-
-
 export function nodeOcclusion(graph) {
     let sum = 0.0;
     let nodes = graph.nodes();
