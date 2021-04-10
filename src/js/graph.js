@@ -374,7 +374,7 @@ class Graph {
     }
 
     //let data = fs.readFileSync(filePath, "utf-8");
-    importCustom(data) {
+    importCustom(data, convert = false) {
         let byline = data.split("\n");
         // let caseNum = Number(byline[0]);
         let start = 0;
@@ -408,6 +408,36 @@ class Graph {
         }
         this._adjList = graph.adjList;
         this._nodes = graph.nodes;
+
+        // convert coordinates to center coordinates
+        if (convert) {
+            let bounds = this.getBoundaries();
+            let boundCenter = {
+                x: (bounds.xMax - bounds.xMin) / 2,
+                y: (bounds.yMax - bounds.yMin) / 2
+            };
+            for (let node of this._nodes) {
+                node.x = node.x - boundCenter.x;
+                node.y = node.y - boundCenter.y;
+            }
+            // translate the bounds too
+            this.bounds.xMin = this.bounds.xMin - boundCenter.x;
+            this.bounds.yMin = this.bounds.yMin - boundCenter.y;
+
+            this.bounds.xMax = this.bounds.xMax - boundCenter.x;
+            this.bounds.yMax = this.bounds.yMax - boundCenter.y;
+
+            console.log("actual bounds", bounds);
+            console.log("default bounds", this.defaultBounds);
+            console.log("bounds center", boundCenter);
+            console.log("bounds after translate", this.getBoundaries());
+            console.log("cneter after:", {
+                x: (this.getBoundaries().xMax - this.getBoundaries().xMin) / 2,
+                y: (this.getBoundaries().yMax - this.getBoundaries().yMin) / 2
+            });
+            console.log("current bounds", this.bounds, this.defaultBounds);
+        }
+
         return this;
     }
     import(data) {

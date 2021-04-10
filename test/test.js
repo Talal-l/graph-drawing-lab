@@ -115,7 +115,7 @@ async function loadGraph() {
 
 
         graph = new Graph().importCustom(graphData);
-        let graph2 = new Graph().importCustom(graphData);
+        let graph2 = new Graph().importCustom(graphData, true);
         let importTime = performance.now() - importStatrTime;
         log.importTimes.push(importTime);
 
