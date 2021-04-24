@@ -96,7 +96,7 @@ export class HillClimbing {
             }
         }
 
-        this.cost = this._objective(this.zn.equalizeScales(this.metrics));
+        this.cost = this._objective(this.zn.equalizeScales(calcMetrics(this.graph,this.params)));
         if ((!equal(this.cost, this.old_cost) && this.cost >= this.old_cost) || equal(this.cost, this.old_cost)) {
             this.squareSize /= 4;
         }
