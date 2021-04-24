@@ -21,6 +21,7 @@ export class HillClimbing {
         this.effectBounds = false;
         this.layoutAlgName = "hillClimbing";
 
+        this.stepCount = 0;
         this.metrics = new Metrics;
 
         this.offsets = [
