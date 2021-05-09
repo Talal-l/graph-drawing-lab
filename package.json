@@ -1,6 +1,6 @@
 {
   "name": "graph-drawing",
-  "type":"module",
+  "type": "module",
   "version": "1.0.0",
   "description": "A Javascript tool to help explore and compare different graph layout algorithms.",
   "main": "main.js",
@@ -13,6 +13,11 @@
   "jest": {
     "transform": {
       "^.+\\.js?$": "babel-jest"
+    }
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
     }
   },
   "repository": {
@@ -32,7 +37,9 @@
     "babel-jest": "^25.1.0",
     "electron": "^8.0.0",
     "eslint": "^5.16.0",
+    "husky": "^6.0.0",
     "jest": "^25.1.0",
+    "pretty-quick": "^3.1.0",
     "webpack": "^4.41.5",
     "webpack-cli": "^3.3.10"
   },

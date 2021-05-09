@@ -1,26 +1,20 @@
 {
-  "plugins": [
-  ],
-
-    "parserOptions": {
-        "ecmaVersion": 10,
-        "sourceType": "module"
-        
-    },
-    "env": {
-        "browser": true,
-        "node": true,
-        "jest": true,
-        "es6": true  
-    },
-    "rules": {
-        "strict": "error",
-        "semi": "error",
-        "quotes": ["off", "double"],
-        "eqeqeq": "warn",
-        "linebreak-style": ["error", "unix"],
-        "indent": ["off",4],
-        "no-undef": "error"
-
-    }
+  "extends": ["eslint:recommended"],
+  "lib": ["es2017"],
+  "parserOptions": {
+    "ecmaVersion": 2019
+  },
+  "env": {
+    "browser": true,
+    "node": true,
+    "es6": true
+  },
+  "rules": {
+    "strict": "error",
+    "semi": "error",
+    "quotes": ["error", "double"],
+    "eqeqeq": "warn",
+    "linebreak-style": ["error", "unix"],
+    "no-undef": "error"
+  }
 }
