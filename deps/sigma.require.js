@@ -3740,37 +3740,29 @@ if (typeof exports !== "undefined") {
     this.edgesIndex[validEdge.id] = validEdge;
 
     if (!this.inNeighborsIndex[validEdge.target][validEdge.source])
-      this.inNeighborsIndex[validEdge.target][validEdge.source] = Object.create(
-        null
-      );
-    this.inNeighborsIndex[validEdge.target][validEdge.source][
-      validEdge.id
-    ] = validEdge;
+      this.inNeighborsIndex[validEdge.target][validEdge.source] =
+        Object.create(null);
+    this.inNeighborsIndex[validEdge.target][validEdge.source][validEdge.id] =
+      validEdge;
 
     if (!this.outNeighborsIndex[validEdge.source][validEdge.target])
-      this.outNeighborsIndex[validEdge.source][
-        validEdge.target
-      ] = Object.create(null);
-    this.outNeighborsIndex[validEdge.source][validEdge.target][
-      validEdge.id
-    ] = validEdge;
+      this.outNeighborsIndex[validEdge.source][validEdge.target] =
+        Object.create(null);
+    this.outNeighborsIndex[validEdge.source][validEdge.target][validEdge.id] =
+      validEdge;
 
     if (!this.allNeighborsIndex[validEdge.source][validEdge.target])
-      this.allNeighborsIndex[validEdge.source][
-        validEdge.target
-      ] = Object.create(null);
-    this.allNeighborsIndex[validEdge.source][validEdge.target][
-      validEdge.id
-    ] = validEdge;
+      this.allNeighborsIndex[validEdge.source][validEdge.target] =
+        Object.create(null);
+    this.allNeighborsIndex[validEdge.source][validEdge.target][validEdge.id] =
+      validEdge;
 
     if (validEdge.target !== validEdge.source) {
       if (!this.allNeighborsIndex[validEdge.target][validEdge.source])
-        this.allNeighborsIndex[validEdge.target][
-          validEdge.source
-        ] = Object.create(null);
-      this.allNeighborsIndex[validEdge.target][validEdge.source][
-        validEdge.id
-      ] = validEdge;
+        this.allNeighborsIndex[validEdge.target][validEdge.source] =
+          Object.create(null);
+      this.allNeighborsIndex[validEdge.target][validEdge.source][validEdge.id] =
+        validEdge;
     }
 
     // Keep counts up to date:
@@ -7903,9 +7895,8 @@ if (typeof exports !== "undefined") {
       g.setAttributeNS(null, "id", c + "-group-" + groups[i]);
       g.setAttributeNS(null, "class", c + "-group");
 
-      this.domElements.groups[groups[i]] = this.domElements.graph.appendChild(
-        g
-      );
+      this.domElements.groups[groups[i]] =
+        this.domElements.graph.appendChild(g);
     }
 
     // Appending measurement canvas

@@ -456,22 +456,18 @@ export async function MainPage() {
     PAGE.querySelector("#node-num").innerHTML = GRAPH.nodes().length;
     PAGE.querySelector("#edge-num").innerHTML = GRAPH.edges().length / 2;
     PAGE.querySelector("#density").innerHTML = GRAPH.density().toFixed(DIGITS);
-    PAGE.querySelector(
-      "#node-occlusion"
-    ).innerHTML = metrics.nodeOcclusion.toFixed(DIGITS);
+    PAGE.querySelector("#node-occlusion").innerHTML =
+      metrics.nodeOcclusion.toFixed(DIGITS);
     //PAGE.querySelector(
     //"#edge-node-occlusion"
     //).innerHTML = metrics.nodeEdgeOcclusion.toFixed(DIGITS);
 
-    PAGE.querySelector("#edge-length").innerHTML = metrics.edgeLength.toFixed(
-      DIGITS
-    );
-    PAGE.querySelector("#edge-cross").innerHTML = metrics.edgeCrossing.toFixed(
-      DIGITS
-    );
-    PAGE.querySelector(
-      "#angular-resolution"
-    ).innerHTML = metrics.angularResolution.toFixed(DIGITS);
+    PAGE.querySelector("#edge-length").innerHTML =
+      metrics.edgeLength.toFixed(DIGITS);
+    PAGE.querySelector("#edge-cross").innerHTML =
+      metrics.edgeCrossing.toFixed(DIGITS);
+    PAGE.querySelector("#angular-resolution").innerHTML =
+      metrics.angularResolution.toFixed(DIGITS);
 
     updateObjective();
   }

@@ -1,52 +1,46 @@
 <!DOCTYPE html>
 <html>
-
-<head>
+  <head>
     <style type="text/css">
-        .container {
+      .container {
+        width: 100%;
+        height: 95%;
+        border: solid;
+      }
 
-            width: 100%;
-            height: 95%;
-            border:solid;
-        }
+      .wrapper {
+        width: 1000px;
+        margin: 4px;
+        height: 900px;
+      }
 
-        .wrapper {
-            width: 1000px;
-            margin:4px;
-            height: 900px;
-        }
+      .box {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
 
-        .box {
-            display: flex;
-            flex-direction: row;
-            flex-wrap: wrap;
-
-            max-width: 100vw;
-            height: 100%;
-
-        }
+        max-width: 100vw;
+        height: 100%;
+      }
     </style>
-
 
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <title>Test</title>
-</head>
+  </head>
 
-<body>
-
+  <body>
     <script src="node_modules/d3/dist/d3.js"></script>
     <script defer src="deps/sigma.require.js" charset="utf-8"></script>
-    <script defer src="deps/sigma.plugins.dragNodes.min.js" charset="utf-8"></script>
+    <script
+      defer
+      src="deps/sigma.plugins.dragNodes.min.js"
+      charset="utf-8"
+    ></script>
     <script type="module" src="/test/test.js" charset="utf-8"></script>
 
-    <div class="box">
-    </div>
+    <div class="box"></div>
 
-    <svg class="chart" id="chart-avg-objective" width="100%" height="600">
-    </svg>
-
-
-</body>
-
+    <svg class="chart" id="chart-avg-objective" width="100%" height="600"></svg>
+  </body>
 </html>

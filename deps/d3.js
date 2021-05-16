@@ -3210,35 +3210,39 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     this.opacity = +opacity;
   }
 
-  define(Rgb, rgb, extend(Color, {
-    brighter: function (k) {
-      k = k == null ? brighter : Math.pow(brighter, k);
-      return new Rgb(this.r * k, this.g * k, this.b * k, this.opacity);
-    },
-    darker: function (k) {
-      k = k == null ? darker : Math.pow(darker, k);
-      return new Rgb(this.r * k, this.g * k, this.b * k, this.opacity);
-    },
-    rgb: function () {
-      return this;
-    },
-    displayable: function () {
-      return (
-        -0.5 <= this.r &&
-        this.r < 255.5 &&
-        -0.5 <= this.g &&
-        this.g < 255.5 &&
-        -0.5 <= this.b &&
-        this.b < 255.5 &&
-        0 <= this.opacity &&
-        this.opacity <= 1
-      );
-    },
-    hex: rgb_formatHex, // Deprecated! Use color.formatHex.
-    formatHex: rgb_formatHex,
-    formatRgb: rgb_formatRgb,
-    toString: rgb_formatRgb,
-  }));
+  define(
+    Rgb,
+    rgb,
+    extend(Color, {
+      brighter: function (k) {
+        k = k == null ? brighter : Math.pow(brighter, k);
+        return new Rgb(this.r * k, this.g * k, this.b * k, this.opacity);
+      },
+      darker: function (k) {
+        k = k == null ? darker : Math.pow(darker, k);
+        return new Rgb(this.r * k, this.g * k, this.b * k, this.opacity);
+      },
+      rgb: function () {
+        return this;
+      },
+      displayable: function () {
+        return (
+          -0.5 <= this.r &&
+          this.r < 255.5 &&
+          -0.5 <= this.g &&
+          this.g < 255.5 &&
+          -0.5 <= this.b &&
+          this.b < 255.5 &&
+          0 <= this.opacity &&
+          this.opacity <= 1
+        );
+      },
+      hex: rgb_formatHex, // Deprecated! Use color.formatHex.
+      formatHex: rgb_formatHex,
+      formatRgb: rgb_formatRgb,
+      toString: rgb_formatRgb,
+    })
+  );
 
   function rgb_formatHex() {
     return "#" + hex(this.r) + hex(this.g) + hex(this.b);
@@ -3309,52 +3313,56 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     this.opacity = +opacity;
   }
 
-  define(Hsl, hsl, extend(Color, {
-    brighter: function (k) {
-      k = k == null ? brighter : Math.pow(brighter, k);
-      return new Hsl(this.h, this.s, this.l * k, this.opacity);
-    },
-    darker: function (k) {
-      k = k == null ? darker : Math.pow(darker, k);
-      return new Hsl(this.h, this.s, this.l * k, this.opacity);
-    },
-    rgb: function () {
-      var h = (this.h % 360) + (this.h < 0) * 360,
-        s = isNaN(h) || isNaN(this.s) ? 0 : this.s,
-        l = this.l,
-        m2 = l + (l < 0.5 ? l : 1 - l) * s,
-        m1 = 2 * l - m2;
-      return new Rgb(
-        hsl2rgb(h >= 240 ? h - 240 : h + 120, m1, m2),
-        hsl2rgb(h, m1, m2),
-        hsl2rgb(h < 120 ? h + 240 : h - 120, m1, m2),
-        this.opacity
-      );
-    },
-    displayable: function () {
-      return (
-        ((0 <= this.s && this.s <= 1) || isNaN(this.s)) &&
-        0 <= this.l &&
-        this.l <= 1 &&
-        0 <= this.opacity &&
-        this.opacity <= 1
-      );
-    },
-    formatHsl: function () {
-      var a = this.opacity;
-      a = isNaN(a) ? 1 : Math.max(0, Math.min(1, a));
-      return (
-        (a === 1 ? "hsl(" : "hsla(") +
-        (this.h || 0) +
-        ", " +
-        (this.s || 0) * 100 +
-        "%, " +
-        (this.l || 0) * 100 +
-        "%" +
-        (a === 1 ? ")" : ", " + a + ")")
-      );
-    },
-  }));
+  define(
+    Hsl,
+    hsl,
+    extend(Color, {
+      brighter: function (k) {
+        k = k == null ? brighter : Math.pow(brighter, k);
+        return new Hsl(this.h, this.s, this.l * k, this.opacity);
+      },
+      darker: function (k) {
+        k = k == null ? darker : Math.pow(darker, k);
+        return new Hsl(this.h, this.s, this.l * k, this.opacity);
+      },
+      rgb: function () {
+        var h = (this.h % 360) + (this.h < 0) * 360,
+          s = isNaN(h) || isNaN(this.s) ? 0 : this.s,
+          l = this.l,
+          m2 = l + (l < 0.5 ? l : 1 - l) * s,
+          m1 = 2 * l - m2;
+        return new Rgb(
+          hsl2rgb(h >= 240 ? h - 240 : h + 120, m1, m2),
+          hsl2rgb(h, m1, m2),
+          hsl2rgb(h < 120 ? h + 240 : h - 120, m1, m2),
+          this.opacity
+        );
+      },
+      displayable: function () {
+        return (
+          ((0 <= this.s && this.s <= 1) || isNaN(this.s)) &&
+          0 <= this.l &&
+          this.l <= 1 &&
+          0 <= this.opacity &&
+          this.opacity <= 1
+        );
+      },
+      formatHsl: function () {
+        var a = this.opacity;
+        a = isNaN(a) ? 1 : Math.max(0, Math.min(1, a));
+        return (
+          (a === 1 ? "hsl(" : "hsla(") +
+          (this.h || 0) +
+          ", " +
+          (this.s || 0) * 100 +
+          "%, " +
+          (this.l || 0) * 100 +
+          "%" +
+          (a === 1 ? ")" : ", " + a + ")")
+        );
+      },
+    })
+  );
 
   /* From FvD 13.37, CSS Color Module Level 3 */
   function hsl2rgb(h, m1, m2) {
@@ -3417,38 +3425,42 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     this.opacity = +opacity;
   }
 
-  define(Lab, lab, extend(Color, {
-    brighter: function (k) {
-      return new Lab(
-        this.l + K * (k == null ? 1 : k),
-        this.a,
-        this.b,
-        this.opacity
-      );
-    },
-    darker: function (k) {
-      return new Lab(
-        this.l - K * (k == null ? 1 : k),
-        this.a,
-        this.b,
-        this.opacity
-      );
-    },
-    rgb: function () {
-      var y = (this.l + 16) / 116,
-        x = isNaN(this.a) ? y : y + this.a / 500,
-        z = isNaN(this.b) ? y : y - this.b / 200;
-      x = Xn * lab2xyz(x);
-      y = Yn * lab2xyz(y);
-      z = Zn * lab2xyz(z);
-      return new Rgb(
-        lrgb2rgb(3.1338561 * x - 1.6168667 * y - 0.4906146 * z),
-        lrgb2rgb(-0.9787684 * x + 1.9161415 * y + 0.033454 * z),
-        lrgb2rgb(0.0719453 * x - 0.2289914 * y + 1.4052427 * z),
-        this.opacity
-      );
-    },
-  }));
+  define(
+    Lab,
+    lab,
+    extend(Color, {
+      brighter: function (k) {
+        return new Lab(
+          this.l + K * (k == null ? 1 : k),
+          this.a,
+          this.b,
+          this.opacity
+        );
+      },
+      darker: function (k) {
+        return new Lab(
+          this.l - K * (k == null ? 1 : k),
+          this.a,
+          this.b,
+          this.opacity
+        );
+      },
+      rgb: function () {
+        var y = (this.l + 16) / 116,
+          x = isNaN(this.a) ? y : y + this.a / 500,
+          z = isNaN(this.b) ? y : y - this.b / 200;
+        x = Xn * lab2xyz(x);
+        y = Yn * lab2xyz(y);
+        z = Zn * lab2xyz(z);
+        return new Rgb(
+          lrgb2rgb(3.1338561 * x - 1.6168667 * y - 0.4906146 * z),
+          lrgb2rgb(-0.9787684 * x + 1.9161415 * y + 0.033454 * z),
+          lrgb2rgb(0.0719453 * x - 0.2289914 * y + 1.4052427 * z),
+          this.opacity
+        );
+      },
+    })
+  );
 
   function xyz2lab(t) {
     return t > t3 ? Math.pow(t, 1 / 3) : t / t2 + t0;
@@ -3509,27 +3521,31 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     return new Lab(o.l, Math.cos(h) * o.c, Math.sin(h) * o.c, o.opacity);
   }
 
-  define(Hcl, hcl, extend(Color, {
-    brighter: function (k) {
-      return new Hcl(
-        this.h,
-        this.c,
-        this.l + K * (k == null ? 1 : k),
-        this.opacity
-      );
-    },
-    darker: function (k) {
-      return new Hcl(
-        this.h,
-        this.c,
-        this.l - K * (k == null ? 1 : k),
-        this.opacity
-      );
-    },
-    rgb: function () {
-      return hcl2lab(this).rgb();
-    },
-  }));
+  define(
+    Hcl,
+    hcl,
+    extend(Color, {
+      brighter: function (k) {
+        return new Hcl(
+          this.h,
+          this.c,
+          this.l + K * (k == null ? 1 : k),
+          this.opacity
+        );
+      },
+      darker: function (k) {
+        return new Hcl(
+          this.h,
+          this.c,
+          this.l - K * (k == null ? 1 : k),
+          this.opacity
+        );
+      },
+      rgb: function () {
+        return hcl2lab(this).rgb();
+      },
+    })
+  );
 
   var A = -0.14861,
     B = +1.78277,
@@ -3567,29 +3583,33 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     this.opacity = +opacity;
   }
 
-  define(Cubehelix, cubehelix, extend(Color, {
-    brighter: function (k) {
-      k = k == null ? brighter : Math.pow(brighter, k);
-      return new Cubehelix(this.h, this.s, this.l * k, this.opacity);
-    },
-    darker: function (k) {
-      k = k == null ? darker : Math.pow(darker, k);
-      return new Cubehelix(this.h, this.s, this.l * k, this.opacity);
-    },
-    rgb: function () {
-      var h = isNaN(this.h) ? 0 : (this.h + 120) * radians,
-        l = +this.l,
-        a = isNaN(this.s) ? 0 : this.s * l * (1 - l),
-        cosh = Math.cos(h),
-        sinh = Math.sin(h);
-      return new Rgb(
-        255 * (l + a * (A * cosh + B * sinh)),
-        255 * (l + a * (C * cosh + D * sinh)),
-        255 * (l + a * (E * cosh)),
-        this.opacity
-      );
-    },
-  }));
+  define(
+    Cubehelix,
+    cubehelix,
+    extend(Color, {
+      brighter: function (k) {
+        k = k == null ? brighter : Math.pow(brighter, k);
+        return new Cubehelix(this.h, this.s, this.l * k, this.opacity);
+      },
+      darker: function (k) {
+        k = k == null ? darker : Math.pow(darker, k);
+        return new Cubehelix(this.h, this.s, this.l * k, this.opacity);
+      },
+      rgb: function () {
+        var h = isNaN(this.h) ? 0 : (this.h + 120) * radians,
+          l = +this.l,
+          a = isNaN(this.s) ? 0 : this.s * l * (1 - l),
+          cosh = Math.cos(h),
+          sinh = Math.sin(h);
+        return new Rgb(
+          255 * (l + a * (A * cosh + B * sinh)),
+          255 * (l + a * (C * cosh + D * sinh)),
+          255 * (l + a * (E * cosh)),
+          this.opacity
+        );
+      },
+    })
+  );
 
   function basis(t1, v0, v1, v2, v3) {
     var t2 = t1 * t1,
@@ -3949,9 +3969,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   /* eslint-disable no-undef */
   function parseCss(value) {
-    const m = new (typeof DOMMatrix === "function"
-      ? DOMMatrix
-      : WebKitCSSMatrix)(value + "");
+    const m = new (
+      typeof DOMMatrix === "function" ? DOMMatrix : WebKitCSSMatrix
+    )(value + "");
     return m.isIdentity ? identity$2 : decompose(m.a, m.b, m.c, m.d, m.e, m.f);
   }
 
@@ -4669,13 +4689,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   function interpolate$1(a, b) {
     var c;
-    return (typeof b === "number"
-      ? interpolateNumber
-      : b instanceof color
-      ? interpolateRgb
-      : (c = color(b))
-      ? ((b = c), interpolateRgb)
-      : interpolateString)(a, b);
+    return (
+      typeof b === "number"
+        ? interpolateNumber
+        : b instanceof color
+        ? interpolateRgb
+        : (c = color(b))
+        ? ((b = c), interpolateRgb)
+        : interpolateString
+    )(a, b);
   }
 
   function attrRemove$1(name) {
@@ -8210,12 +8232,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       )
         this._ += "L" + x0 + "," + y0;
       if (!r) return;
-      this._ += `A${r},${r},0,1,1,${
-        x - r
-      },${y}A${r},${r},0,1,1,${(this._x1 = x0)},${(this._y1 = y0)}`;
+      this._ += `A${r},${r},0,1,1,${x - r},${y}A${r},${r},0,1,1,${(this._x1 =
+        x0)},${(this._y1 = y0)}`;
     }
     rect(x, y, w, h) {
-      this._ += `M${(this._x0 = this._x1 = +x)},${(this._y0 = this._y1 = +y)}h${+w}v${+h}h${-w}Z`;
+      this._ += `M${(this._x0 = this._x1 = +x)},${(this._y0 = this._y1 =
+        +y)}h${+w}v${+h}h${-w}Z`;
     }
     value() {
       return this._ || null;
@@ -8803,14 +8825,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       return new Voronoi(this, bounds);
     }
     *neighbors(i) {
-      const {
-        inedges,
-        hull,
-        _hullIndex,
-        halfedges,
-        triangles,
-        collinear,
-      } = this;
+      const { inedges, hull, _hullIndex, halfedges, triangles, collinear } =
+        this;
 
       // degenerate case with several collinear points
       if (collinear) {
@@ -10653,7 +10669,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   }
 
   // [[fill]align][sign][symbol][0][width][,][.precision][~][type]
-  var re = /^(?:(.)?([<>=^]))?([+\-( ])?([$#])?(0)?(\d+)?(,)?(\.\d+)?(~)?([a-z%])?$/i;
+  var re =
+    /^(?:(.)?([<>=^]))?([+\-( ])?([$#])?(0)?(\d+)?(,)?(\.\d+)?(~)?([a-z%])?$/i;
 
   function formatSpecifier(specifier) {
     if (!(match = re.exec(specifier)))
@@ -12975,9 +12992,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   }
 
   function contains$1(object, point) {
-    return (object && containsObjectType.hasOwnProperty(object.type)
-      ? containsObjectType[object.type]
-      : containsGeometry)(object, point);
+    return (
+      object && containsObjectType.hasOwnProperty(object.type)
+        ? containsObjectType[object.type]
+        : containsGeometry
+    )(object, point);
   }
 
   function graticuleX(y0, y1, dy) {
@@ -13188,7 +13207,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       areaStream$1.lineEnd = areaRingEnd$1;
     },
     polygonEnd: function () {
-      areaStream$1.lineStart = areaStream$1.lineEnd = areaStream$1.point = noop$2;
+      areaStream$1.lineStart =
+        areaStream$1.lineEnd =
+        areaStream$1.point =
+          noop$2;
       areaSum$1.add(abs$2(areaRingSum$1));
       areaRingSum$1 = new Adder();
     },
@@ -14248,11 +14270,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         t = lower48.translate(),
         x = (coordinates[0] - t[0]) / k,
         y = (coordinates[1] - t[1]) / k;
-      return (y >= 0.12 && y < 0.234 && x >= -0.425 && x < -0.214
-        ? alaska
-        : y >= 0.166 && y < 0.234 && x >= -0.214 && x < -0.115
-        ? hawaii
-        : lower48
+      return (
+        y >= 0.12 && y < 0.234 && x >= -0.425 && x < -0.214
+          ? alaska
+          : y >= 0.166 && y < 0.234 && x >= -0.214 && x < -0.115
+          ? hawaii
+          : lower48
       ).invert(coordinates);
     };
 
@@ -19009,21 +19032,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     ];
 
     function tickFormat(date) {
-      return (second(date) < date
-        ? formatMillisecond
-        : minute(date) < date
-        ? formatSecond
-        : hour(date) < date
-        ? formatMinute
-        : day(date) < date
-        ? formatHour
-        : month(date) < date
-        ? week(date) < date
-          ? formatDay
-          : formatWeek
-        : year(date) < date
-        ? formatMonth
-        : formatYear)(date);
+      return (
+        second(date) < date
+          ? formatMillisecond
+          : minute(date) < date
+          ? formatSecond
+          : hour(date) < date
+          ? formatMinute
+          : day(date) < date
+          ? formatHour
+          : month(date) < date
+          ? week(date) < date
+            ? formatDay
+            : formatWeek
+          : year(date) < date
+          ? formatMonth
+          : formatYear
+      )(date);
     }
 
     function tickInterval(interval, start, stop) {
@@ -21180,7 +21205,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     areaStart: noop$3,
     areaEnd: noop$3,
     lineStart: function () {
-      this._x0 = this._x1 = this._x2 = this._x3 = this._x4 = this._y0 = this._y1 = this._y2 = this._y3 = this._y4 = NaN;
+      this._x0 =
+        this._x1 =
+        this._x2 =
+        this._x3 =
+        this._x4 =
+        this._y0 =
+        this._y1 =
+        this._y2 =
+        this._y3 =
+        this._y4 =
+          NaN;
       this._point = 0;
     },
     lineEnd: function () {
@@ -21431,7 +21466,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     areaStart: noop$3,
     areaEnd: noop$3,
     lineStart: function () {
-      this._x0 = this._x1 = this._x2 = this._x3 = this._x4 = this._x5 = this._y0 = this._y1 = this._y2 = this._y3 = this._y4 = this._y5 = NaN;
+      this._x0 =
+        this._x1 =
+        this._x2 =
+        this._x3 =
+        this._x4 =
+        this._x5 =
+        this._y0 =
+        this._y1 =
+        this._y2 =
+        this._y3 =
+        this._y4 =
+        this._y5 =
+          NaN;
       this._point = 0;
     },
     lineEnd: function () {
@@ -21586,7 +21633,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     },
     lineStart: function () {
       this._x0 = this._x1 = this._x2 = this._y0 = this._y1 = this._y2 = NaN;
-      this._l01_a = this._l12_a = this._l23_a = this._l01_2a = this._l12_2a = this._l23_2a = this._point = 0;
+      this._l01_a =
+        this._l12_a =
+        this._l23_a =
+        this._l01_2a =
+        this._l12_2a =
+        this._l23_2a =
+        this._point =
+          0;
     },
     lineEnd: function () {
       switch (this._point) {
@@ -21655,8 +21709,27 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     areaStart: noop$3,
     areaEnd: noop$3,
     lineStart: function () {
-      this._x0 = this._x1 = this._x2 = this._x3 = this._x4 = this._x5 = this._y0 = this._y1 = this._y2 = this._y3 = this._y4 = this._y5 = NaN;
-      this._l01_a = this._l12_a = this._l23_a = this._l01_2a = this._l12_2a = this._l23_2a = this._point = 0;
+      this._x0 =
+        this._x1 =
+        this._x2 =
+        this._x3 =
+        this._x4 =
+        this._x5 =
+        this._y0 =
+        this._y1 =
+        this._y2 =
+        this._y3 =
+        this._y4 =
+        this._y5 =
+          NaN;
+      this._l01_a =
+        this._l12_a =
+        this._l23_a =
+        this._l01_2a =
+        this._l12_2a =
+        this._l23_2a =
+        this._point =
+          0;
     },
     lineEnd: function () {
       switch (this._point) {
@@ -21742,7 +21815,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     },
     lineStart: function () {
       this._x0 = this._x1 = this._x2 = this._y0 = this._y1 = this._y2 = NaN;
-      this._l01_a = this._l12_a = this._l23_a = this._l01_2a = this._l12_2a = this._l23_2a = this._point = 0;
+      this._l01_a =
+        this._l12_a =
+        this._l23_a =
+        this._l01_2a =
+        this._l12_2a =
+        this._l23_2a =
+        this._point =
+          0;
     },
     lineEnd: function () {
       if (this._line || (this._line !== 0 && this._point === 3))
