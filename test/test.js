@@ -128,7 +128,7 @@ async function loadGraph() {
 
     let hc = new HillClimbing(graph);
     hillClimbing_Fast_NoGrid(graph);
-    displayGraph(hc, "graph1");
+    displayGraph(hc.graph, "hcClone", "graph1");
 
     let hc4 = new HillClimbing(graph2);
     hc4.run();
@@ -322,7 +322,7 @@ function tsTest(graph) {
   return graph;
 }
 
-function displayGraph(layoutAlg, gId) {
+function displayGraph(graph, algName, it, executionTime, objective, gId) {
   let id = `graph-${gId}`;
   let box = document.querySelector(".box");
   let wrapper;
@@ -333,6 +333,7 @@ function displayGraph(layoutAlg, gId) {
     details = document.createElement("h3");
     graphContainer = document.createElement("div");
     wrapper.setAttribute("class", "wrapper");
+    wrapper.setAttribute("style", "margin:50px");
     graphContainer.setAttribute("id", id);
     graphContainer.setAttribute("class", "container");
     wrapper.appendChild(graphContainer);
@@ -342,11 +343,11 @@ function displayGraph(layoutAlg, gId) {
     let parentNode = graphContainer.parentNode;
     details = parentNode.querySelector("h3");
   }
-  details.innerText = `Alog: ${layoutAlg?.layoutAlgName},\n Objective:,\n it: ${
-    layoutAlg?.it
-  },\n execution: ${layoutAlg?.executionTime / 1000}`;
+  details.innerText = `Alog: ${algName},\n Objective:${objective},\n it: ${it},\n execution: ${
+    executionTime / 1000
+  }`;
 
-  return updateSigGraph(layoutAlg?.graph, id);
+  return updateSigGraph(graph, id);
 }
 function updateSigGraph(graph, container) {
   let sigDefaults = {

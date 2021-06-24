@@ -9,7 +9,9 @@ import { BatchRunPage } from "./batchRun.js";
 import { Metrics, MetricsWeights } from "./metrics2.js";
 
 export async function MainPage() {
+  // load html
   const PAGE = await loadPage("main", document);
+  // set this page as the last page so it's not lost on refresh
   sessionStorage.setItem("lastPage", "MainPage");
 
   // TODO: restore state
@@ -27,6 +29,7 @@ export async function MainPage() {
       edgeHoverSizeRatio: 1.6,
     },
   };
+  // create a worker (thread) that can do work without blocking the main ui
   let worker = new Worker("build/layoutWorker.js");
   let webglRenderer = {
     type: "webgl",
